@@ -29,9 +29,10 @@ const userSchema = new mongoose.Schema<IUser>(
       enum: Object.values(UserRole),
     },
     company: {
-      type: String,
-      trim: true,
-    },
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Company",
+        default: null, 
+      },
     isBlocked: {
       type: Boolean,
       default: false,

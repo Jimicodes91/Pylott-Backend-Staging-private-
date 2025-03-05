@@ -23,8 +23,8 @@ export enum UserRole {
     lastLogin?: Date;
     verificationToken?: string;
     tokenExpires?: number;
-    passwordSetupToken?: string;
-    passwordSetupTokenExpires?: number;
+    passwordSetupToken:string;
+    passwordSetupTokenExpires:number;
   }
 
   export interface IVerificationToken extends mongoose.Document {
@@ -35,8 +35,6 @@ export enum UserRole {
     tokenType: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET';
   }
 export interface AdminSignupData{
-    firstname?:string;
-    lastname?:string;
     email:string;
     password:string;
 }

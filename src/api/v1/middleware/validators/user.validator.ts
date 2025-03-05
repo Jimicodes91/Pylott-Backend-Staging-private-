@@ -13,8 +13,8 @@ export const signUpValidator = [
 ];
 
 export const signUpAdminValidator = [
-    body("firstname", "First name is required").not().isEmpty(),
-    body("lastname", "Last name is required").not().isEmpty(),
+    // body("firstname", "First name is required").not().isEmpty(),
+    // body("lastname", "Last name is required").not().isEmpty(),
     body("email", "Email is required").not().isEmpty(),
     body("password", "Password cannot be empty").not().isEmpty(),
     body('password', "The minimun password length is 6 characters").isLength({

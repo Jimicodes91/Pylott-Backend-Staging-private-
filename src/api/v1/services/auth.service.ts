@@ -4,16 +4,17 @@ import { AdminSignupData, EmailVerificationData, UserRole } from "../utils/user"
 import User from "../models/user.model";
 import crypto from "crypto";
 import sendEmail from "../utils/nodemailer";
-import { generateToken } from "../utils";
+import { generateRandomPassword, generateToken } from "../utils";
 
 export const AdminSignup = async (data: AdminSignupData) => {
-  const { firstname, lastname, email, password } = data;
+  const { email, password } = data;
   const verificationToken = crypto.randomBytes(32).toString("hex");
   const tokenExpires = Date.now() + 900000; // Token valid for 15 minutes
 
+  //const userPassword = generateRandomPassword()
+
   const userData = {
-    firstname,
-    lastname,
+  
     email,
     password,
     verificationToken, // Add verificationToken to userData
@@ -27,8 +28,16 @@ export const AdminSignup = async (data: AdminSignupData) => {
     if (user) {
       throw new HttpError("Email is taken, use a different email address", 400);
     }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;//regex for strong password
+    if (!passwordRegex.test(password)) {
+      throw new HttpError(
+        "Password must be 8+ chars with uppercase, lowercase, number, and special character",
+        400
+      );
+    }
 
-    // Hash the password if provided
+
+    // // Hash the password if provided
     if (password) {
       const salt = await bcrypt.genSalt(10);
       userData.password = bcrypt.hashSync(password, salt);
@@ -101,5 +110,138 @@ export const verifyEmailService = async (token:string) => {
       return { user: user, token: bearerToken };
     } catch (error: any) {
       throw new HttpError(error.message || "Email verification failed", 500);
+    }
+  };
+
+  export const resendVerificationEmailService = async (email: string) => {
+    try {
+      const user = await User.findOne({ email });
+  
+      if (!user) {
+        throw new HttpError("User not found", 404);
+      }
+  
+      if (user.isVerified) {
+        throw new HttpError("Email is already verified", 400);
+      }
+  
+      // Generate a new verification token
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      user.verificationToken = verificationToken;
+      user.tokenExpires = Date.now() + 900000; // Token valid for 15 minutes
+  
+      await user.save();
+  
+      // Send new verification email
+      const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify?token=${verificationToken}&email=${encodeURIComponent(
+        email
+      )}`;
+  
+      await sendEmail(
+        user.email,
+        "Pylott Email Verification - Resend",
+        `<html>
+          <body>
+              <h2>Email Verification</h2>
+              <p>You requested a new verification email. Click the link below to verify your email:</p>
+              <a style="font-size: 20px;" href="${verificationLink}">${verificationLink}</a>
+              <p>Best regards,</p>
+              <p>Pylott</p>
+          </body>
+        </html>`
+      );
+  
+      return { message: "Verification email sent successfully" };
+    } catch (error: any) {
+      throw new HttpError(error.message || "Failed to resend verification email", error.statusCode || 500);
+    }
+  };
+  export const forgotPasswordService = async (email: string) => {
+    try {
+      const user = await User.findOne({ email });
+  
+      if (!user) {
+        throw new HttpError("User not found", 404);
+      }
+  
+      // Generate a password reset token
+      const passwordResetToken = crypto.randomBytes(32).toString("hex");
+
+      console.log('token', passwordResetToken)
+  
+      // Save the token and expiry time to the user
+      user.verificationToken = passwordResetToken;
+  
+      await user.save();
+  
+      // Send the password reset email
+      const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${passwordResetToken}&email=${encodeURIComponent(
+        email
+      )}`;
+  
+      await sendEmail(
+        user.email,
+        "Reset Your Password",
+        `<html>
+          <body>
+              <h2>Password Reset Request</h2>
+              <p>You requested to reset your password. Click the link below to proceed:</p>
+              <a style="font-size: 20px;" href="${resetLink}">${resetLink}</a>
+              <p>If you did not request this, please ignore this email.</p>
+              <p>Best regards,</p>
+              <p>Pylott</p>
+          </body>
+        </html>`
+      );
+  
+      return { message: "Password reset email sent successfully" };
+    } catch (error: any) {
+      throw new HttpError(error.message || "Failed to send password reset email", 500);
+    }
+  };
+
+ 
+  export const resetPasswordService = async (
+    token: string,
+    newPassword: string
+  ) => {
+    try {
+      // Find the user by email and newPassword reset token
+      const user = await User.findOne({ verificationToken: token });
+  
+      if (!user) {
+        throw new HttpError("Invalid token ", 404);
+      }
+      if (!newPassword) {
+        throw new HttpError('Please provide newPassword', 400);
+      }
+  
+  
+      // Check if the token has expired
+      if (user.passwordSetupTokenExpires && user.passwordSetupTokenExpires < Date.now()) {
+        throw new HttpError("Token has expired", 400);
+      }
+  
+      // Validate the new newPassword
+      var passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+      const strongPassword = passwordRegex.test(newPassword);
+      if (!strongPassword) {
+        throw new HttpError(
+          "Password must be 8+ chars with uppercase, lowercase, number, and special character",
+          400
+        );
+      }
+  
+      // Hash the new password
+      const salt = await bcrypt.genSalt(10);
+      user.password = bcrypt.hashSync(newPassword, salt);
+      user.verificationToken = '';
+  
+  
+      await user.save();
+  
+      return { message: "Password reset successfully" };
+    } catch (error: any) {
+      throw new HttpError(error.message || "Password reset failed", 500);
     }
   };

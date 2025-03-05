@@ -1,6 +1,6 @@
 import {Request,Response} from "express";
 import { validationResult } from 'express-validator';
-import { AdminSignup, verifyEmailService } from "../services/auth.service";
+import { AdminSignup, forgotPasswordService, resendVerificationEmailService, resetPasswordService, verifyEmailService } from "../services/auth.service";
 import { errorResponse, successResponse } from "../middleware/response.middleware";
 
 /**
@@ -40,3 +40,49 @@ export const verifyEmail = async (req: Request, res: Response) => {
         return errorResponse(res, undefined, error.message, error.statusCode);
     }
   };
+
+  export const resendVerificationEmail = async (req: Request, res: Response) => {
+    const { email } = req.body;
+  
+    if (!email) {
+      return errorResponse(res, "Email is required", "VALIDATION_ERROR", 400);
+    }
+  
+    try {
+      const response = await resendVerificationEmailService(email);
+      return successResponse(res, response, "Verification email sent", 200);
+    } catch (error: any) {
+      return errorResponse(res, error.message, "EMAIL_ERROR", error.statusCode || 500);
+    }
+  };
+
+  export const forgotPassword = async (req: Request, res: Response) => {
+    const { email } = req.body;
+  
+    try {
+      if (!email) {
+        return errorResponse(res,"Email is required","VALIDATION_ERROR", 400);
+      }
+  
+      const result = await forgotPasswordService(email);
+      return successResponse(res, result, "Forgot Password mail sent successfully", 200)
+    } catch (error: any) {
+        return errorResponse(res, error.message, "EMAIL_ERROR", error.statusCode || 500);
+    }
+  };
+  export const resetPasswordController = async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body;
+  
+    try {
+      if (!token || !newPassword) {
+        return errorResponse(res, undefined,"Token, email, and new password are required", 400);
+      }
+  
+      const result = await resetPasswordService(token, newPassword);
+      return successResponse(res, result, "Password successfully changed", 200)
+
+    } catch (error: any) {
+    return errorResponse(res, error.message, "EMAIL_ERROR", error.statusCode || 500);
+    }
+  };
+
