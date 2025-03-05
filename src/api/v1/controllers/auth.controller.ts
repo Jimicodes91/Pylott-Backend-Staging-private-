@@ -1,6 +1,6 @@
 import {Request,Response} from "express";
 import { validationResult } from 'express-validator';
-import { AdminSignup, forgotPasswordService, resendVerificationEmailService, resetPasswordService, verifyEmailService } from "../services/auth.service";
+import { AdminSignup, forgotPasswordService, resendVerificationEmailService, resetPasswordService, signIn, verifyEmailService } from "../services/auth.service";
 import { errorResponse, successResponse } from "../middleware/response.middleware";
 
 /**
@@ -22,6 +22,21 @@ export const SignUpAdmin = async (req:Request, res:Response)=>{
       }
  
 }
+
+export const signInUser = async (req: Request, res: Response) => {
+    const validationErrors = validationResult(req);
+  
+    if (validationErrors.array().length > 0) {
+      return errorResponse(res, validationErrors.array(), 'Check your form, make sure all fields are valid', 422);
+    }
+  
+    try {
+      const loginData = await signIn(req.body);
+      return successResponse(res, loginData, 'User logged in successfully ✅');
+    } catch (error: any) {
+      return errorResponse(res, undefined, error.message, error.statusCode);
+    }
+  };
 
 export const verifyEmail = async (req: Request, res: Response) => {
  

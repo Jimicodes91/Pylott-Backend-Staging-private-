@@ -43,3 +43,8 @@ export interface EmailVerificationData{
     token: string; 
     email: string;
 }
+
+export interface loginData {
+    email: string;
+    password: string
+}

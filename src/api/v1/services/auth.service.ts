@@ -1,10 +1,11 @@
 import bcrypt from "bcryptjs";
 import HttpError from "../utils/errorHandler";
-import { AdminSignupData, EmailVerificationData, UserRole } from "../utils/user";
+import { AdminSignupData, loginData, UserRole } from "../utils/user";
 import User from "../models/user.model";
 import crypto from "crypto";
 import sendEmail from "../utils/nodemailer";
-import { generateRandomPassword, generateToken } from "../utils";
+import jwt from "jsonwebtoken"
+import { generateToken } from "../utils";
 
 export const AdminSignup = async (data: AdminSignupData) => {
   const { email, password } = data;
@@ -28,8 +29,9 @@ export const AdminSignup = async (data: AdminSignupData) => {
     if (user) {
       throw new HttpError("Email is taken, use a different email address", 400);
     }
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;//regex for strong password
-    if (!passwordRegex.test(password)) {
+    const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+    const strongPassword = passwordRegex.test(password);
+    if (!strongPassword) {
       throw new HttpError(
         "Password must be 8+ chars with uppercase, lowercase, number, and special character",
         400
@@ -79,6 +81,64 @@ export const AdminSignup = async (data: AdminSignupData) => {
     );
   }
 };
+
+export const signIn = async (data: loginData) => {
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const tokenExpires = Date.now() + 900000; 
+    try {
+      const user = await User.findOne({ email: data.email });
+  
+        if (!user) {
+          throw new HttpError('Invalid email or password', 401)
+        }
+          
+        if (!user.isVerified) {
+          //const verificationToken = generateOTP();
+          const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify?token=${verificationToken}&email=${encodeURIComponent(
+            data.email
+          )}`;
+      
+          user.verificationToken = verificationToken;
+          await user.save();
+  
+          await sendEmail(
+            user.email,
+            "Pylott email verification",
+            `<html>
+              <body>
+                  <h2>Welcome to Pylott</h2>
+                  <p>Thank you for signing up with us. To verify your email address, please use the link below:</p>
+                  <a style="font-size: 20px;" href="${verificationLink}">${verificationLink}</a>
+                  <p>Best regards,</p>
+                  <p>Pylott</p>
+              </body>
+            </html>`
+          );
+          throw new HttpError('Verify email before log in, Verification link has been sent to your email', 404)
+        }
+  
+        const password_valid = bcrypt.compareSync(
+          data.password,
+          user.password
+        );
+          
+        if (!password_valid) {
+          throw new HttpError('Invalid email or password', 401)
+        };
+          
+        let token = jwt.sign(
+          { email: user.email, role: user.role},
+          process.env.JWT_SECRET as string,
+          { expiresIn: "1d" }
+        );
+          
+        return { user, token }
+      } catch (error: any) {
+        console.error("Error loging user:", error);
+        throw new HttpError(error.message || "Unable to log in user", error.statusCode || 500);
+      }
+  };
+  
 
 export const verifyEmailService = async (token:string) => {
  
@@ -223,7 +283,7 @@ export const verifyEmailService = async (token:string) => {
       }
   
       // Validate the new newPassword
-      var passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+      const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
       const strongPassword = passwordRegex.test(newPassword);
       if (!strongPassword) {
         throw new HttpError(
