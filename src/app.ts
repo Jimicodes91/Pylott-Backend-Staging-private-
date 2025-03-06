@@ -5,7 +5,8 @@ dotenv.config()
 import cors from 'cors';
 import { connectDB } from "./config/db.config";
 import constants from "./api/v1/utils/constants";
-import authRoutes from "./api/v1/routes/auth.routes"
+import authRoutes from "./api/v1/routes/auth.routes";
+import companyRoutes from "./api/v1/routes/company.routes";
 
 const app = express()
 const mainPath = '/api/v1'
@@ -20,6 +21,7 @@ app.get('/', (req, res) => {
 });
 
 app.use(`${mainPath}/auth`, authRoutes);
+app.use(`${mainPath}/company`, companyRoutes);
 
 const startDb = async (url: string) => {
     try {

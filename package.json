@@ -38,6 +38,7 @@
     "node-mailjet": "^6.0.7",
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "uuid": "^11.1.0"
   }
 }

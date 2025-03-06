@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from 'uuid';
 import HttpError from "../utils/errorHandler";
-import { AdminSignupData, loginData, UserRole } from "../utils/user";
+import { AdminSignupData, CompanyAdminSignpData, loginData, UserRole } from "../utils/user";
 import User from "../models/user.model";
 import crypto from "crypto";
 import sendEmail from "../utils/nodemailer";
@@ -82,9 +83,85 @@ export const AdminSignup = async (data: AdminSignupData) => {
   }
 };
 
+export const CompanyAdminSignup = async (data: CompanyAdminSignpData) => {
+    const { email, password, name } = data;
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const tokenExpires = Date.now() + 900000; // Token valid for 15 minutes
+  
+    //const userPassword = generateRandomPassword()
+  
+    const userData = {
+
+    name,
+      email,
+      password,
+      verificationToken, // Add verificationToken to userData
+      tokenExpires, // Add tokenExpires to userData
+      role: UserRole.COMPANY_ADMIN,
+    };
+  
+    try {
+      // Check if the email is already taken
+      const user = await User.findOne({ email });
+      if (user) {
+        throw new HttpError("Email is taken, use a different email address", 400);
+      }
+      const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+      const strongPassword = passwordRegex.test(password);
+      if (!strongPassword) {
+        throw new HttpError(
+          "Password must be 8+ chars with uppercase, lowercase, number, and special character",
+          400
+        );
+      }
+  
+  
+      // // Hash the password if provided
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        userData.password = bcrypt.hashSync(password, salt);
+      }
+  
+      // Create the new user
+      const newUser = await User.create(userData);
+  
+      // Remove the password from the returned user object
+      if (newUser.password) {
+        newUser.password = "";
+      }
+  
+      // Send verification email
+      const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify?token=${verificationToken}&email=${encodeURIComponent(
+        email
+      )}`;
+  
+      await sendEmail(
+        newUser.email,
+        "Pylott email verification",
+        `<html>
+          <body>
+              <h2>Welcome to Pylott</h2>
+              <p>Thank you for signing up with us. To verify your email address, please use the link below:</p>
+              <a style="font-size: 20px;" href="${verificationLink}">${verificationLink}</a>
+              <p>Best regards,</p>
+              <p>Pylott</p>
+          </body>
+        </html>`
+      );
+  
+      return newUser;
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpError(
+        error.message || "Unable to create user",
+        error.statusCode || 500
+      );
+    }
+  };
+
 export const signIn = async (data: loginData) => {
     const verificationToken = crypto.randomBytes(32).toString("hex");
-    const tokenExpires = Date.now() + 900000; 
+   // const tokenExpires = Date.now() + 900000; 
     try {
       const user = await User.findOne({ email: data.email });
   
@@ -305,3 +382,96 @@ export const verifyEmailService = async (token:string) => {
       throw new HttpError(error.message || "Password reset failed", 500);
     }
   };
+
+
+  export const sendInvitation = async (adminId: string, email: string, role: UserRole) => {
+    try {
+      // Step 1: Validate the admin's role
+      const admin = await User.findOne({_id:adminId});
+      console.log('add',admin)
+      if (!admin || admin.role !== UserRole.COMPANY_ADMIN) {
+        throw new HttpError("Only company admins can send invitations", 403);
+      }
+  
+      // Step 2: Check if the email is already registered
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        throw new HttpError("Email is already registered", 400);
+      }
+  
+      // Step 3: Generate an invitation token
+      const invitationToken = crypto.randomBytes(32).toString("hex");
+      const tokenExpires = Date.now() + 900000; // 15 minutes
+  
+      // Step 4: Save the invitation token in the database (optional)
+      // You can create an "Invitation" collection or store it in the User model.
+  
+      // Step 5: Send the invitation email
+      const registrationLink = `${process.env.FRONTEND_URL}/register?token=${invitationToken}&email=${encodeURIComponent(
+        email
+      )}&role=${role}`;
+  
+      await sendEmail(
+        email,
+        "You've Been Invited to Join Pylott",
+        `<html>
+          <body>
+              <h2>Welcome to Pylott</h2>
+              <p>You have been invited to join Pylott as a ${role}. Click the link below to complete your registration:</p>
+              <a style="font-size: 20px;" href="${registrationLink}">Complete Registration</a>
+              <p>Best regards,</p>
+              <p>Pylott</p>
+          </body>
+        </html>`
+      );
+  
+      return { message: "Invitation sent successfully" };
+    } catch (error: any) {
+      throw new HttpError(error.message || "Failed to send invitation", 500);
+    }
+  };
+
+
+
+export const completeRegistration = async (
+  email: string,
+  password: string,
+) => {
+  try {
+   
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      throw new HttpError("Email is already registered", 400);
+    }
+
+
+     const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+     const strongPassword = passwordRegex.test(password);
+     if (!strongPassword) {
+       throw new HttpError(
+         "Password must be 8+ chars with uppercase, lowercase, number, and special character",
+         400
+       );
+     }
+ 
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+
+    
+    const newUser = new User({
+    
+      email,
+      password: hashedPassword,
+      role:UserRole.CONSULTANT,
+      isVerified: true, // Mark as verified since they were invited
+    });
+    await newUser.save();
+
+    // Step 6: Return the new user (without password)
+    newUser.password = "";
+    return newUser;
+  } catch (error: any) {
+    throw new HttpError(error.message || "Failed to complete registration", 500);
+  }
+};

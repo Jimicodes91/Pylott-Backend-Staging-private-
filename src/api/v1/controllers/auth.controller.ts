@@ -1,7 +1,8 @@
 import {Request,Response} from "express";
 import { validationResult } from 'express-validator';
-import { AdminSignup, forgotPasswordService, resendVerificationEmailService, resetPasswordService, signIn, verifyEmailService } from "../services/auth.service";
+import { AdminSignup, CompanyAdminSignup, completeRegistration, forgotPasswordService, resendVerificationEmailService, resetPasswordService, sendInvitation, signIn, verifyEmailService } from "../services/auth.service";
 import { errorResponse, successResponse } from "../middleware/response.middleware";
+import { JwtPayload } from "jsonwebtoken";
 
 /**
  * Sign up a new user.
@@ -21,6 +22,20 @@ export const SignUpAdmin = async (req:Request, res:Response)=>{
         return errorResponse(res, undefined, error.message, error.statusCode);
       }
  
+}
+
+export const SignUpCompanyAdmin = async (req:Request, res:Response)=>{
+  const validationErrors = validationResult(req);
+  if (validationErrors.array().length > 0) {
+      return errorResponse(res, validationErrors.array(), 'Check your form, make sure all fields are valid', 422);
+    }
+    try {
+      const newUser = await CompanyAdminSignup(req.body);
+      return successResponse(res, newUser, 'User created successfully ✅, check email to verify account');
+    } catch (error: any) {
+      return errorResponse(res, undefined, error.message, error.statusCode);
+    }
+
 }
 
 export const signInUser = async (req: Request, res: Response) => {
@@ -98,6 +113,54 @@ export const verifyEmail = async (req: Request, res: Response) => {
 
     } catch (error: any) {
     return errorResponse(res, error.message, "EMAIL_ERROR", error.statusCode || 500);
+    }
+  };
+
+
+  export const inviteTeamMember = async (req: Request, res: Response) => {
+    // Step 1: Validate the request data
+    const validationErrors = validationResult(req);
+    if (validationErrors.array().length > 0) {
+      return errorResponse(res, validationErrors.array(), "Check your form, make sure all fields are valid", 422);
+    }
+  
+    try {
+      //console.log(req.user)
+      
+      const { email, role } = req.body;
+      //const adminId = (req as any).user._id
+      const { id: adminId } = req.query; // Extract adminId from query params
+       // Assuming the admin's ID is stored in req.user
+  
+      // Step 2: Call the sendInvitation service
+      const result = await sendInvitation(adminId as string, email, role);
+  
+      // Step 3: Return a success response
+      return successResponse(res, result, "Invitation sent successfully ✅");
+    } catch (error: any) {
+      // Step 4: Handle errors
+      return errorResponse(res, undefined, error.message, error.statusCode || 500);
+    }
+  };
+
+  export const registerInvitedUser = async (req: Request, res: Response) => {
+    // Step 1: Validate the request data
+    const validationErrors = validationResult(req);
+    if (validationErrors.array().length > 0) {
+      return errorResponse(res, validationErrors.array(), "Check your form, make sure all fields are valid", 422);
+    }
+  
+    try {
+      const { email, password, } = req.body;
+  
+      // Step 2: Call the completeRegistration service
+      const newUser = await completeRegistration(email, password);
+  
+      // Step 3: Return a success response
+      return successResponse(res, newUser, "Registration completed successfully ✅");
+    } catch (error: any) {
+      // Step 4: Handle errors
+      return errorResponse(res, undefined, error.message, error.statusCode || 500);
     }
   };
 

@@ -3,6 +3,11 @@ import { IUser, UserRole } from "../utils/user";
 
 const userSchema = new mongoose.Schema<IUser>(
   {
+  //   id: {
+  //     type: String,
+  //     required: true,
+  //     unique: true
+  // },
     email: {
       type: String,
       required: [true, "Please provide an email"],
@@ -15,13 +20,9 @@ const userSchema = new mongoose.Schema<IUser>(
       required: [true, "Please provide a password"],
 
     },
-    firstname: {
+    name: {
       type: String,
     
-      trim: true,
-    },
-    lastname: {
-      type: String,
       trim: true,
     },
     role: {

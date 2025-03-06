@@ -22,6 +22,17 @@ export const signUpAdminValidator = [
     })
 ];
 
+export const signUpCompanyAdminValidator = [
+    // body("firstname", "First name is required").not().isEmpty(),
+    body("name", "Name is required").not().isEmpty(),
+    body("email", "Email is required").not().isEmpty(),
+    body("password", "Password cannot be empty").not().isEmpty(),
+    body('password', "The minimun password length is 6 characters").isLength({
+        min:6,
+    })
+];
+
+
 
 
 export const signInValidator = [
@@ -31,4 +42,9 @@ export const signInValidator = [
     body("password", "The minimum password length is 8 characters").isLength({
 		min: 8,
 	}),
+]
+
+
+export const createCompanyValidator = [
+
 ]
