@@ -11,7 +11,6 @@ export const authenticateUser = (req: JwtPayload, res: Response, next: NextFunct
     if (!token) {
       throw new HttpError("Access denied. No token provided.", 401);
     }
-
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       email: string;
@@ -19,7 +18,6 @@ export const authenticateUser = (req: JwtPayload, res: Response, next: NextFunct
       _id:any;
 
     };
-
     // Attach the user information to the request object
     req.user = decoded;
 

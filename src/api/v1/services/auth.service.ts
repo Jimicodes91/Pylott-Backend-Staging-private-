@@ -8,6 +8,7 @@ import sendEmail from "../utils/nodemailer";
 import jwt from "jsonwebtoken"
 import { generateToken } from "../utils";
 import Company from "../models/company.model";
+import Client from "../models/client.model";
 
 export const AdminSignup = async (data: AdminSignupData) => {
   const { email, password } = data;
@@ -491,3 +492,112 @@ export const verifyEmailService = async (token:string) => {
       throw new HttpError(error.message || "Failed to complete registration", 500);
     }
   };
+
+  export const addClientService = async (
+    name: string,
+    email: string,
+    companyId: string
+  ) => {
+    try {
+     
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        throw new HttpError("Email is already registered", 400);
+      }
+
+      
+  
+    
+     // const temporaryPassword = crypto.randomBytes(8).toString("hex"); // Generates a random 16-character password
+     const temporaryPassword = crypto.randomBytes(5).toString("hex").slice(0, 9);
+     console.log(temporaryPassword); 
+     const salt = await bcrypt.genSalt(10);
+      const hashedPassword = bcrypt.hashSync(temporaryPassword, salt);
+  
+    
+      const newUser = new User({
+        name,
+        email,
+        password: hashedPassword,
+        role: UserRole.CLIENT,
+        company: companyId, // Associate the client with the company
+        isVerified: true, // Mark as verified since they were added by the admin
+      });
+      await newUser.save();
+  
+      
+      const newClient = new Client({
+        user: newUser._id, // Link the client to the user
+        company: companyId, // Link the client to the company
+        isActive: true,
+      });
+      await newClient.save();
+  
+      
+      await Company.findByIdAndUpdate(
+        companyId,
+        { $push: { clients: newUser._id } }, // Add the client's ID to the clients array
+        { new: true }
+      );
+  
+      // Step 6: Send an email with the temporary password
+      await sendEmail(
+        email,
+        "Welcome to Pylott - Your Temporary Password",
+        `<html>
+          <body>
+              <h2>Welcome to Pylott</h2>
+              <p>You have been added as a client. Use the temporary password below to log in:</p>
+              <p><strong>Temporary Password:</strong> ${temporaryPassword}</p>
+              <p>Please log in and update your password for security.</p>
+              <p>Best regards,</p>
+              <p>Pylott</p>
+          </body>
+        </html>`
+      );
+  
+      return { message: "Client added successfully. Temporary password sent via email." };
+    } catch (error: any) {
+      throw new HttpError(error.message || "Failed to add client", 500);
+    }
+  };
+
+
+export const updatePasswordService = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  try {
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new HttpError("User not found", 404);
+    }
+
+  
+    const isPasswordValid = bcrypt.compareSync(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new HttpError("Current password is incorrect", 400);
+    }
+
+  
+    const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+    const strongPassword = passwordRegex.test(newPassword);
+    if (!strongPassword) {
+      throw new HttpError(
+        "Password must be 8+ chars with uppercase, lowercase, number, and special character",
+        400
+      );
+    }
+
+    
+    const salt = await bcrypt.genSalt(10);
+    user.password = bcrypt.hashSync(newPassword, salt);
+    await user.save();
+
+    return { message: "Password updated successfully" };
+  } catch (error: any) {
+    throw new HttpError(error.message || "Failed to update password", 500);
+  }
+};

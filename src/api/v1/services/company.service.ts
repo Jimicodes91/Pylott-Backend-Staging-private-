@@ -17,7 +17,7 @@ export const createCompanyService = async (data: CompanySignupData, adminId:stri
     const newCompany = await Company.create(companyData);
 
     // Step 2: Update the admin's company field
-    //await User.findByIdAndUpdate(adminId, { company: newCompany._id });
+    await User.findByIdAndUpdate(adminId, { company: newCompany._id });
     return newCompany;
   } catch (error: any) {
     console.error("Error creating form:", error);

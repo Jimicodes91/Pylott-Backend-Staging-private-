@@ -1,8 +1,10 @@
 import {Request,Response} from "express";
 import { validationResult } from 'express-validator';
-import { AdminSignup, CompanyAdminSignup, completeRegistration, forgotPasswordService, resendVerificationEmailService, resetPasswordService, sendInvitation, signIn, verifyEmailService } from "../services/auth.service";
+import { addClientService, AdminSignup, CompanyAdminSignup, completeRegistration, forgotPasswordService, resendVerificationEmailService, resetPasswordService, sendInvitation, signIn, updatePasswordService, verifyEmailService } from "../services/auth.service";
 import { errorResponse, successResponse } from "../middleware/response.middleware";
 import { JwtPayload } from "jsonwebtoken";
+import User from "../models/user.model";
+import HttpError from "../utils/errorHandler";
 
 /**
  * Sign up a new user.
@@ -44,9 +46,11 @@ export const signInUser = async (req: Request, res: Response) => {
     if (validationErrors.array().length > 0) {
       return errorResponse(res, validationErrors.array(), 'Check your form, make sure all fields are valid', 422);
     }
+   
   
     try {
       const loginData = await signIn(req.body);
+   
       return successResponse(res, loginData, 'User logged in successfully ✅');
     } catch (error: any) {
       return errorResponse(res, undefined, error.message, error.statusCode);
@@ -152,12 +156,68 @@ export const verifyEmail = async (req: Request, res: Response) => {
   
     try {
       const { email, password, companyId } = req.body;
+    
   
       // Step 2: Call the completeRegistration service
       const newUser = await completeRegistration(email, password, companyId);
   
       // Step 3: Return a success response
       return successResponse(res, newUser, "Registration completed successfully ✅");
+    } catch (error: any) {
+      // Step 4: Handle errors
+      return errorResponse(res, undefined, error.message, error.statusCode || 500);
+    }
+  };
+
+  export const addClient = async (req: Request, res: Response) => {
+    // Step 1: Validate the request data
+    const validationErrors = validationResult(req);
+    if (validationErrors.array().length > 0) {
+      return errorResponse(res, validationErrors.array(), "Check your form, make sure all fields are valid", 422);
+    }
+  
+    try {
+      const { name, email } = req.body;
+      const adminId = (req as any).user?._id; // Assuming the admin's ID is stored in req.user
+
+      
+      const admin = await User.findById(adminId);
+      if (!admin) {
+        throw new HttpError("Admin not found", 404);
+      }
+  
+      const companyId = admin.company; 
+      if (!companyId) {
+        throw new HttpError("Admin is not associated with a company", 400);
+      }
+  
+  
+      const result = await addClientService(name, email, companyId);
+  
+
+      return successResponse(res, result, "Client added successfully ✅");
+    } catch (error: any) {
+
+      return errorResponse(res, undefined, error.message, error.statusCode || 500);
+    }
+  };
+
+  export const updatePassword = async (req: Request, res: Response) => {
+   
+    const validationErrors = validationResult(req);
+    if (validationErrors.array().length > 0) {
+      return errorResponse(res, validationErrors.array(), "Check your form, make sure all fields are valid", 422);
+    }
+  
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = (req as any).user._id; // Assuming the user's ID is stored in req.user
+  
+      // Step 2: Call the updatePasswordService
+      const result = await updatePasswordService(userId, currentPassword, newPassword);
+  
+      // Step 3: Return a success response
+      return successResponse(res, result, "Password updated successfully ✅");
     } catch (error: any) {
       // Step 4: Handle errors
       return errorResponse(res, undefined, error.message, error.statusCode || 500);
