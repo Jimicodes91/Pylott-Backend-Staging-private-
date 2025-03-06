@@ -3,11 +3,11 @@ import { ICompany } from "../utils/company";
 
 const companySchema = new mongoose.Schema<ICompany>(
   {
-    // id: {
-    //     type: String,
-    //     required: true,
-    //     unique: true
-    // },
+    id: {
+        type: String,
+        required: true,
+        unique: true
+    },
     name: {
       type: String,
       required: true,

@@ -8,7 +8,6 @@ export enum UserRole {
   }
   
   export interface IUser extends mongoose.Document {
-    id:string;
     email: string;
     password: string;
     name:string;

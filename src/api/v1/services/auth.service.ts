@@ -7,6 +7,7 @@ import crypto from "crypto";
 import sendEmail from "../utils/nodemailer";
 import jwt from "jsonwebtoken"
 import { generateToken } from "../utils";
+import Company from "../models/company.model";
 
 export const AdminSignup = async (data: AdminSignupData) => {
   const { email, password } = data;
@@ -204,7 +205,7 @@ export const signIn = async (data: loginData) => {
         };
           
         let token = jwt.sign(
-          { email: user.email, role: user.role},
+          { email: user.email, role: user.role, _id:user._id},
           process.env.JWT_SECRET as string,
           { expiresIn: "1d" }
         );
@@ -386,30 +387,36 @@ export const verifyEmailService = async (token:string) => {
 
   export const sendInvitation = async (adminId: string, email: string, role: UserRole) => {
     try {
-      // Step 1: Validate the admin's role
+    
       const admin = await User.findOne({_id:adminId});
+      console.log(admin)
       console.log('add',admin)
       if (!admin || admin.role !== UserRole.COMPANY_ADMIN) {
         throw new HttpError("Only company admins can send invitations", 403);
       }
   
-      // Step 2: Check if the email is already registered
+        // Ensure the admin is associated with a company
+    if (!admin.company) {
+      throw new HttpError("Admin is not associated with a company", 400);
+    }
+
+
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         throw new HttpError("Email is already registered", 400);
       }
   
-      // Step 3: Generate an invitation token
+
       const invitationToken = crypto.randomBytes(32).toString("hex");
       const tokenExpires = Date.now() + 900000; // 15 minutes
+      const companyId = admin.company;
+      console.log('com[p',companyId)
   
-      // Step 4: Save the invitation token in the database (optional)
-      // You can create an "Invitation" collection or store it in the User model.
-  
-      // Step 5: Send the invitation email
+      
+      
       const registrationLink = `${process.env.FRONTEND_URL}/register?token=${invitationToken}&email=${encodeURIComponent(
         email
-      )}&role=${role}`;
+      )}&role=${role}&company=${admin.company}`;
   
       await sendEmail(
         email,
@@ -433,45 +440,54 @@ export const verifyEmailService = async (token:string) => {
 
 
 
-export const completeRegistration = async (
-  email: string,
-  password: string,
-) => {
-  try {
-   
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw new HttpError("Email is already registered", 400);
+
+  export const completeRegistration = async (
+    email: string,
+    password: string,
+    companyId: string // Company ID to associate the consultant with
+  ) => {
+    try {
+     
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        throw new HttpError("Email is already registered", 400);
+      }
+  
+
+      const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+      const strongPassword = passwordRegex.test(password);
+      if (!strongPassword) {
+        throw new HttpError(
+          "Password must be 8+ chars with uppercase, lowercase, number, and special character",
+          400
+        );
+      }
+  
+      // Step 3: Hash the password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = bcrypt.hashSync(password, salt);
+  
+    
+      const newUser = new User({
+        email,
+        password: hashedPassword,
+        company: companyId, // Associate the consultant with the company
+        role: UserRole.CONSULTANT,
+        isVerified: true, // Mark as verified since they were invited
+      });
+      await newUser.save();
+  
+
+      await Company.findByIdAndUpdate(
+        companyId,
+        { $push: { consultants: newUser._id } }, // Add the consultant's ID to the consultants array
+        { new: true }
+      );
+  
+
+      newUser.password = "";
+      return newUser;
+    } catch (error: any) {
+      throw new HttpError(error.message || "Failed to complete registration", 500);
     }
-
-
-     const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
-     const strongPassword = passwordRegex.test(password);
-     if (!strongPassword) {
-       throw new HttpError(
-         "Password must be 8+ chars with uppercase, lowercase, number, and special character",
-         400
-       );
-     }
- 
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = bcrypt.hashSync(password, salt);
-
-    
-    const newUser = new User({
-    
-      email,
-      password: hashedPassword,
-      role:UserRole.CONSULTANT,
-      isVerified: true, // Mark as verified since they were invited
-    });
-    await newUser.save();
-
-    // Step 6: Return the new user (without password)
-    newUser.password = "";
-    return newUser;
-  } catch (error: any) {
-    throw new HttpError(error.message || "Failed to complete registration", 500);
-  }
-};
+  };

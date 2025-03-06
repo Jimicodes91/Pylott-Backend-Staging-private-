@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
 export interface ICompany {
-    id:string;
+  id:string;
   name: string;
   industryType: string;
   size: string;
@@ -16,6 +16,7 @@ export interface ICompany {
 }
 
 export interface CompanySignupData{
+  adminId:string;
     name:string;
     industryType:string;
     size: string;

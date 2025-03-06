@@ -151,10 +151,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
     }
   
     try {
-      const { email, password, } = req.body;
+      const { email, password, companyId } = req.body;
   
       // Step 2: Call the completeRegistration service
-      const newUser = await completeRegistration(email, password);
+      const newUser = await completeRegistration(email, password, companyId);
   
       // Step 3: Return a success response
       return successResponse(res, newUser, "Registration completed successfully ✅");
