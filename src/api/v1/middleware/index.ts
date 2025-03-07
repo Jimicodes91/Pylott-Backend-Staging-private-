@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import HttpError from "../utils/errorHandler";
 import { UserRole } from "../utils/user";
+import User from "../models/user.model";
 
 export const authenticateUser = (req: JwtPayload, res: Response, next: NextFunction) => {
   try {
@@ -67,5 +68,32 @@ export const authorizeRole = (allowedRoles: UserRole[]) => {
       next();
     } catch (error) {
       return res.status(401).json({ message: 'Invalid token' });
+    }
+  };
+
+  export const authenticateSameUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+   
+      const token = req.header("Authorization")?.replace("Bearer ", "");
+  
+      if (!token) {
+        throw new HttpError("Access denied. No token provided.", 401);
+      }
+  
+      
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+        userId: string;
+      };
+  
+   
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        throw new HttpError("User not found", 404);
+      }
+  
+      (req as any).user = user; 
+      next();
+    } catch (error: any) {
+      res.status(401).json({ error: "Invalid or expired token" });
     }
   };

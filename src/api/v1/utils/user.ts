@@ -14,6 +14,7 @@ export enum UserRole {
     role: UserRole;
     language:string;
     currency:string;
+    timezone:string;
     isBlocked:boolean;
     pfp:string;
     company?: string;
@@ -36,6 +37,15 @@ export enum UserRole {
 export interface AdminSignupData{
     email:string;
     password:string;
+}
+
+export interface UserUpdateData{
+  name?: string;
+  email?: string;
+  timezone?:string;
+  currency?:string;
+  language?:string;
+  pfp?: string;
 }
 
 export interface CompanyAdminSignpData{

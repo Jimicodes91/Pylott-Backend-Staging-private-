@@ -7,6 +7,7 @@ import { connectDB } from "./config/db.config";
 import constants from "./api/v1/utils/constants";
 import authRoutes from "./api/v1/routes/auth.routes";
 import companyRoutes from "./api/v1/routes/company.routes";
+import userRoutes from "./api/v1/routes/user.routes";
 
 const app = express()
 const mainPath = '/api/v1'
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 
 app.use(`${mainPath}/auth`, authRoutes);
 app.use(`${mainPath}/company`, companyRoutes);
+app.use(`${mainPath}/user`, userRoutes);
 
 const startDb = async (url: string) => {
     try {
