@@ -49,20 +49,20 @@ export const authorizeRole = (allowedRoles: UserRole[]) => {
   
 
   export const verifyJWT = (req: JwtPayload, res: Response, next: NextFunction) => {
-    // Check if authorization header is present
+    
     const authHeader = req.headers['authorization'];
     if (!authHeader) {
       return res.status(401).json({ message: 'Authorization header missing! Provide authorization header' });
     }
   
-    // Extract token from header
+    
     const token = authHeader.split(' ')[1];
     if (!token) {
       return res.status(401).json({ message: 'Token missing! Provide token' });
     }
   
     try {
-      // Verify JWT token
+    
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
       (req as CustomRequest).user = decoded;
       next();
