@@ -1,41 +1,18 @@
-import mongoose from "mongoose";
-import { IClient } from "../utils/client";
+import { ModelObject } from 'objection';
 
-const clientSchema = new mongoose.Schema<IClient>(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-      required: true,
-    },
-    projects: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Project",
-      },
-    ],
-    contactPerson: {
-      type: String,
-      trim: true,
-    },
-    billingAddress: {
-      type: String,
-      trim: true,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
+import { ModelsRelationMapping } from '@/shared/types/models.type';
+import BaseModel from './base.model';
 
-const Client = mongoose.model<IClient>("Client", clientSchema);
-export default Client;
+export class Client extends BaseModel {
+	static tableName = 'clients';
+
+	user_id: string;
+	company_id: string;
+	contact_person?: string;
+	billing_address?: string;
+	is_active?: boolean;
+
+	static relationMappings = (): ModelsRelationMapping => ({});
+}
+
+export type ClientModelType = ModelObject<Client>;

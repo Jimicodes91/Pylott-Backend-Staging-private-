@@ -1,87 +1,31 @@
-import mongoose from "mongoose";
-import { IUser, UserRole } from "../utils/user";
+import { ModelObject } from 'objection';
 
-const userSchema = new mongoose.Schema<IUser>(
-  {
-    id: {
-      type: String,
-      required: true,
-      unique: true
-  },
-    email: {
-      type: String,
-      required: [true, "Please provide an email"],
-      unique: true,
-      trim: true,
-     
-    },
-    pfp:{
-      type:String
-    },
-    password: {
-      type: String,
-      required: [true, "Please provide a password"],
+import { UserRoles } from '@/shared/enums';
+import { ModelsRelationMapping } from '@/shared/types/models.type';
+import BaseModel from './base.model';
 
-    },
-    name: {
-      type: String,
-      trim: true,
-    },
-   
-    role: {
-      type: String,
-      enum: Object.values(UserRole),
-    },
-    company: {
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Company",
-        default: null, 
-      },
-    isBlocked: {
-      type: Boolean,
-      default: false,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    timezone:{
-      type:String,
-    },
-    language:{
-      type:String,
-      
-    },
-    currency:{
-      type:String
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    lastLogin: {
-      type: Date,
-    },
-    verificationToken:{
-        type:String,
-    },
-    tokenExpires:{
-        type:Number
-    },
-    passwordSetupToken:{
-        type:String
-    },
-    passwordSetupTokenExpires:{
-        type:Number
-    }
+export class User extends BaseModel {
+	static tableName = 'users';
 
+	email: string;
+	pfp?: string;
+	password: string;
+	name?: string;
+	role?: UserRoles;
+	company_id?: string;
+	is_blocked?: boolean;
+	is_verified?: boolean;
+	timezone?: string;
+	language?: string;
+	currency?: string;
+	is_active?: boolean;
+	last_login?: Date;
+	verification_token?: string;
+	token_expires?: number;
+	password_setup_token?: string;
+	password_setup_token_expires?: number;
 
-  },
-  {
-    timestamps: true,
-  }
-);
+	static relationMappings = (): ModelsRelationMapping => ({});
+}
 
-const User = mongoose.model<IUser>("User", userSchema);
-
-export default User;
+export type UserModelType = ModelObject<User>;

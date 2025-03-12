@@ -1,42 +1,18 @@
-import mongoose from "mongoose";
-import { IConsultant } from "../utils/consultant";
+import { ModelObject } from 'objection';
 
-const consultantSchema = new mongoose.Schema<IConsultant>(
-  {
-    // id: {
-    //     type: String,
-    //     required: true,
-    //     unique: true
-    // },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-      required: true,
-    },
-    skills: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-    hourlyRate: {
-      type: Number,
-      min: 0,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
+import BaseModel from './base.model';
+import { ModelsRelationMapping } from '@/shared/types/models.type';
 
-const Consultant = mongoose.model<IConsultant>("Consultant", consultantSchema);
-export default Consultant;
+export class Consultant extends BaseModel {
+	static tableName = 'consultants';
+
+	user_id: string;
+	company_id: string;
+	skills?: string[];
+	hourly_rate?: number;
+	is_active?: boolean;
+
+	static relationMappings = (): ModelsRelationMapping => ({});
+}
+
+export type ConsultantModelType = ModelObject<Consultant>;

@@ -1,4 +1,9 @@
 import { injectable } from 'tsyringe';
 
 @injectable()
-export class AuthService {}
+export class AuthService {
+	public async signup() {
+		try {
+		} catch (error) {}
+	}
+}
