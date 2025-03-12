@@ -12,11 +12,6 @@ import entrypoint from '@shared/routes/entrypoint';
 import { Server } from '@shared/types/http.type';
 import { errorHandler, notFoundHandler } from '@shared/routes/defaults';
 
-// const mainPath = '/api/v1';
-// app.use(`${mainPath}/auth`, authRoutes);
-// app.use(`${mainPath}/company`, companyRoutes);
-// app.use(`${mainPath}/user`, userRoutes);
-
 @injectable()
 export default class Application {
 	public server: Server;
