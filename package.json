@@ -1,44 +1,98 @@
 {
-  "name": "pylott",
-  "version": "1.0.0",
-  "main": "src/app.ts",
-  "scripts": {
-    "start": "node ./dist/app.js",
-    "dev": "nodemon --exec ts-node src/app.ts",
-    "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/segunallen/Pylott.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/segunallen/Pylott/issues"
-  },
-  "homepage": "https://github.com/segunallen/Pylott#readme",
-  "description": "",
-  "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/nodemailer": "^6.4.17",
-    "typescript": "^5.8.2"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "express-validator": "^7.2.1",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.12.0",
-    "node-mailjet": "^6.0.7",
-    "nodemailer": "^6.10.0",
-    "nodemon": "^3.1.9",
-    "ts-node": "^10.9.2",
-    "uuid": "^11.1.0"
-  }
+	"name": "pylott",
+	"version": "1.0.0",
+	"scripts": {
+		"build": "tsc && tsc-alias",
+		"start": "node dist/src/index.js",
+		"dev": "nodemon",
+		"knex": "ts-node -r dotenv/config ./node_modules/knex/bin/cli.js",
+		"db:migrate": "npm run knex -- migrate:latest",
+		"db:migrate:make": "npm run knex -- migrate:make",
+		"db:migrate:down": "npm run knex -- migrate:down",
+		"db:migrate:unlock": "npm run knex -- migrate:unlock",
+		"db:migrate:rollback": "npm run knex -- migrate:rollback",
+		"lint": "eslint ./ --cache --ignore-pattern .gitignore",
+		"lint:fix": "eslint --fix --ext .js,.jsx .",
+		"format": "prettier --write .",
+		"prepare": "husky install"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/segunallen/Pylott.git"
+	},
+	"engines": {
+		"node": ">=17.x.x"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/segunallen/Pylott/issues"
+	},
+	"homepage": "https://github.com/segunallen/Pylott#readme",
+	"description": "",
+	"devDependencies": {
+		"@types/cors": "^2.8.17",
+		"@types/express": "^5.0.0",
+		"@types/jsonwebtoken": "^9.0.9",
+		"@types/node": "^22.13.10",
+		"@types/nodemailer": "^6.4.17",
+		"@typescript-eslint/eslint-plugin": "^8.26.1",
+		"@typescript-eslint/parser": "^8.26.1",
+		"eslint": "^8.57.1",
+		"eslint-config-prettier": "^10.1.1",
+		"eslint-plugin-import": "^2.31.0",
+		"eslint-plugin-node": "^11.1.0",
+		"eslint-plugin-prettier": "^5.2.3",
+		"husky": "^9.1.7",
+		"lint-staged": "^15.5.0",
+		"pre-commit": "^1.2.2",
+		"prettier": "^3.5.3",
+		"typescript": "^5.8.2"
+	},
+	"dependencies": {
+		"bcryptjs": "^3.0.2",
+		"cors": "^2.8.5",
+		"dayjs": "^1.11.13",
+		"dotenv": "^16.4.7",
+		"express": "^4.21.2",
+		"express-async-errors": "^3.1.1",
+		"express-validator": "^7.2.1",
+		"http-status-codes": "^2.3.0",
+		"jsonwebtoken": "^9.0.2",
+		"knex": "^3.1.0",
+		"module-alias": "^2.2.3",
+		"mongoose": "^8.12.0",
+		"mysql": "^2.18.1",
+		"mysql2": "^3.13.0",
+		"node-mailjet": "^6.0.7",
+		"nodemailer": "^6.10.0",
+		"nodemon": "^3.1.9",
+		"objection": "^3.1.5",
+		"reflect-metadata": "^0.2.2",
+		"ts-node": "^10.9.2",
+		"tsc-alias": "^1.8.11",
+		"tsyringe": "^4.8.0",
+		"uuid": "^11.1.0"
+	},
+	"_moduleAliases": {
+		"@": "src",
+		"@config": "src/config",
+		"@models": "src/models",
+		"@modules": "src/modules",
+		"@shared": "src/shared"
+	},
+	"nodemonConfig": {
+		"watch": [
+			"src"
+		],
+		"ext": "ts,json",
+		"ignore": [
+			"src/**/*.spec.ts"
+		],
+		"exec": "ts-node -r tsconfig-paths/register src/index.ts"
+	},
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx}": ["eslint --fix"]
+	}
 }
