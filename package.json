@@ -93,12 +93,6 @@
 		"exec": "ts-node -r tsconfig-paths/register src/index.ts"
 	},
 	"lint-staged": {
-		"*.{js,jsx,ts,tsx}": [
-			"eslint --fix",
-			"prettier --write"
-		],
-		"*.{json,md}": [
-			"prettier --write"
-		]
+		"*.{js,jsx,ts,tsx}": ["eslint --fix"]
 	}
 }
