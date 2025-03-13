@@ -5,7 +5,7 @@ import BaseRepository from './base.repository';
 
 @injectable()
 export class UserRepository extends BaseRepository<UserModelType, User> {
-	constructor() {
-		super(User);
-	}
+  constructor() {
+    super(User);
+  }
 }

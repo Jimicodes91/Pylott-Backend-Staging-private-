@@ -5,7 +5,7 @@ import BaseRepository from './base.repository';
 
 @injectable()
 export class ClientRepository extends BaseRepository<ClientModelType, Client> {
-	constructor() {
-		super(Client);
-	}
+  constructor() {
+    super(Client);
+  }
 }

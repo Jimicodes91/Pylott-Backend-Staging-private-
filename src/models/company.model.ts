@@ -4,19 +4,19 @@ import BaseModel from './base.model';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 
 export class Company extends BaseModel {
-	static tableName = 'companies';
+  static tableName = 'companies';
 
-	name: string;
-	industry_type: string;
-	size: string;
-	country: string;
-	address: string;
-	city: string;
-	postal_code?: string;
-	admin_id?: string;
-	is_active?: boolean;
+  name: string;
+  industry_type: string;
+  size: string;
+  country: string;
+  address: string;
+  city: string;
+  postal_code?: string;
+  admin_id?: string;
+  is_active?: boolean;
 
-	static relationMappings = (): ModelsRelationMapping => ({});
+  static relationMappings = (): ModelsRelationMapping => ({});
 }
 
 export type CompanyModelType = ModelObject<Company>;

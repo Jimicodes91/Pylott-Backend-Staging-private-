@@ -1,9 +1,27 @@
+import { container } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
 import HttpError from '../utils/errorHandler';
 import User from '../models/user.model';
 import { UserRoles } from '../enums';
+import { UserRepository } from '@/repositories';
+
+/**
+ * How to import the dependeceny anotated with @injectable
+ * @param req 
+ * @param res 
+ * @param next 
+ */
+// const userRepo = container.resolve(UserRepository);
+
+// class Example {
+//   constructor(private readonly _userRepo: UserRepository) {}
+
+//   authenticateUser() {
+//     this._userRepo.getById("")
+//   }
+// }
 
 export const authenticateUser = (req: JwtPayload, res: Response, next: NextFunction) => {
   try {
@@ -86,8 +104,8 @@ export const authenticateSameUser = async (req: Request, res: Response, next: Ne
       userId: string;
     };
 
-    const user = await User.findById(decoded.userId);
-    if (!user) {
+    const user = await userRepo.getById(decoded.userId)
+
       throw new HttpError('User not found', 404);
     }
 

@@ -14,40 +14,40 @@ import { errorHandler, notFoundHandler } from '@shared/routes/defaults';
 
 @injectable()
 export default class Application {
-	public server: Server;
-	public httpServer: http.Server;
-	public corsConfig = this._corsConfig();
+  public server: Server;
+  public httpServer: http.Server;
+  public corsConfig = this._corsConfig();
 
-	constructor() {
-		bootstrap();
-		this.configure();
-		this.setMiddlewares();
-	}
+  constructor() {
+    bootstrap();
+    this.configure();
+    this.setMiddlewares();
+  }
 
-	public async close() {
-		this.httpServer.close();
-	}
+  public async close() {
+    this.httpServer.close();
+  }
 
-	public async listen(port: number) {
-		this.httpServer = await this.server.listen(port);
-	}
+  public async listen(port: number) {
+    this.httpServer = await this.server.listen(port);
+  }
 
-	private configure() {
-		this.server = express();
-	}
+  private configure() {
+    this.server = express();
+  }
 
-	private setMiddlewares() {
-		this.server.use(cors(this.corsConfig));
-		this.server.use(bodyParser.json({ limit: '10mb' }));
-		this.server.use(bodyParser.urlencoded({ limit: '10mb', extended: false }));
+  private setMiddlewares() {
+    this.server.use(cors(this.corsConfig));
+    this.server.use(bodyParser.json({ limit: '10mb' }));
+    this.server.use(bodyParser.urlencoded({ limit: '10mb', extended: false }));
 
-		entrypoint(this.server);
-		this.server.use(notFoundHandler);
-		this.server.use(errorHandler);
-	}
+    entrypoint(this.server);
+    this.server.use(notFoundHandler);
+    this.server.use(errorHandler);
+  }
 
-	private _corsConfig() {
-		const allowAll = '*';
-		return { origin: allowAll };
-	}
+  private _corsConfig() {
+    const allowAll = '*';
+    return { origin: allowAll };
+  }
 }

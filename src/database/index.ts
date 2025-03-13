@@ -7,9 +7,9 @@ import knexConfig from '../../knexfile';
 let knex: IKnex;
 
 export const dbConnect = () => {
-	knex = Knex(knexConfig);
+  knex = Knex(knexConfig);
 
-	Model.knex(knex);
+  Model.knex(knex);
 
-	return knex;
+  return knex;
 };

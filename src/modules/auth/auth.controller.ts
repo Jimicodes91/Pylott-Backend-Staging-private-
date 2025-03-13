@@ -6,7 +6,7 @@ import { successResponse } from '@/shared/utils/api-response';
 
 @injectable()
 export class AuthController {
-	constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
-	signup = async (req: Request, res: Response) => successResponse(res, 'Sample response', {});
+  signup = async (req: Request, res: Response) => successResponse(res, 'Sample response', {});
 }
