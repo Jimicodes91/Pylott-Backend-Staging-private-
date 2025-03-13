@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import * as process from 'process';
 
-import { requiredBootTimeEnvs } from '@/shared/constants/env.constants';
+import { requiredBootTimeEnvs } from '../shared/constants/env.constants';
 
 export const app = {
 	url: process.env.BASE_PATH || '',
@@ -14,11 +14,14 @@ export const app = {
 export const database = {
 	knex: {
 		client: process.env.DB_CLIENT || 'mysql2',
-		database: process.env.DB_DATABASE,
-		user: process.env.DB_USERNAME,
-		password: process.env.DB_PASSWORD,
-		port: process.env.DB_PORT,
-		charset: 'utf8mb4',
+		connection: {
+			database: process.env.DB_DATABASE,
+			user: process.env.DB_USERNAME,
+			password: process.env.DB_PASSWORD,
+			port: Number(process.env.DB_PORT),
+			host: process.env.DB_HOST,
+			charset: 'utf8mb4',
+		},
 		pool: {
 			min: 2,
 			max: 10,
