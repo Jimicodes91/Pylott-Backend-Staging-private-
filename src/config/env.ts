@@ -44,6 +44,14 @@ export const mail = {
     secure: false,
     sender: process.env.SMTP_SENDER,
   },
+  nodemailer: {
+    user: process.env.NODEMAILER_USER,
+    pass: process.env.NODEMAILER_PASSWORD,
+    mail: process.env.NODEMAILER_MAIL,
+    host: process.env.NODEMAILER_HOST,
+    secure: false,
+    port: process.env.NODEMAILER_PORT,
+  },
 };
 
 export const storage = {

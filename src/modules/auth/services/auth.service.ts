@@ -20,6 +20,9 @@ export class AuthService {
   ) {}
   public async adminSignup(data: AdminSignupData) {
     const { email, password } = data;
+    if (!email || !password) {
+      throw new HttpError('Please fill all the required fields', 400);
+    }
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const tokenExpires = Date.now() + 900000; // Token valid for 15 minutes
 

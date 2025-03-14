@@ -4,7 +4,7 @@ const tableName = 'consultants';
 
 export async function up(knex: Knex): Promise<void> {
 	await knex.schema.createTable(tableName, (table) => {
-		table.increments('id').primary();
+
 		table.integer('user_id').unsigned().notNullable().references('id').inTable('users');
 		table.integer('company_id').unsigned().notNullable().references('id').inTable('companies');
 		table.json('skills').nullable();

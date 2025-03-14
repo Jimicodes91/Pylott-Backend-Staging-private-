@@ -1,14 +1,14 @@
 import nodemailer from 'nodemailer';
-import CONSTANTS from './constants';
+import { mail } from '@/config/env';
 
 const config = {
-  service: CONSTANTS.NODEMAILER_SERVICE,
-  host: CONSTANTS.NODEMAILER_HOST,
-  port: Number(CONSTANTS.NODEMAILER_PORT),
-  secure: !!Number(CONSTANTS.NODEMAILER_SECURE),
+  service: mail.nodemailer.mail,
+  host: mail.nodemailer.host,
+  port: Number(mail.nodemailer.port),
+  secure: !!Number(mail.nodemailer.secure),
   auth: {
-    user: CONSTANTS.NODEMAILER_EMAIL,
-    pass: CONSTANTS.NODEMAILER_PASSWORD,
+    user: mail.nodemailer.user,
+    pass: mail.nodemailer.pass,
   },
 };
 
@@ -16,7 +16,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   const transporter = nodemailer.createTransport(config);
   try {
     const info = await transporter.sendMail({
-      from: `"${CONSTANTS.NODEMAILER_NAME}" <${CONSTANTS.NODEMAILER_EMAIL}>`,
+      from: `"${config.auth.user}" <${config.service}>`,
       to,
       subject,
       html,

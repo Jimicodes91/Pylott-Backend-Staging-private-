@@ -4,12 +4,11 @@ const tableName = 'users';
 
 export async function up(knex: Knex): Promise<void> {
 	await knex.schema.createTable(tableName, (table) => {
-		table.increments('id').primary();
 		table.string('email').unique().index();
 		table.string('pfp').nullable();
 		table.string('password').notNullable();
 		table.string('name').nullable();
-		table.enum('role', ['admin', 'user', 'client', 'consultant']).defaultTo('user');
+		table.enum('role', ['ADMIN', 'SUPER_ADMIN', 'CLIENT', 'CONSULTANT', 'USER']).defaultTo('USER');
 		table.integer('company_id').unsigned().nullable().references('id').inTable('companies');
 		table.boolean('is_blocked').defaultTo(false);
 		table.boolean('is_verified').defaultTo(false);
