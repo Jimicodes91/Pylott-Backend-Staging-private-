@@ -93,6 +93,8 @@
 		"exec": "ts-node -r tsconfig-paths/register src/index.ts"
 	},
 	"lint-staged": {
-		"*.{js,jsx,ts,tsx}": ["eslint --fix"]
+		"*.{js,jsx,ts,tsx}": [
+			"eslint --fix"
+		]
 	}
 }

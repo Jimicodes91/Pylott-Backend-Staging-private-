@@ -1,13 +1,39 @@
 import { injectable } from 'tsyringe';
 import { Request, Response } from 'express';
-
 import { UserService } from './services/user.service';
+import { errorResponse, successResponse } from '@/shared/utils/api-response';
 
 @injectable()
 export class UserController {
-	constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
-	getUser = async (req: Request, res: Response) => {};
+  public getUser = async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      if (!userId) {
+        return errorResponse(res, 'User ID is required');
+      }
 
-	updateProfile = async (req: Request, res: Response) => {};
+      const user = await this.userService.getUser(userId);
+      return successResponse(res, 'User fetched successfully', user);
+    } catch (error: any) {
+      return errorResponse(res, 'GET_USER_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+
+  public updateProfile = async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const updateData = req.body;
+
+      if (!userId) {
+        return errorResponse(res, 'User ID is required');
+      }
+
+      const updatedUser = await this.userService.updateUserProfile(userId, updateData);
+      return successResponse(res, 'Profile updated successfully', updatedUser);
+    } catch (error: any) {
+      return errorResponse(res, 'UPDATE_PROFILE_ERROR', error.message, error.statusCode || 500);
+    }
+  };
 }

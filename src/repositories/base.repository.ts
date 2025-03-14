@@ -37,6 +37,18 @@ export default abstract class BaseRepository<T, M extends BaseModel> {
     return await this.model.query(trx).where({ id }).whereNull('deleted_at').first();
   }
 
+  public async findOne(query_identifier: Partial<T>, trx?: Objection.Transaction) {
+    return await this.model.query(trx).where(query_identifier).whereNull('deleted_at').first();
+  }
+
+  /**
+   * Find users by query
+   * @param query - Query object to search by
+   * @returns Array of matching users
+   */
+  public async findMany(query: Partial<T>, trx?: Objection.Transaction) {
+    return await this.model.query(trx).where(query).whereNull('deleted_at');
+  }
   /**
    * @param query_identifier - clause object to identify a record
    * @param trx - db transaction
@@ -68,5 +80,14 @@ export default abstract class BaseRepository<T, M extends BaseModel> {
 
       await this.model.query(trx).where(query_identifier).update({ deleted_at: deletedAt });
     }
+  }
+
+  public async pushToArray(query_identifier: Partial<T>, column: string, value: any, trx?: Objection.Transaction): Promise<void> {
+    await this.model
+      .query(trx)
+      .where(query_identifier)
+      .patch({
+        [column]: this.model.raw(`array_append(??, ?)`, [column, value]),
+      });
   }
 }

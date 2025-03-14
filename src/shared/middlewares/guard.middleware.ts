@@ -1,119 +1,89 @@
 import { container } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
 import HttpError from '../utils/errorHandler';
-import User from '../models/user.model';
 import { UserRoles } from '../enums';
+import { CustomRequest, UserPayload } from '../interface';
 import { UserRepository } from '@/repositories';
 
-/**
- * How to import the dependeceny anotated with @injectable
- * @param req 
- * @param res 
- * @param next 
- */
-// const userRepo = container.resolve(UserRepository);
+const userRepo = container.resolve(UserRepository);
 
-// class Example {
-//   constructor(private readonly _userRepo: UserRepository) {}
-
-//   authenticateUser() {
-//     this._userRepo.getById("")
-//   }
-// }
-
-export const authenticateUser = (req: JwtPayload, res: Response, next: NextFunction) => {
+// Fixed middleware with no return value
+export const authenticateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Get the token from the Authorization header
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
-      throw new HttpError('Access denied. No token provided.', 401);
+      return next(new HttpError('Access denied. No token provided.', 401));
     }
+
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       email: string;
       role: string;
       _id: any;
     };
-    // Attach the user information to the request object
-    req.user = decoded;
 
-    next();
+    const user = await userRepo.getById(decoded._id);
+    if (!user) {
+      return next(new HttpError('User not found.', 404));
+    }
+
+    // Set the user on the request object
+    (req as any).user = decoded;
+
+    return next();
   } catch (error: any) {
-    //@klaus139 Do something with the error
-    console.log(error.message); // added to bypass pre-commit (please fix)
-    res.status(401).json({ error: 'Invalid or expired token' });
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return next(new HttpError('Invalid or expired token', 401));
+    }
+
+    return next(new HttpError(error.message || 'Authentication failed', error.statusCode || 500));
   }
 };
+
 export const authorizeRole = (allowedRoles: UserRoles[]) => {
-  return (req: JwtPayload, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      const userRole = req.user?.role;
+      const userRole = (req as any).user?.role;
 
       if (!userRole || !allowedRoles.includes(userRole as UserRoles)) {
-        throw new HttpError('Access denied. You do not have permission to access this resource.', 403);
+        return next(new HttpError('Access denied. You do not have permission to access this resource.', 403));
       }
 
-      next();
+      return next();
     } catch (error: any) {
-      //@klaus139 Do something with the error
-      console.log(error.message); // added to bypass pre-commit (please fix)
-      res.status(403).json({ error: error.message });
+      return next(new HttpError(error.message || 'Authorization failed', error.statusCode || 500));
     }
   };
 };
 
-// @klaus139 please move this to interface directory or somewhere more appropriate
-export interface CustomRequest extends Request {
-  user: any;
-}
-
-export const verifyJWT = (req: JwtPayload, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) {
-    return res.status(401).json({ message: 'Authorization header missing! Provide authorization header' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ message: 'Token missing! Provide token' });
-  }
-
+export const verifyJWT = (req: CustomRequest, res: Response, next: NextFunction): void => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    (req as CustomRequest).user = decoded;
-    next();
-  } catch (error) {
-    //@klaus139 Do something with the error
-    console.log(error.message); // added to bypass pre-commit (please fix)
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-};
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) {
+      return next(new HttpError('Authorization header missing! Provide authorization header', 401));
+    }
 
-export const authenticateSameUser = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-
+    const token = authHeader.split(' ')[1];
     if (!token) {
-      throw new HttpError('Access denied. No token provided.', 401);
+      return next(new HttpError('Token missing! Provide token', 401));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
-      userId: string;
-    };
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as UserPayload;
+    req.user = decoded;
 
-    const user = await userRepo.getById(decoded.userId)
-
-      throw new HttpError('User not found', 404);
-    }
-
-    (req as any).user = user;
-    next();
+    return next();
   } catch (error: any) {
-    //@klaus139 Do something with the error
-    console.log(error.message); // added to bypass pre-commit (please fix)
-    res.status(401).json({ error: 'Invalid or expired token' });
+    // Handle JWT errors
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return next(new HttpError('Invalid token', 401));
+    }
+
+    // Handle other errors
+    return next(new HttpError(error.message || 'Token verification failed', error.statusCode || 500));
   }
 };
