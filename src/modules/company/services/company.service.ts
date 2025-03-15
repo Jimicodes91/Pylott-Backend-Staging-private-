@@ -27,6 +27,7 @@ export class CompanyService {
 
       // Create the company in the database
       const company = await this.companyRepository.create(companyData);
+      await this.userRepository.update({ id: adminId }, { company_id: company.id });
 
       return company;
     } catch (error: any) {

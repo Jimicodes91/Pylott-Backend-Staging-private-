@@ -82,12 +82,20 @@ export default abstract class BaseRepository<T, M extends BaseModel> {
     }
   }
 
+  // public async pushToArray(query_identifier: Partial<T>, column: string, value: any, trx?: Objection.Transaction): Promise<void> {
+  //   await this.model
+  //     .query(trx)
+  //     .where(query_identifier)
+  //     .patch({
+  //       [column]: this.model.raw(`array_append(??, ?)`, [column, value]),
+  //     });
+  // }
   public async pushToArray(query_identifier: Partial<T>, column: string, value: any, trx?: Objection.Transaction): Promise<void> {
     await this.model
       .query(trx)
       .where(query_identifier)
       .patch({
-        [column]: this.model.raw(`array_append(??, ?)`, [column, value]),
+        [column]: this.model.raw(`JSON_ARRAY_APPEND(??, '$', ?)`, [column, value]),
       });
   }
 }

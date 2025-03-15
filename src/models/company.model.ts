@@ -14,6 +14,8 @@ export class Company extends BaseModel {
   city: string;
   postal_code?: string;
   admin_id?: string;
+  consultant_id?: string[];
+  client_id?: string;
   is_active?: boolean;
 
   static relationMappings = (): ModelsRelationMapping => ({});
