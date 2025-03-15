@@ -3,7 +3,7 @@ import { inject, injectable } from 'tsyringe';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
-import { ClientRepository, CompanyRepository, UserRepository } from '@/repositories';
+import { ClientRepository, CompanyRepository, ConsultantRepository, UserRepository } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { strongPassword } from '@/shared/utils/any';
@@ -17,6 +17,7 @@ export class AuthService {
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(ClientRepository) private clientRepository: ClientRepository,
+    @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
   ) {}
   public async adminSignup(data: AdminSignupData) {
     const { email, password } = data;
@@ -337,6 +338,7 @@ export class AuthService {
       if (!admin || admin.role !== UserRoles.ADMIN) {
         throw new HttpError('Only company admins can send invitations', 403);
       }
+      console.log(admin);
 
       // Ensure the admin is associated with a company
       if (!admin.company_id) {
@@ -383,11 +385,9 @@ export class AuthService {
         throw new HttpError('Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character', 400);
       }
 
-      // Step 3: Hash the password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = bcrypt.hashSync(password, salt);
 
-      // Step 4: Create the new user
       const newUser = await this.userRepository.create({
         email,
         password: hashedPassword,
@@ -396,7 +396,17 @@ export class AuthService {
         is_verified: true,
       });
 
-      await this.companyRepository.pushToArray({ id: companyId }, 'consultants', newUser._id);
+      await this.companyRepository.pushToArray(
+        { id: companyId }, // query_identifier
+        'consultant_id', // column
+        newUser.id, // value
+      );
+
+      await this.consultantRepository.create({
+        user_id: newUser.id,
+        company_id: companyId,
+      });
+
       newUser.password = '';
       return newUser;
     } catch (error: any) {
@@ -412,6 +422,7 @@ export class AuthService {
       }
 
       const temporaryPassword = crypto.randomBytes(5).toString('hex').slice(0, 9);
+      console.log('temp', temporaryPassword);
 
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = bcrypt.hashSync(temporaryPassword, salt);
@@ -424,14 +435,24 @@ export class AuthService {
         company_id: companyId,
         is_verified: true, // Mark as verified since they were added by the admin
       });
+      if (!newUser) {
+        throw new HttpError('Error creating user', 400);
+      }
 
-      await this.clientRepository.create({
+      const client = await this.clientRepository.create({
         company_id: companyId,
         user_id: newUser._id,
         is_active: true,
       });
 
-      await this.companyRepository.pushToArray({ id: companyId }, 'clients', newUser._id);
+      if (!client) {
+        throw new HttpError('Error creating client', 500);
+      }
+
+      await this.companyRepository.update(
+        { id: companyId }, // query_identifier
+        { client_id: newUser._id }, // payload
+      );
 
       await sendEmail(
         email,

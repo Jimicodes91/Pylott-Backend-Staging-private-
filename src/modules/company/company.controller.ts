@@ -10,7 +10,8 @@ export class CompanyController {
 
   public createCompany = async (req: Request, res: Response) => {
     try {
-      const adminId = (req as any).user.id;
+      const adminId = (req as any).user._id;
+
       const companyData = req.body;
 
       if (!adminId) {
@@ -18,6 +19,7 @@ export class CompanyController {
       }
 
       const company = await this.companyService.createCompany(companyData, adminId);
+
       return successResponse(res, 'Company created successfully', company);
     } catch (error: any) {
       console.log(error);
