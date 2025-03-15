@@ -8,7 +8,6 @@ import { companyRoutes } from '@/modules/company/company.route';
 import { userRoutes } from '@/modules/user/user.route';
 
 export default (server: Server) => {
-
   server.get('/', (_: Request, response: Response) => successResponse(response, 'Welcome to Pylott 🚀'));
 
   authRoutes(`${RoutePrefix.V1}/auth`, server);

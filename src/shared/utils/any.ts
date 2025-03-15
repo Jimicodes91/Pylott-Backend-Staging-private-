@@ -23,3 +23,13 @@ export function normalizeURL(targetURL: string, baseURL?: string): string {
     throw new HttpError('Link is invalid, please provide a valid link ⚠️', 400);
   }
 }
+
+export function strongEmail(email: string) {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+}
+
+export function strongPassword(password: string) {
+  const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+  return passwordRegex.test(password);
+}

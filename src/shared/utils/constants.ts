@@ -1,5 +1,5 @@
-import dotenv from "dotenv"
-dotenv.config()
+import dotenv from 'dotenv';
+dotenv.config();
 
 const constants = {
   NODE_ENV: process.env.NODE_ENV,
@@ -16,10 +16,10 @@ const constants = {
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRETS: process.env.CLOUDINARY_API_SECRETS,
 
-  MAILJET_API_KEY:process.env.MAILJET_API_KEY,
+  MAILJET_API_KEY: process.env.MAILJET_API_KEY,
   MAILJET_API_SECRET: process.env.MAILJET_API_SECRET,
 
-  PYLOTT_ADMIN_EMAIL:process.env.PYLOTT_ADMIN_EMAIL
+  PYLOTT_ADMIN_EMAIL: process.env.PYLOTT_ADMIN_EMAIL,
 };
 
 export default constants;

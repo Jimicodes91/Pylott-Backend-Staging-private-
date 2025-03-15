@@ -1,0 +1,16 @@
+version: '3.0'
+
+services:
+  pylot:
+    container_name: 'pylot-db'
+    image: mysql:8.4
+    env_file: ./.env
+    ports:
+      - '3386:3306'
+    volumes:
+      - pylot-vol:/var/lib/mysql
+    command: mysqld --mysql-native-password=ON
+    restart: always
+
+volumes:
+  pylot-vol:
