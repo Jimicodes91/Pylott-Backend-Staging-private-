@@ -92,11 +92,16 @@ export class AuthController {
 
   public sendInvite = async (req: Request, res: Response) => {
     try {
-      const { adminId, email, role } = req.body;
-      if (!adminId || !email || !role) {
-        return errorResponse(res, 'Admin ID, email, and role are required');
+      //console.log(req)
+      const adminId = (req as any).user._id;
+      if (!adminId) {
+        return errorResponse(res, 'Admin Id is required');
       }
-      const result = await this.authService.sendInvitation(adminId, email, role);
+      const { email, role } = req.body;
+      if (!adminId || !email || !role) {
+        return errorResponse(res, 'email, and role are required');
+      }
+      const result = await this.authService.sendConsultantInvitation(adminId, email, role);
       return successResponse(res, 'Invitation sent successfully', result);
     } catch (error: any) {
       return errorResponse(res, 'SEND_INVITE_ERROR', error.message, error.statusCode);

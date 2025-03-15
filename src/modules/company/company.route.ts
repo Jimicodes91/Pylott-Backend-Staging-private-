@@ -10,5 +10,5 @@ import { authenticateUser, authorizeRole } from '@/shared/middlewares/guard.midd
 const companyController = container.resolve(CompanyController);
 
 export const companyRoutes = (prefix: string, server: Server) => {
-	server.post(`${prefix}`, authenticateUser, authorizeRole([UserRoles.ADMIN]), schemaValidator(createCompanyValidationRule), companyController.create);
+  server.post(`${prefix}/create`, authenticateUser, authorizeRole([UserRoles.ADMIN]), schemaValidator(createCompanyValidationRule), companyController.createCompany);
 };

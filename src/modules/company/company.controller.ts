@@ -8,11 +8,9 @@ import { CompanyService } from './services/company.service';
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
-  create = async (req: Request, res: Response) => successResponse(res, 'Create company', {});
-
   public createCompany = async (req: Request, res: Response) => {
     try {
-      const { adminId } = req.params;
+      const adminId = (req as any).user.id;
       const companyData = req.body;
 
       if (!adminId) {
@@ -22,6 +20,7 @@ export class CompanyController {
       const company = await this.companyService.createCompany(companyData, adminId);
       return successResponse(res, 'Company created successfully', company);
     } catch (error: any) {
+      console.log(error);
       return errorResponse(res, 'CREATE_COMPANY_ERROR', error.message, error.statusCode || 500);
     }
   };

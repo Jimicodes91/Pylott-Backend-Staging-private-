@@ -13,6 +13,8 @@ import {
   signUpCompanyAdminValidator,
   updatePasswordValidatorRule,
 } from '@/shared/validations/auth';
+import { authenticateUser, authorizeRole } from '@/shared/middlewares/guard.middleware';
+import { UserRoles } from '@/shared/enums';
 
 const authController = container.resolve(AuthController);
 
@@ -31,7 +33,7 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/reset-password`, schemaValidator(resetPasswordValidationRule), authController.resetPassword);
 
-  server.post(`${prefix}/send-invite`, authController.sendInvite);
+  server.post(`${prefix}/send-consultant-invite`, authenticateUser, authorizeRole([UserRoles.ADMIN]), authController.sendInvite);
 
   server.post(`${prefix}/complete-registration`, schemaValidator(completeRegistrationValidationRule), authController.completeRegistration);
 

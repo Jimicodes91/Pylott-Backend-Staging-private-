@@ -27,11 +27,11 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     };
 
     const user = await userRepo.getById(decoded._id);
+
     if (!user) {
       return next(new HttpError('User not found.', 404));
     }
 
-    // Set the user on the request object
     (req as any).user = decoded;
 
     return next();
@@ -47,12 +47,10 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 export const authorizeRole = (allowedRoles: UserRoles[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      const userRole = (req as any).user?.role;
-
+      const userRole = (req as any).user.role;
       if (!userRole || !allowedRoles.includes(userRole as UserRoles)) {
         return next(new HttpError('Access denied. You do not have permission to access this resource.', 403));
       }
-
       return next();
     } catch (error: any) {
       return next(new HttpError(error.message || 'Authorization failed', error.statusCode || 500));

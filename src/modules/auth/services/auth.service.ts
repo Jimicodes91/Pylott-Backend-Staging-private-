@@ -88,8 +88,8 @@ export class AuthService {
       name,
       email,
       password,
-      verificationToken,
-      tokenExpires,
+      verification_token: verificationToken,
+      token_expires: tokenExpires,
       role: UserRoles.ADMIN,
     };
 
@@ -331,7 +331,7 @@ export class AuthService {
     }
   }
 
-  public async sendInvitation(adminId: string, email: string, role: UserRoles) {
+  public async sendConsultantInvitation(adminId: string, email: string, role: UserRoles) {
     try {
       const admin = await this.userRepository.getById(adminId);
       if (!admin || admin.role !== UserRoles.ADMIN) {

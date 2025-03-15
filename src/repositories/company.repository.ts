@@ -5,7 +5,7 @@ import BaseRepository from './base.repository';
 
 @injectable()
 export class CompanyRepository extends BaseRepository<CompanyModelType, Company> {
-	constructor() {
-		super(Company);
-	}
+  constructor() {
+    super(Company);
+  }
 }

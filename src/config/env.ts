@@ -54,6 +54,8 @@ export const mail = {
   },
 };
 
+export const JWT_SECRET_KEY = process.env.JWT_SECRET;
+
 export const storage = {
   cloudinary: {
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
