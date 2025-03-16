@@ -422,8 +422,7 @@ export class AuthService {
       }
 
       const temporaryPassword = crypto.randomBytes(5).toString('hex').slice(0, 9);
-      console.log('temp', temporaryPassword);
-
+      //console.log('temp', temporaryPassword);
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = bcrypt.hashSync(temporaryPassword, salt);
 

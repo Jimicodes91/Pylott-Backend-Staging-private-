@@ -9,3 +9,9 @@ export enum UserRoles {
   SUPER_ADMIN = 'SUPER_ADMIN',
   USER = 'USER',
 }
+
+export enum CompanySubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  PENDING = 'PENDING',
+  DEACTIVATED = 'DEACTIVATED',
+}
