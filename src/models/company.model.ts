@@ -17,6 +17,8 @@ export class Company extends BaseModel {
   consultant_id?: string[];
   client_id?: string;
   is_active?: boolean;
+  subscription_status?: string;
+  subscription_expiry_date?: Date;
 
   static relationMappings = (): ModelsRelationMapping => ({});
 }
