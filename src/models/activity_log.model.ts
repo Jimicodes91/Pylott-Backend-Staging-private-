@@ -7,10 +7,10 @@ export class ActivityLogs extends BaseModel {
   static tableName = 'activity_logs';
 
   company_id: string;
-  project_id: string;
   user_id: string;
-  description: string;
+  entity_id: string;
   entity: string;
+  description: string;
 
   static relationMappings = (): ModelsRelationMapping => ({});
 }

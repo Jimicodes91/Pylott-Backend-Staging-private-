@@ -6,5 +6,5 @@ export interface IStorage {
 
 // @todo
 // repositories - Done
-// Migrations;
+// Migrations - Done;
 // Concrete implementation;

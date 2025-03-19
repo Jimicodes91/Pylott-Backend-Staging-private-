@@ -1,15 +1,14 @@
 import type { Knex } from "knex";
 
-const tableName = "activity_logs"
+const tableName = "milestones";
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTableIfNotExists(tableName, (table) => {
     table.string('id').unique().notNullable();
+    table.string('project_type_id').notNullable().index();
     table.string('company_id').notNullable().index();
-    table.string('user_id').notNullable().index();
-    table.string('entity_id').notNullable().index();
-    table.string('entity').notNullable().index();
-    table.string('description');
+    table.string('name');
+    table.boolean('is_system').nullable().defaultTo(false);
     table.timestamps(true, true);
     table.timestamp('deleted_at').nullable();
   });

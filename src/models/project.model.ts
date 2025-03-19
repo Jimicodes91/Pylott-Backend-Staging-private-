@@ -9,13 +9,12 @@ export class Project extends BaseModel {
   client_id: string;
   company_id: string;
   consultant_id: string;
-  milestone_is: string;
+  milestone_id: string;
   stage_id: string;
   project_type_id: string;
+  status: string;
   name: string;
   description: string;
-  status: string;
-  phase: string;
   start_date: string;
   end_date: string;
   completed_at: string;

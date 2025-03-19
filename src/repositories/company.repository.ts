@@ -8,6 +8,7 @@ export class CompanyRepository extends BaseRepository<CompanyModelType, Company>
   constructor() {
     super(Company);
   }
+<<<<<<< HEAD
 
   // Fetch all companies with sorting and filtering
   public async getAllCompanies(filters: { status?: string; subscription_status?: string }, sortBy: string = 'created_at', order: 'asc' | 'desc' = 'desc') {
@@ -28,4 +29,6 @@ export class CompanyRepository extends BaseRepository<CompanyModelType, Company>
   public async updateCompanyStatus(companyId: string, subscription_status: 'active' | 'pending' | 'deactivated') {
     return this.model.query().where({ id: companyId }).update({ subscription_status });
   }
+=======
+>>>>>>> d441edf (chore: add all repositories)
 }
