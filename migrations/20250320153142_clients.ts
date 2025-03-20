@@ -9,7 +9,7 @@ export async function up(knex: Knex): Promise<void> {
   
     table.string('contact_person', 255).nullable(); 
     table.string('billing_address', 255).nullable(); 
-    table.string('company_id', 36).notNullable().references('id').inTable('companies'); 
+    table.string('company_id', 36).notNullable()
     table.boolean('is_active').defaultTo(true); 
     table.timestamps(true, true); 
     table.timestamp('deleted_at').nullable(); 

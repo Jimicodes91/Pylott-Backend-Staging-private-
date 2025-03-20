@@ -338,7 +338,7 @@ export class AuthService {
       if (!admin || admin.role !== UserRoles.ADMIN) {
         throw new HttpError('Only company admins can send invitations', 403);
       }
-      console.log(admin);
+      //console.log(admin);
 
       // Ensure the admin is associated with a company
       if (!admin.company_id) {

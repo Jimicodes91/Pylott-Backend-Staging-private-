@@ -16,6 +16,23 @@ export class SysAdminController {
       return errorResponse(res, 'DASHBOARD_SUMMARY_ERROR', error.message, error.statusCode || 500);
     }
   };
+
+  public getAllUsers = async (req: Request, res: Response) => {
+    try {
+      const allUsers: any = await this.sysAdminService.getTotalUsers();
+      return successResponse(res, 'users fetched successfully', allUsers);
+    } catch (error) {
+      return errorResponse(res, 'DASHBOARD_SUMMARY_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+  public getActiveUsers = async (req: Request, res: Response) => {
+    try {
+      const allUsers = await this.sysAdminService.getActiveUsers();
+      return successResponse(res, 'users fetched successfully', allUsers);
+    } catch (error) {
+      return errorResponse(res, 'DASHBOARD_SUMMARY_ERROR', error.message, error.statusCode || 500);
+    }
+  };
   public getAllCompanies = async (req: Request, res: Response) => {
     try {
       const { status, subscription_status } = req.query;

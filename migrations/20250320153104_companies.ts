@@ -13,11 +13,11 @@ export async function up(knex: Knex): Promise<void> {
     table.string('address', 255).notNullable(); 
     table.string('city', 255).notNullable(); 
     table.string('postal_code', 255).nullable(); 
-    table.string('admin_id', 36).nullable().references('id').inTable('users'); 
+    table.string('admin_id', 36).nullable()
     table.boolean('is_active').defaultTo(true); 
     table.string('subscription_status').defaultTo('active')
-    table.string('consultant_id', 255).nullable().references('id').inTable('consultants')
-    table.string('client_id', 36).nullable().references('id').inTable('clients')
+    table.string('consultant_id', 255).nullable()
+    table.string('client_id', 36).nullable()
     table.string('project_id', 255).nullable()
     table.string('subscription_expiry_date').nullable();
     table.timestamps(true, true); 

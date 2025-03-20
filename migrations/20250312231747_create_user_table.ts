@@ -11,7 +11,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('password', 255).notNullable(); 
     table.string('name', 255).nullable(); 
     table.enum('role', ['ADMIN', 'SUPER_ADMIN', 'CLIENT', 'CONSULTANT', 'USER']).defaultTo('USER'); 
-    table.string('company_id', 36).nullable().references('id').inTable('companies'); 
+    table.string('company_id', 36).nullable() 
     table.boolean('is_blocked').defaultTo(false); 
     table.boolean('is_verified').defaultTo(false); 
     table.string('timezone', 255).nullable(); 

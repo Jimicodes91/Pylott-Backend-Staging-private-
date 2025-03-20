@@ -24,6 +24,14 @@ export class SysAdminService {
     return count.count;
   }
 
+  public async getActiveUsers() {
+    return await this.userRepository.getAllActiveUsers();
+  }
+
+  public async getActiveUserCount() {
+    return await this.userRepository.countActiveUsers();
+  }
+
   // Get total active subscriptions
   public async getTotalActiveSubscriptions(): Promise<number> {
     const count = await this.companyRepository.count({ subscription_status: 'active' });
@@ -52,27 +60,31 @@ export class SysAdminService {
   }
 
   public async getAllCompanies(filters: { status?: string; subscription_status?: string }, sortBy: string = 'created_at', order: 'asc' | 'desc' = 'desc') {
-    return this.companyRepository.getAllCompanies(filters, sortBy, order);
+    return await this.companyRepository.getAllCompanies(filters, sortBy, order);
   }
 
   public async getCompanyDetails(companyId: string) {
-    return this.companyRepository.getById(companyId);
+    return await this.companyRepository.getById(companyId);
+  }
+
+  public async getAllActiveUsers() {
+    return await this.userRepository.getAllActiveUsers();
   }
 
   public async updateCompanyStatus(companyId: string, subscription_status: 'active' | 'pending' | 'deactivated') {
-    return this.companyRepository.updateCompanyStatus(companyId, subscription_status);
+    return await this.companyRepository.updateCompanyStatus(companyId, subscription_status);
   }
 
   public async subscribeCompany(companyId: string, expiryDate: Date) {
-    return this.companyRepository.update({ id: companyId }, { subscription_status: 'active', subscription_expiry_date: expiryDate });
+    return await this.companyRepository.update({ id: companyId }, { subscription_status: 'active', subscription_expiry_date: expiryDate });
   }
 
   public async cancelSubscription(companyId: string) {
-    return this.companyRepository.update({ id: companyId }, { subscription_status: 'expired' });
+    return await this.companyRepository.update({ id: companyId }, { subscription_status: 'expired' });
   }
 
   public async renewSubscription(companyId: string, expiryDate: Date) {
-    return this.companyRepository.update({ id: companyId }, { subscription_status: 'active', subscription_expiry_date: expiryDate });
+    return await this.companyRepository.update({ id: companyId }, { subscription_status: 'active', subscription_expiry_date: expiryDate });
   }
 
   public async addSysAdmin(name: string, email: string, role: UserRoles = UserRoles.SUPER_ADMIN) {
