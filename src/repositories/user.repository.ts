@@ -19,4 +19,11 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
   public async deactivateSysAdmin(userId: string) {
     return this.update({ id: userId }, { is_active: false });
   }
+  public async getAllActiveUsers() {
+    return this.findMany({ is_active: true });
+  }
+  public async countActiveUsers() {
+    const result = await this.count({ is_active: true });
+    return result.count;
+  }
 }
