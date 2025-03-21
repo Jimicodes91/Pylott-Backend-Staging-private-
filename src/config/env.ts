@@ -45,16 +45,16 @@ export const mail = {
     sender: process.env.SMTP_SENDER,
   },
   nodemailer: {
-    user: process.env.NODEMAILER_USER,
-    pass: process.env.NODEMAILER_PASSWORD,
-    mail: process.env.NODEMAILER_MAIL,
-    host: process.env.NODEMAILER_HOST,
+    user: process.env.NODEMAILER_USER || 'emmp.org.ng@gmail.com',
+    pass: process.env.NODEMAILER_PASSWORD || 'mjoh xzgs nzya lbum',
+    mail: process.env.NODEMAILER_MAIL || 'gmail',
+    host: process.env.NODEMAILER_HOST || 'smtp.gmail.com',
     secure: false,
-    port: process.env.NODEMAILER_PORT,
+    port: process.env.NODEMAILER_PORT || 465,
   },
 };
 
-export const JWT_SECRET_KEY = process.env.JWT_SECRET;
+export const JWT_SECRET_KEY = process.env.JWT_SECRET || 'kbsbdabdjabkdjshudeuwhhnnm,asdnkjashdasddsad';
 
 export const storage = {
   cloudinary: {
