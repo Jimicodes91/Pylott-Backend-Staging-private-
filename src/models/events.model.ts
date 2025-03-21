@@ -8,14 +8,14 @@ import BaseModel from './base.model';
 export class Event extends BaseModel {
   static tableName = 'events';
 
+  project_id: string;
+  event_type_id: string;
   name: string;
-  type: string;
   date: string;
   start_time: string;
   end_time: string;
   description: string;
   venue: string;
-  project_id: string;
 
   static relationMappings = (): ModelsRelationMapping => ({});
 }
