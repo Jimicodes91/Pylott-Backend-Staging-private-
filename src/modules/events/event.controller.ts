@@ -17,25 +17,35 @@ export class EventController {
 
     // @ts-ignore
     const user = req.user;
-
     const { statusCode = null, ...others } = await this.eventService.createEvent(user.company_id, project_id, payload);
+    return genericResponse({ res, data: others, statusCode });
+  };
 
+  updateEvent = async (req: Request, res: Response) => {
+    const { project_id, event_id } = req.params;
+    const payload = req.body as Partial<EventDto>;
+
+    // @ts-ignore
+    const user = req.user;
+    const { statusCode = null, ...others } = await this.eventService.updateEvent(user.company_id, event_id, project_id, payload);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  deleteEvent = async (req: Request, res: Response) => {
+    const { project_id, event_id } = req.params;
+    const { statusCode = null, ...others } = await this.eventService.deleteEvent(event_id, project_id);
     return genericResponse({ res, data: others, statusCode });
   };
 
   getEventDetails = async (req: Request, res: Response) => {
     const { event_id, project_id } = req.params;
-
     const { statusCode = null, ...others } = await this.eventService.getEventDetails(event_id, project_id);
-
     return genericResponse({ res, data: others, statusCode });
   };
 
   getAllEvents = async (req: Request, res: Response) => {
     const { project_id } = req.params;
-
     const { statusCode = null, ...others } = await this.eventService.getAllEvents(project_id);
-
     return genericResponse({ res, data: others, statusCode });
   };
 }

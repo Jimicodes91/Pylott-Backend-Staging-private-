@@ -1,6 +1,0 @@
-- Github Action (would be added later)
-- Pre Commit Hook ✅
-- Package Json scripts ✅
-- Readme ✅
-- Delete /controller and /services once moved to modules
-- Flesh out our db schema structure before code

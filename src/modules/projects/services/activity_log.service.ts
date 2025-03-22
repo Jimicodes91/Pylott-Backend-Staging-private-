@@ -1,4 +1,6 @@
 import { injectable } from 'tsyringe';
 
 @injectable()
-export class ActivityLogsService {}
+export class ActivityLogsService {
+  private traceId = '[ActivityLog Service]';
+}

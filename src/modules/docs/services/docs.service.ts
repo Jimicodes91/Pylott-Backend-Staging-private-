@@ -45,7 +45,6 @@ export class DocsService {
 
       let attachmentUrl: null | string = null;
 
-      // @ts-ignore
       const docFileName = others.file_name.trim().replaceAll(' ', '-');
 
       const documentData: Partial<DocumentsModelType> = {
@@ -108,6 +107,107 @@ export class DocsService {
       return { status: true, message: 'Project documents fetched successfully', data: documents };
     } catch (error) {
       console.log(`${this.traceId} Error occurred fetching all project docs ===> ${JSON.stringify({ project_id, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  public async deleteDocument(project_id: string, company_id: string, document_id: string): Promise<ServiceType> {
+    try {
+      const document = await this.documentRepository.findOne({ project_id, id: document_id, company_id });
+      if (!document) return { status: false, message: 'Document not found', statusCode: StatusCodes.NOT_FOUND };
+
+      await Objection.Model.transaction(async (trx) => {
+        await this.documentAttachmentRepository.delete({ document_id }, true, trx);
+        await this.documentRepository.delete({ id: document_id, company_id, project_id }, true, trx);
+      });
+
+      return { status: true, message: 'Document deleted successfully' };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred deleting documents ===> ${JSON.stringify({ project_id, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  public async updateUploadedDocument(project_id: string, company_id: string, document_id: string, payload: Partial<UploadDocumentType>): Promise<ServiceType> {
+    try {
+      const document = await this.documentRepository.findOne({ project_id, id: document_id, company_id });
+      if (!document) return { status: false, message: 'Document not found', statusCode: StatusCodes.NOT_FOUND };
+
+      const updateData: Partial<DocumentsModelType> = {};
+
+      if (payload.document_type_id) {
+        const metadataQuery = {
+          company_id,
+          type: MetadataType.DOCUMENT,
+          id: payload.document_type_id,
+        };
+        const eventType = await this.metadataRepository.findOne(metadataQuery);
+        if (!eventType) return { status: false, message: 'Document type not found', statusCode: StatusCodes.NOT_FOUND };
+
+        updateData.document_type_id = payload.document_type_id;
+      }
+
+      const project = await this.projectRepository.findOne({ id: project_id, company_id });
+      if (!project) return { status: false, message: 'Project not found', statusCode: StatusCodes.NOT_FOUND };
+
+      if (payload.description) updateData.description = payload.description;
+      if (payload.file_name) updateData.name = payload.file_name.replaceAll(' ', '-');
+
+      await this.documentRepository.update({ id: document_id, project_id, company_id }, updateData);
+
+      return { status: true, message: 'Document details updated successfully' };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred updating docs ===> ${JSON.stringify({ project_id, company_id, document_id, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  public async updateDocumentAttachment(project_id: string, company_id: string, document_id: string, payload: Pick<UploadDocumentType, 'attachment'>): Promise<ServiceType> {
+    try {
+      const document = await this.documentRepository.findOne({ project_id, id: document_id, company_id });
+      if (!document) return { status: false, message: 'Document not found', statusCode: StatusCodes.NOT_FOUND };
+
+      let attachmentUrl;
+
+      if (payload.attachment && !payload.attachment.includes('http')) {
+        const fileName = `${project_id}/${document.name}`;
+        const { status, data } = await this.cloudinary.upload(DocumentsDirectory.DOCS, payload.attachment, fileName);
+
+        if (!status) return { status: false, message: 'Could not upload document. Please try again later', statusCode: 400 };
+        attachmentUrl = data;
+      }
+
+      if (attachmentUrl) await this.documentAttachmentRepository.update({ id: document_id }, { media_url: attachmentUrl });
+
+      return { status: true, message: 'Document details updated successfully' };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred updating docs ===> ${JSON.stringify({ project_id, company_id, document_id, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  public async deleteDocumentAttachment(project_id: string, company_id: string, document_id: string, attachment_id: string): Promise<ServiceType> {
+    try {
+      const project = await this.projectRepository.findOne({ id: project_id, company_id });
+      if (!project) return { status: false, message: 'Project not found', statusCode: StatusCodes.NOT_FOUND };
+
+      await this.documentAttachmentRepository.delete({ id: attachment_id, document_id }, false);
+
+      return { status: true, message: 'Document attachment deleted successfully' };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred deleting doc attachment ===> ${JSON.stringify({ project_id, document_id, attachment_id, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',
