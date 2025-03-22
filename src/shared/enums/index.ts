@@ -15,3 +15,31 @@ export enum CompanySubscriptionStatus {
   PENDING = 'PENDING',
   DEACTIVATED = 'DEACTIVATED',
 }
+export enum ProjectType {
+  BASIC = 'basic',
+  ELITE = 'elite',
+  PREMIMUM = 'premium',
+}
+
+export enum ProjectStatus {
+  NOT_STARTED = 'not_started',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+}
+
+export enum ProjectTaskStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  IN_PROGRESS = 'in_progress',
+  OVER_DUE = 'over_due',
+}
+
+export enum MetadataType {
+  DOCUMENT = 'document',
+  EVENT = 'event',
+  TASK = 'task',
+}
+
+export enum DocumentsDirectory {
+  DOCS = 'docs',
+}
