@@ -6,6 +6,7 @@ import { EventDto } from '@/shared/types/dto/event.dto';
 import { genericResponse } from '@/shared/utils/api-response';
 
 // @Todo event invites
+// @accept event, decline event, set reminder
 @injectable()
 export class EventController {
   constructor(private readonly eventService: EventService) {}
@@ -24,7 +25,17 @@ export class EventController {
 
   getEventDetails = async (req: Request, res: Response) => {
     const { event_id, project_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.eventService.getEventDetails(event_id, project_id);
+
+    return genericResponse({ res, data: others, statusCode });
   };
 
-  getAllEvents = async () => {};
+  getAllEvents = async (req: Request, res: Respons) => {
+    const { project_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.eventService.getAllEvents(project_id);
+
+    return genericResponse({ res, data: others, statusCode });
+  };
 }

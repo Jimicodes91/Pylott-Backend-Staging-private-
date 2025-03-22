@@ -1,6 +1,10 @@
+/* eslint-disable prefer-const */
 import dayjs from 'dayjs';
 import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
+
+dayjs.extend(advancedFormat);
 
 import { EventsRepository, MetadataRepository, ProjectRepository } from '@/repositories';
 
@@ -54,6 +58,54 @@ export class EventService {
       return { status: true, message: 'Event created successfully', statusCode: StatusCodes.CREATED };
     } catch (error: any) {
       console.log(`${this.traceId} Error occurred creating event ===> ${JSON.stringify({ payload, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  public async getEventDetails(event_id: string, project_id: string): Promise<ServiceType> {
+    try {
+      const record = await this.eventRepository.findOne({ project_id, id: event_id });
+
+      if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
+
+      record.start_time = dayjs(record.start_time).format('ha').toLowerCase();
+
+      record.end_time = dayjs(record.end_time).format('ha').toLowerCase();
+
+      record.date = dayjs(record.date).format('MMMM	DD');
+
+      return { status: true, message: 'Event details fetched successfully', data: record };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred fetching event details ===> ${JSON.stringify({ event_id, project_id, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  public async getAllEvents(project_id: string): Promise<ServiceType> {
+    try {
+      const records = await this.eventRepository.findMany({ project_id });
+
+      const mappedRecords = records.map((record) => {
+        let { start_time, end_time, date, ...others } = record;
+
+        start_time = dayjs(start_time).format('ha').toLowerCase();
+
+        end_time = dayjs(end_time).format('ha').toLowerCase();
+
+        date = dayjs(date).format('MMMM	DD');
+
+        return { ...others, start_time, end_time, date };
+      });
+
+      return { status: true, message: 'All events fetched successfully', data: mappedRecords };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred fetching events ===> ${JSON.stringify({ project_id, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',
