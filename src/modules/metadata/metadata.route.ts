@@ -10,15 +10,15 @@ import { UserRoles } from '@/shared/enums';
 const metadataController = container.resolve(MetadataController);
 
 export const metadataRoutes = (prefix: string, server: Server) => {
-  server.get(`${prefix}/:project_id/type/documents`, authGuard, metadataController.getDocumentTypes);
+  server.get(`${prefix}/projects/:project_id/type/documents`, authGuard, metadataController.getDocumentTypes);
 
-  server.get(`${prefix}/:project_id/type/tasks`, authGuard, metadataController.getTaskTypes);
+  server.get(`${prefix}/projects/:project_id/type/tasks`, authGuard, metadataController.getTaskTypes);
 
-  server.get(`${prefix}/:project_id/type/events`, authGuard, metadataController.getEventTypes);
+  server.get(`${prefix}/projects/:project_id/type/events`, authGuard, metadataController.getEventTypes);
 
-  server.post(`${prefix}/:project_id/type/documents`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createDocumentType);
+  server.post(`${prefix}/projects/:project_id/type/documents`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createDocumentType);
 
-  server.post(`${prefix}/:project_id/type/tasks`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createTaskType);
+  server.post(`${prefix}/:projects/project_id/type/tasks`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createTaskType);
 
-  server.post(`${prefix}/:project_id/type/events`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createEventType);
+  server.post(`${prefix}/projects/:project_id/type/events`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createEventType);
 };
