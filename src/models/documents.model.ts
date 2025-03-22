@@ -1,4 +1,6 @@
-import { ModelObject } from 'objection';
+import { Model, ModelObject } from 'objection';
+
+import { Attachments } from './document_attachments.model';
 
 import { MetadataType } from '@/shared/enums';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
@@ -9,11 +11,19 @@ export class Documents extends BaseModel {
 
   company_id: string;
   project_id: string;
+  document_type_id: string;
+  name: string;
   task_id?: string;
   type: MetadataType;
   description: string;
 
-  static relationMappings = (): ModelsRelationMapping => ({});
+  static relationMappings = (): ModelsRelationMapping => ({
+    attachments: {
+      modelClass: Attachments,
+      relation: Model.HasManyRelation,
+      join: { from: 'documents.id', to: 'attachments.document_id' },
+    },
+  });
 }
 
 export type DocumentsModelType = ModelObject<Documents>;

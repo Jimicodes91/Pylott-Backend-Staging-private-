@@ -31,7 +31,7 @@ export class EventController {
     return genericResponse({ res, data: others, statusCode });
   };
 
-  getAllEvents = async (req: Request, res: Respons) => {
+  getAllEvents = async (req: Request, res: Response) => {
     const { project_id } = req.params;
 
     const { statusCode = null, ...others } = await this.eventService.getAllEvents(project_id);
