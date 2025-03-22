@@ -43,3 +43,9 @@ export enum MetadataType {
 export enum DocumentsDirectory {
   DOCS = 'docs',
 }
+
+export enum EventStatus {
+  ACCEPTED = 'accepted',
+  DECLINED = 'declined',
+  TENTATIVE = 'tentative',
+}

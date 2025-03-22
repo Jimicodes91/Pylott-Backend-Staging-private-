@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
 import dayjs from 'dayjs';
 import { injectable } from 'tsyringe';
@@ -11,7 +12,9 @@ import { EventsRepository, MetadataRepository, ProjectRepository } from '@/repos
 import { EventDto } from '@/shared/types/dto/event.dto';
 import { MetadataType } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
-import { EventModelType } from '@/models';
+import { EventModelType, UserModelType } from '@/models';
+import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
+import { CreateCalenderEvent } from '@/shared/types/events.type';
 
 @injectable()
 export class EventService {
@@ -21,10 +24,13 @@ export class EventService {
     private readonly metadataRepository: MetadataRepository,
     private readonly eventRepository: EventsRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly googleCalender: GoogleAPIsCalender,
   ) {}
 
-  public async createEvent(company_id: string, project_id: string, payload: EventDto): Promise<ServiceType> {
+  public async createEvent(user: UserModelType, project_id: string, payload: EventDto): Promise<ServiceType> {
     try {
+      const company_id = user.company_id;
+
       const metadataQuery = {
         company_id,
         type: MetadataType.EVENT,
@@ -45,12 +51,28 @@ export class EventService {
 
       if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
 
+      payload.start_datetime = dayjs(payload.start_datetime).format();
+      payload.end_datetime = dayjs(payload.end_datetime).format();
+
+      const gcalData: CreateCalenderEvent = {
+        summary: payload.name,
+        description: payload.description,
+        location: payload.venue,
+        startDateTime: payload.start_datetime,
+        endDateTime: payload.end_datetime,
+      };
+
+      const gcalResponse = await this.googleCalender.createEvent(gcalData, { email: user.email, displayName: user.name }, payload.invites);
+
+      if (!gcalResponse) return { status: false, message: 'Could not sync event at the moment' };
+
       const insertData: Partial<EventModelType> = {
         ...payload,
-        start_time: dayjs(payload.start_time).format(),
-        end_time: dayjs(payload.end_time).format(),
-        date: dayjs(payload.date).format(),
+        start_datetime: payload.start_datetime,
+        end_datetime: payload.end_datetime,
         project_id,
+        provider_identifier: gcalResponse.id,
+        created_by: user.id,
       };
 
       await this.eventRepository.create(insertData);
@@ -78,26 +100,36 @@ export class EventService {
       const eventType = await this.metadataRepository.findOne(metadataQuery);
       if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
 
-      payload.name = payload.name.trim();
+      if (payload.name) payload.name = payload.name.trim();
       const eventNameTaken = await this.eventRepository.findOne({ name: payload.name, project_id });
       if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
 
-      if ((payload.start_time && !payload.end_time) || (payload.end_time && !payload.start_time)) {
-        return { status: false, message: 'Fields `start_time` and `end_time` are required when performing updates' };
+      if ((payload.start_datetime && !payload.end_datetime) || (payload.end_datetime && !payload.start_datetime)) {
+        return { status: false, message: 'Fields `start_datetime` and `end_datetime` are required when performing updates' };
       }
 
       const updateData: Partial<EventModelType> = {};
 
-      if (payload.start_time) updateData.start_time = dayjs(payload.start_time).format();
-      if (payload.end_time) updateData.end_time = dayjs(payload.end_time).format();
-      if (payload.date) updateData.date = dayjs(payload.date).format();
+      if (payload.start_datetime) updateData.start_datetime = dayjs(payload.start_datetime).format();
+      if (payload.end_datetime) updateData.end_datetime = dayjs(payload.end_datetime).format();
 
       if (payload.name) {
         const eventNameTaken = await this.eventRepository.findOne({ name: payload.name, project_id });
         if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
+        updateData.name = payload.name;
       }
 
-      await this.eventRepository.update({ id: event_id, project_id }, updateData);
+      const gcalData: Partial<CreateCalenderEvent> = {
+        summary: payload?.name,
+        description: payload?.description,
+        location: payload?.venue,
+        startDateTime: payload?.start_datetime,
+        endDateTime: payload?.end_datetime,
+      };
+
+      const gcalResponse = await this.googleCalender.updateEvent(record.provider_identifier, gcalData, payload?.invites ?? []);
+
+      if (gcalResponse) await this.eventRepository.update({ id: event_id, project_id }, updateData);
 
       return { status: true, message: 'Event updated successfully', statusCode: StatusCodes.OK };
     } catch (error: any) {
@@ -109,19 +141,59 @@ export class EventService {
     }
   }
 
-  public async getEventDetails(event_id: string, project_id: string): Promise<ServiceType> {
+  public async getEventDetails(user: UserModelType, event_id: string, project_id: string): Promise<ServiceType> {
     try {
       const record = await this.eventRepository.findOne({ project_id, id: event_id });
-
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
 
-      record.start_time = dayjs(record.start_time).format('ha').toLowerCase();
+      const formattedStartTime = dayjs(record.start_datetime).format('ha').toLowerCase();
+      const formattedEndTime = dayjs(record.end_datetime).format('ha').toLowerCase();
+      const formattedDate = dayjs(record.start_datetime).format('MMM DD, YYYY');
 
-      record.end_time = dayjs(record.end_time).format('ha').toLowerCase();
+      const gcalEvent = await this.googleCalender.getEvent(record.provider_identifier);
+      if (!gcalEvent) return { status: false, message: 'Could not retrieve event details', statusCode: 400 };
 
-      record.date = dayjs(record.date).format('MMMM	DD');
+      const attendees = gcalEvent.attendees || [];
 
-      return { status: true, message: 'Event details fetched successfully', data: record };
+      const currentUserAttendee = attendees.find((attendee) => attendee.email === user.email);
+      const userResponseStatus = currentUserAttendee ? currentUserAttendee.responseStatus : null;
+      const isCreator = record.created_by === user.id;
+
+      const formattedAttendees = attendees.map((attendee) => {
+        return {
+          email: attendee.email,
+          name: attendee?.displayName || attendee.email.split('@')[0],
+          response_status: attendee.responseStatus || 'No Action',
+          is_organizer: !!attendee.organizer,
+          status_display: attendee.responseStatus,
+        };
+      });
+
+      const { provider_identifier: _, ...eventData } = record;
+
+      const responseData = {
+        ...eventData,
+        date: formattedDate,
+        start_time: formattedStartTime,
+        end_time: formattedEndTime,
+        invites: formattedAttendees,
+        is_creator: isCreator,
+        is_attendee: !!currentUserAttendee,
+        user_response: userResponseStatus,
+        attendance_stats: {
+          total: attendees.length,
+          accepted: attendees.filter((a) => a.responseStatus === 'accepted').length,
+          declined: attendees.filter((a) => a.responseStatus === 'declined').length,
+          tentative: attendees.filter((a) => a.responseStatus === 'tentative').length,
+          no_response: attendees.filter((a) => !a.responseStatus || a.responseStatus === 'needsAction').length,
+        },
+      };
+
+      return {
+        status: true,
+        message: 'Event details fetched successfully',
+        data: responseData,
+      };
     } catch (error) {
       console.log(`${this.traceId} Error occurred fetching event details ===> ${JSON.stringify({ event_id, project_id, err_msg: error?.message })}`);
       return {
@@ -137,6 +209,10 @@ export class EventService {
 
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
 
+      const result = await this.googleCalender.deleteEvent(record.provider_identifier);
+
+      if (!result) return { status: false, message: 'Could not complete sync action, please try again later' };
+
       await this.eventRepository.delete({ id: event_id, project_id }, true);
 
       return { status: true, message: 'Event deleted successfully' };
@@ -149,23 +225,78 @@ export class EventService {
     }
   }
 
-  public async getAllEvents(project_id: string): Promise<ServiceType> {
+  public async getAllEvents(user: UserModelType, project_id: string): Promise<ServiceType> {
     try {
       const records = await this.eventRepository.findMany({ project_id });
 
-      const mappedRecords = records.map((record) => {
-        let { start_time, end_time, date, ...others } = record;
+      const mappedRecords = await Promise.all(
+        records.map(async (record) => {
+          const formattedStartDatetime = dayjs(record.start_datetime).format('MMM DD YY, ha').toLowerCase();
+          const formattedEndDatetime = dayjs(record.end_datetime).format('MMM DD YY, ha').toLowerCase();
+          const formattedDate = dayjs(record.start_datetime).format('MMM DD, YYYY');
 
-        start_time = dayjs(start_time).format('ha').toLowerCase();
+          const gcalEvent = await this.googleCalender.getEvent(record.provider_identifier);
 
-        end_time = dayjs(end_time).format('ha').toLowerCase();
+          if (!gcalEvent) {
+            return {
+              ...record,
+              start_datetime: formattedStartDatetime,
+              end_datetime: formattedEndDatetime,
+              date: formattedDate,
+              invites: [],
+              is_creator: record.created_by === user.id,
+              is_attendee: false,
+              user_response: null,
+              attendance_stats: { total: 0, accepted: 0, declined: 0, tentative: 0, no_response: 0 },
+            };
+          }
 
-        date = dayjs(date).format('MMMM	DD');
+          const attendees = gcalEvent.attendees || [];
 
-        return { ...others, start_time, end_time, date };
-      });
+          const currentUserAttendee = attendees.find((attendee) => attendee.email === user.email);
+          const userResponseStatus = currentUserAttendee ? currentUserAttendee.responseStatus : null;
 
-      return { status: true, message: 'All events fetched successfully', data: mappedRecords };
+          const isCreator = record.created_by === user.id;
+
+          const formattedAttendees = attendees.map((attendee) => {
+            return {
+              email: attendee.email,
+              name: attendee.displayName || attendee.email.split('@')[0],
+              response_status: attendee.responseStatus || 'needsAction',
+              is_organizer: !!attendee.organizer,
+              status_display: attendee.responseStatus,
+            };
+          });
+
+          const attendanceStats = {
+            total: attendees.length,
+            accepted: attendees.filter((a) => a.responseStatus === 'accepted').length,
+            declined: attendees.filter((a) => a.responseStatus === 'declined').length,
+            tentative: attendees.filter((a) => a.responseStatus === 'tentative').length,
+            no_response: attendees.filter((a) => !a.responseStatus || a.responseStatus === 'needsAction').length,
+          };
+
+          const { provider_identifier: _, ...eventData } = record;
+
+          return {
+            ...eventData,
+            date: formattedDate,
+            start_datetime: formattedStartDatetime,
+            end_datetime: formattedEndDatetime,
+            invites: formattedAttendees,
+            is_creator: isCreator,
+            is_attendee: !!currentUserAttendee,
+            user_response: userResponseStatus,
+            attendance_stats: attendanceStats,
+          };
+        }),
+      );
+
+      return {
+        status: true,
+        message: 'All events fetched successfully',
+        data: mappedRecords,
+      };
     } catch (error) {
       console.log(`${this.traceId} Error occurred fetching events ===> ${JSON.stringify({ project_id, err_msg: error?.message })}`);
       return {
