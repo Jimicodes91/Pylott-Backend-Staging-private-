@@ -20,7 +20,7 @@ export class Documents extends BaseModel {
   static relationMappings = (): ModelsRelationMapping => ({
     attachments: {
       modelClass: Attachments,
-      relation: Model.HasManyRelation,
+      relation: Model.BelongsToOneRelation,
       join: { from: 'documents.id', to: 'attachments.document_id' },
     },
   });

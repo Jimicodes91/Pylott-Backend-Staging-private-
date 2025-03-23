@@ -43,6 +43,7 @@ export enum MetadataType {
 
 export enum DocumentsDirectory {
   DOCS = 'docs',
+  TASKS = 'tasks',
 }
 
 export enum EventStatus {

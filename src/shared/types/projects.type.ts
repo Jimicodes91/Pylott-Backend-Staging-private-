@@ -25,3 +25,13 @@ export type AddProjectMember = {
   user_id: string;
   is_visible_to_client?: boolean;
 };
+
+export type CreateTask = {
+  name: string;
+  description: string;
+  status?: string;
+  start_date: string;
+  end_date: string;
+  assignee_id: string;
+  attachments?: [string];
+};

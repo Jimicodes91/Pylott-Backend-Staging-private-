@@ -14,8 +14,6 @@ import { UserModelType } from '@/models';
 import { CreateProjectType } from '@/shared/types/projects.type';
 import { ProjectStatus } from '@/shared/enums';
 
-// @todo - Project members
-// @todo - pagination
 // @todo - Project routes, validation, migration and testing
 
 @injectable()

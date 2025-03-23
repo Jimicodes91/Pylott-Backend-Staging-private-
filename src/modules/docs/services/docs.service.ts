@@ -57,7 +57,7 @@ export class DocsService {
         name: others.file_name,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
-        const fileName = `${project_id}/${docFileName}`;
+        const fileName = `${project_id}/${docFileName}`.toLowerCase();
         const { status, data } = await this.cloudinary.upload(DocumentsDirectory.DOCS, attachment, fileName);
 
         if (!status) return { status: false, message: 'Could not upload document. Please try again later', statusCode: 400 };

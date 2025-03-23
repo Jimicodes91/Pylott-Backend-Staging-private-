@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { injectable } from 'tsyringe';
 
 import { UserModelType } from '@/models';
-import { AddProjectMember, CreateMilestoneStagesType, CreateMilestoneType, CreateProjectType } from '@/shared/types/projects.type';
+import { AddProjectMember, CreateMilestoneStagesType, CreateMilestoneType, CreateProjectType, CreateTask } from '@/shared/types/projects.type';
 import { genericResponse } from '@/shared/utils/api-response';
 import { ActivityLogsService } from './services/activity_log.service';
 import { MilestoneService } from './services/milestone.service';
@@ -206,8 +206,59 @@ export class ProjectController {
     return genericResponse({ res, data: others, statusCode });
   };
 
-  // Task endpoints
-  // (Implementation for other controller methods would go here)
+  createTask = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id } = req.params;
+    const payload = req.body as CreateTask;
+
+    const { statusCode = null, ...others } = await this.taskService.createTask(user, project_id, payload);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  updateTask = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { task_id, project_id } = req.params;
+    const payload = req.body as Partial<CreateTask>;
+
+    const { statusCode = null, ...others } = await this.taskService.updateTask(user, task_id, project_id, payload);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getTaskById = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const { company_id } = req.user as UserModelType;
+    const { project_id, task_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskService.getTaskById(company_id, project_id, task_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getAllTasks = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const { company_id } = req.user as UserModelType;
+    const { project_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskService.getAllTask(company_id, project_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  deleteTask = async (req: Request, res: Response): Promise<void> => {
+    const { project_id, task_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskService.deleteTask(project_id, task_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  deleteTaskAttachment = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { task_id, attachment_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskService.deleteTaskAttachment(user, task_id, attachment_id);
+    genericResponse({ res, data: others, statusCode });
+  };
 
   // Notes endpoints
   // (Implementation for other controller methods would go here)
