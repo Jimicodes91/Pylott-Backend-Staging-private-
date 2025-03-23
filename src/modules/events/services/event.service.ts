@@ -101,7 +101,7 @@ export class EventService {
       if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
 
       if (payload.name) payload.name = payload.name.trim();
-      const eventNameTaken = await this.eventRepository.findOne({ name: payload.name, project_id });
+      const eventNameTaken = await this.eventRepository.findOneWhereNameEquals(payload.name, project_id, event_id);
       if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
 
       if ((payload.start_datetime && !payload.end_datetime) || (payload.end_datetime && !payload.start_datetime)) {

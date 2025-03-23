@@ -8,4 +8,8 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
   constructor() {
     super(ProjectType);
   }
+
+  async findOneWhereNameEquals(name: string, company_id: string, id: string) {
+    return await this.model.query().where({ name, company_id }).where('id', '<>', id).first();
+  }
 }
