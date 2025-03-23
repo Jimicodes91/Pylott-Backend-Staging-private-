@@ -12,10 +12,6 @@ const documentController = container.resolve(DocsController);
 const eventsController = container.resolve(EventController);
 export const projectRoutes = (prefix: string, server: Server) => {
   /**
-   * Projects
-   */
-
-  /**
    * Events
    */
 

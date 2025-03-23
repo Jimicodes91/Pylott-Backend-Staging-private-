@@ -8,4 +8,8 @@ export class ProjectMembersRepository extends BaseRepository<ProjectMemebersMode
   constructor() {
     super(ProjectMembers);
   }
+
+  async getProjectMembers(project_id: string, company_id: string) {
+    return await this.model.query().where({ project_id, company_id }).withGraphFetched('user').orderBy('created_at');
+  }
 }

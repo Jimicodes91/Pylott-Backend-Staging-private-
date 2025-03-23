@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { injectable } from 'tsyringe';
 
 import { UserModelType } from '@/models';
-import { CreateMilestoneType, CreateProjectType, CreateMilestoneStagesType } from '@/shared/types/projects.type';
+import { AddProjectMember, CreateMilestoneStagesType, CreateMilestoneType, CreateProjectType } from '@/shared/types/projects.type';
 import { genericResponse } from '@/shared/utils/api-response';
 import { ActivityLogsService } from './services/activity_log.service';
 import { MilestoneService } from './services/milestone.service';
@@ -11,6 +11,7 @@ import { PhasesService } from './services/phases.service';
 import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
 import { TypeService } from './services/type.service';
+import { MemberService } from './services/members.service';
 
 @injectable()
 export class ProjectController {
@@ -22,6 +23,7 @@ export class ProjectController {
     private readonly milestoneService: MilestoneService,
     private readonly phaseService: PhasesService,
     private readonly typeService: TypeService,
+    private readonly memberService: MemberService,
   ) {}
 
   getAllProjectTypes = async (req: Request, res: Response) => {
@@ -56,6 +58,7 @@ export class ProjectController {
     return genericResponse({ res, data: others, statusCode });
   };
 
+  // Milestone endpoints
   getAllMilestones = async (req: Request, res: Response) => {
     // @ts-ignore
     const company_id = (req.user as UserModelType)?.company_id;
@@ -131,13 +134,82 @@ export class ProjectController {
     return genericResponse({ res, data: others, statusCode });
   };
 
+  getAllProjects = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const company_id = (req.user as UserModelType)?.company_id;
+    const { status, client_id, consultant_id, project_type_id } = req.query;
+
+    const filters = {
+      status: status as string,
+      client_id: client_id as string,
+      consultant_id: consultant_id as string,
+      project_type_id: project_type_id as string,
+    };
+
+    const { statusCode = null, ...others } = await this.projectService.getAllProjects(company_id, filters);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  getProject = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const company_id = (req.user as UserModelType)?.company_id;
+    const { project_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.projectService.getProject(company_id, project_id);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  createProject = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const payload = req.body as CreateProjectType;
+
+    const { statusCode = null, ...others } = await this.projectService.createProject(user, payload);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  updateProject = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id } = req.params;
+    const payload = req.body as Partial<CreateProjectType>;
+
+    const { statusCode = null, ...others } = await this.projectService.updateProject(user, project_id, payload);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  getProjectMembers = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const company_id = (req.user as UserModelType)?.company_id;
+    const { project_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.memberService.getProjectMembers(company_id, project_id);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  addProjectMember = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id } = req.params;
+    const payload = req.body as AddProjectMember;
+
+    const { statusCode = null, ...others } = await this.memberService.addProjectMember(user, project_id, payload);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  removeProjectMember = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id, member_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.memberService.removeProjectMember(user, project_id, member_id);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
   // Task endpoints
   // (Implementation for other controller methods would go here)
 
   // Notes endpoints
-  // (Implementation for other controller methods would go here)
-
-  // Project endpoints
   // (Implementation for other controller methods would go here)
 
   // ActivityLogs endpoints
