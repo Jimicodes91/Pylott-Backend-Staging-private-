@@ -6,7 +6,7 @@ import BaseModel from './base.model';
 export class Milestones extends BaseModel {
   static tableName = 'milestones';
 
-  product_type_id: string;
+  project_type_id: string;
   name: string;
   is_system: boolean;
   company_id: string;

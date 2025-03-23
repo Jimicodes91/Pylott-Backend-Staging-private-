@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { injectable } from 'tsyringe';
 
+import { UserModelType } from '@/models';
+import { CreateMilestoneType, CreateProjectType } from '@/shared/types/projects.type';
+import { genericResponse } from '@/shared/utils/api-response';
 import { ActivityLogsService } from './services/activity_log.service';
 import { MilestoneService } from './services/milestone.service';
 import { NotesService } from './services/notes.service';
@@ -8,9 +11,6 @@ import { PhasesService } from './services/phases.service';
 import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
 import { TypeService } from './services/type.service';
-import { genericResponse } from '@/shared/utils/api-response';
-import { UserModelType } from '@/models';
-import { CreateProjectType } from '@/shared/types/projects.type';
 
 @injectable()
 export class ProjectController {
@@ -24,6 +24,7 @@ export class ProjectController {
     private readonly typeService: TypeService,
   ) {}
 
+  // Project Type endpoints
   getAllProjectTypes = async (req: Request, res: Response) => {
     // @ts-ignore
     const company_id = (req.user as UserModelType)?.company_id;
@@ -56,6 +57,39 @@ export class ProjectController {
     return genericResponse({ res, data: others, statusCode });
   };
 
+  getAllMilestones = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const company_id = (req.user as UserModelType)?.company_id;
+    const { project_type_id } = req.params;
+    const { statusCode = null, ...others } = await this.milestoneService.getAllMilestones(company_id, project_type_id as string);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  getMilestoneDetails = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const company_id = (req.user as UserModelType)?.company_id;
+    const { milestone_id, project_type_id } = req.params;
+    const { statusCode = null, ...others } = await this.milestoneService.getMilestoneDetails(company_id, milestone_id, project_type_id);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  createMilestone = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const company_id = (req.user as UserModelType)?.company_id;
+    const payload = req.body as CreateMilestoneType;
+    const { statusCode = null, ...others } = await this.milestoneService.createMilestone(company_id, payload);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  updateMilestone = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const company_id = (req.user as UserModelType)?.company_id;
+    const { milestone_id } = req.params;
+    const updateData = req.body as Partial<CreateMilestoneType>;
+    const { statusCode = null, ...others } = await this.milestoneService.updateMilestone(company_id, milestone_id, updateData);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
   // Task endpoints
   // (Implementation for other controller methods would go here)
 
@@ -66,9 +100,6 @@ export class ProjectController {
   // (Implementation for other controller methods would go here)
 
   // ActivityLogs endpoints
-  // (Implementation for other controller methods would go here)
-
-  // Milestone endpoints
   // (Implementation for other controller methods would go here)
 
   // Phase endpoints
