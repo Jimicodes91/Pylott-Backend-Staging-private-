@@ -305,4 +305,69 @@ export class EventService {
       };
     }
   }
+
+  /**
+   * Updates the user's response to an event invitation
+   * @param user Current user
+   * @param event_id Event ID
+   * @param project_id Project ID
+   * @param response Response status ('accepted', 'declined', 'tentative')
+   */
+  public async respondToEventInvite(user: UserModelType, event_id: string, project_id: string, response: 'accepted' | 'declined' | 'tentative'): Promise<ServiceType> {
+    try {
+      const record = await this.eventRepository.findOne({ project_id, id: event_id });
+      if (!record)
+        return {
+          status: false,
+          message: 'Event not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+
+      const gcalEvent = await this.googleCalender.getEvent(record.provider_identifier);
+      if (!gcalEvent)
+        return {
+          status: false,
+          message: 'Could not sync event details, please try again later',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+
+      const attendees = gcalEvent.attendees || [];
+      const userIndex = attendees.findIndex((attendee) => attendee.email === user.email);
+
+      if (userIndex === -1)
+        return {
+          status: false,
+          message: 'You are not invited to this event',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+
+      const result = await this.googleCalender.respondToEvent(record.provider_identifier, user.email, response);
+
+      if (!result)
+        return {
+          status: false,
+          message: 'Could not update invitation response',
+        };
+
+      return {
+        status: true,
+        message: `Successfully ${response} the invitation`,
+      };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error responding to event invite ===> ${JSON.stringify({
+          event_id,
+          project_id,
+          response,
+          user_email: user.email,
+          err_msg: error?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
 }

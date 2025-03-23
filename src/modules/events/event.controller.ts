@@ -5,9 +5,8 @@ import { EventService } from './services/event.service';
 import { EventDto } from '@/shared/types/dto/event.dto';
 import { genericResponse } from '@/shared/utils/api-response';
 import { UserModelType } from '@/models';
+import { EventStatus } from '@/shared/enums';
 
-// @Todo event invites
-// @accept event, decline event, set reminder
 @injectable()
 export class EventController {
   constructor(private readonly eventService: EventService) {}
@@ -49,6 +48,24 @@ export class EventController {
     const { project_id } = req.params;
     // @ts-ignore
     const { statusCode = null, ...others } = await this.eventService.getAllEvents(req.user as UserModelType, project_id);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  acceptEventInvite = async (req: Request, res: Response) => {
+    const { project_id, event_id } = req.params;
+    // @ts-ignore
+    const user = req.user as UserModelType;
+
+    const { statusCode = null, ...others } = await this.eventService.respondToEventInvite(user, event_id, project_id, EventStatus.ACCEPTED);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  declineEventInvite = async (req: Request, res: Response) => {
+    const { project_id, event_id } = req.params;
+    // @ts-ignore
+    const user = req.user as UserModelType;
+
+    const { statusCode = null, ...others } = await this.eventService.respondToEventInvite(user, event_id, project_id, EventStatus.DECLINED);
     return genericResponse({ res, data: others, statusCode });
   };
 }

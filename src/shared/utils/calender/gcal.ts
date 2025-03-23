@@ -229,6 +229,41 @@ export class GoogleAPIsCalender {
     }
   }
 
+  /**
+   * Updates a user's response to a calendar event
+   * @param eventId Google Calendar Event ID
+   * @param userEmail Email of the user responding to the event
+   * @param responseStatus Response status ('accepted', 'declined', 'tentative')
+   * @returns Boolean indicating success or failure
+   */
+  public async respondToEvent(eventId: string, userEmail: string, responseStatus: 'accepted' | 'declined' | 'tentative'): Promise<boolean> {
+    try {
+      const event = await this.getEvent(eventId);
+
+      if (!event) return false;
+
+      const attendees = event.attendees || [];
+      const attendeeIndex = attendees.findIndex((attendee) => attendee.email === userEmail);
+
+      if (attendeeIndex === -1) return false;
+
+      attendees[attendeeIndex].responseStatus = responseStatus;
+
+      const response = await this.calendar.events.patch({
+        calendarId: 'primary',
+        eventId,
+        requestBody: {
+          attendees,
+        },
+      });
+
+      return response.status === 200;
+    } catch (error) {
+      console.error(`${this.traceId} Error responding to event for user with email ${userEmail}: ===>`, error.message);
+      return false;
+    }
+  }
+
   private googleClient() {
     try {
       return new google.auth.GoogleAuth({

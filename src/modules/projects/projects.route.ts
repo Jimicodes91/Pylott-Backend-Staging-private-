@@ -24,6 +24,9 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.patch(`${prefix}/:product_id/events/:event_id`, authGuard, schemaValidator(updateEventValidationRules), eventsController.updateEvent);
   server.get(`${prefix}/:product_id/events/:event_id`, authGuard, eventsController.getEventDetails);
   server.delete(`${prefix}/:product_id/events/:event_id`, authGuard, eventsController.deleteEvent);
+  // New event invitation response endpoints
+  server.post(`${prefix}/:product_id/events/:event_id/accept`, authGuard, eventsController.acceptEventInvite);
+  server.post(`${prefix}/:product_id/events/:event_id/decline`, authGuard, eventsController.declineEventInvite);
 
   /**
    * Documents
