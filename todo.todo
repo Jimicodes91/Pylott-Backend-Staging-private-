@@ -1,10 +1,12 @@
 - Convert all console.log to logger (pino)
+Questions
 - Phase stat (40%) - How is this determined
 - Phase date left till completion - not stated when creating a phase
 - Document request ?
-- Project members (internal and ?)
+- Project members (internal and client) ?
 - Projects routes and validation
+
 - Comments
-- Notification module
 - Notes
-- Activity Logs
+
+- Notification module

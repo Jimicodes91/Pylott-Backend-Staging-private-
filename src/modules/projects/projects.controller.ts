@@ -4,7 +4,6 @@ import { injectable } from 'tsyringe';
 import { UserModelType } from '@/models';
 import { AddProjectMember, CreateMilestoneStagesType, CreateMilestoneType, CreateProjectType, CreateTask } from '@/shared/types/projects.type';
 import { genericResponse } from '@/shared/utils/api-response';
-import { ActivityLogsService } from './services/activity_log.service';
 import { MilestoneService } from './services/milestone.service';
 import { NotesService } from './services/notes.service';
 import { PhasesService } from './services/phases.service';
@@ -12,6 +11,7 @@ import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
 import { TypeService } from './services/type.service';
 import { MemberService } from './services/members.service';
+import { AuditTrailService } from '@/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class ProjectController {
@@ -19,7 +19,7 @@ export class ProjectController {
     private readonly taskService: TaskService,
     private readonly noteService: NotesService,
     private readonly projectService: ProjectService,
-    private readonly activityLogService: ActivityLogsService,
+    private readonly auditTrailService: AuditTrailService,
     private readonly milestoneService: MilestoneService,
     private readonly phaseService: PhasesService,
     private readonly typeService: TypeService,

@@ -7,6 +7,7 @@ import { RoutePrefix } from '../enums';
 import { companyRoutes } from '@/modules/company/company.route';
 import { userRoutes } from '@/modules/user/user.route';
 import { sysAdminRoutes } from '@/modules/admin/admin.route';
+import { auditTrailRoutes } from '@/audit_trail/audit_trail.route';
 
 export default (server: Server) => {
   server.get('/', (_: Request, response: Response) => successResponse(response, 'Welcome to Pylott 🚀'));
@@ -15,4 +16,5 @@ export default (server: Server) => {
   userRoutes(`${RoutePrefix.V1}/user`, server);
   companyRoutes(`${RoutePrefix.V1}/company`, server);
   sysAdminRoutes(`${RoutePrefix.V1}/admin`, server);
+  auditTrailRoutes(`${RoutePrefix.V1}/audit-trails`, server);
 };

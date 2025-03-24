@@ -7,10 +7,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository, ProjectRepository, ProjectTaskRepository, UserRepository } from '@/repositories';
 
 import { AttachmentsModelType, DocumentsModelType, ProjectTaskModelType, UserModelType } from '@/models';
-import { DocumentsDirectory, MetadataType, ProjectTaskStatus } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType, ProjectTaskStatus } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateTask } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
+import { AuditTrailService } from '@/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class TaskService {
@@ -24,6 +25,7 @@ export class TaskService {
     private readonly documentRepository: DocumentsRepository,
     private readonly projectTaskRepository: ProjectTaskRepository,
     private readonly attachmentRepository: DocumentAttachmentsRepository,
+    private readonly auditTrailService: AuditTrailService,
   ) {}
 
   async createTask(user: UserModelType, project_id: string, payload: CreateTask): Promise<ServiceType> {
@@ -60,11 +62,11 @@ export class TaskService {
         };
       }
 
-      await Objection.Model.transaction(async (trx) => {
-        const document_id = uuidv4();
-        const task_id = uuidv4();
-        const task_type_id = uuidv4();
+      const task_id = uuidv4();
+      const document_id = uuidv4();
+      const task_type_id = uuidv4();
 
+      await Objection.Model.transaction(async (trx) => {
         const metadataQuery = {
           company_id,
           type: MetadataType.TASK,
@@ -112,6 +114,14 @@ export class TaskService {
             }
           });
         }
+      });
+
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.TASK_ADDED, {
+        user_id: user.id,
+        company_id,
+        description: 'Task added',
+        entity_description: user.name.replace(/^./, (c) => c.toUpperCase()),
+        entity_id: task_id,
       });
 
       return {

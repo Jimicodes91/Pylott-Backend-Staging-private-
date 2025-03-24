@@ -51,3 +51,9 @@ export enum EventStatus {
   DECLINED = 'declined',
   TENTATIVE = 'tentative',
 }
+
+export enum AUDIT_TRAIL_ACTION {
+  TASK_ADDED = 'TASK_ADDED',
+  NOTE_PINNED = 'NOTE_PINNED',
+  NOTE_CREATED = 'NOTE_CREATED',
+}

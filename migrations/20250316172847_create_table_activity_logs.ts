@@ -7,8 +7,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string('id').unique().notNullable();
     table.string('company_id').notNullable().index();
     table.string('user_id').notNullable().index();
-    table.string('entity_id').notNullable().index();
-    table.string('entity').notNullable().index();
+    table.string('name');
+    table.string('entity');
     table.string('description');
     table.timestamps(true, true);
     table.timestamp('deleted_at').nullable();

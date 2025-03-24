@@ -15,3 +15,4 @@ export * from './project_notes.repository';
 export * from './project_task.repository';
 export * from './comments.repository';
 export * from './project.repository';
+export * from './activity_log.repository';

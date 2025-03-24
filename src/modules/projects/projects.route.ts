@@ -39,11 +39,6 @@ export const projectRoutes = (prefix: string, server: Server) => {
     schemaValidator(updateDocumentAttachmentValidationRules),
     documentController.updateDocumentAttachment,
   );
-
-  /**
-   * Activity Logs
-   */
-
   /**
    * Tasks
    */

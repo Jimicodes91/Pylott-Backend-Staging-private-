@@ -5,7 +5,6 @@ import { DocsService } from './services/docs.service';
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { genericResponse } from '@/shared/utils/api-response';
 
-// @todo - Document request
 @injectable()
 export class DocsController {
   constructor(private readonly docService: DocsService) {}

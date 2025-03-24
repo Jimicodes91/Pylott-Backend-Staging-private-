@@ -35,3 +35,18 @@ export type CreateTask = {
   assignee_id: string;
   attachments?: [string];
 };
+
+export type AuditTrailPayload = {
+  user_id: string;
+  company_id: string;
+  description: string;
+  associated_entity_table?: string;
+  entity_description: string;
+  entity_id: string;
+};
+
+export type AuditTrailFilter = {
+  start_date?: string;
+  end_date?: string;
+  action?: string;
+};
