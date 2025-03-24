@@ -141,4 +141,8 @@ export class SysAdminService {
   public async deactivateSysAdmin(userId: string) {
     return this.userRepository.deactivateSysAdmin(userId);
   }
+
+  public async getAllAdmins() {
+    return this.userRepository.getAllAdmins();
+  }
 }

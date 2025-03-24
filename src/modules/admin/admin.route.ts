@@ -14,6 +14,7 @@ export const sysAdminRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/active`, authenticateUser, authorizeRole([UserRoles.SUPER_ADMIN]), sysAdminController.getActiveUsers);
 
   server.get(`${prefix}/companies/:id`, authenticateUser, authorizeRole([UserRoles.SUPER_ADMIN]), sysAdminController.getCompanyDetails);
+  server.get(`${prefix}/all-admin`, authenticateUser, authorizeRole([UserRoles.SUPER_ADMIN]), sysAdminController.getAllAdmins);
 
   server.patch(`${prefix}/companies/:id/status`, authenticateUser, authorizeRole([UserRoles.SUPER_ADMIN]), sysAdminController.updateCompanyStatus);
   server.post(`${prefix}/companies/:id/subscribe`, authenticateUser, authorizeRole([UserRoles.SUPER_ADMIN]), sysAdminController.subscribeCompany);
