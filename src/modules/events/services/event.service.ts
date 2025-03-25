@@ -73,6 +73,8 @@ export class EventService {
         project_id,
         provider_identifier: gcalResponse.id,
         created_by: user.id,
+        company_id: user.company_id,
+        is_visible_to_client: payload.is_visible_to_client,
       };
 
       await this.eventRepository.create(insertData);
@@ -112,6 +114,7 @@ export class EventService {
 
       if (payload.start_datetime) updateData.start_datetime = dayjs(payload.start_datetime).format();
       if (payload.end_datetime) updateData.end_datetime = dayjs(payload.end_datetime).format();
+      if (payload.is_visible_to_client !== null || payload.is_visible_to_client !== undefined) updateData.is_visible_to_client = payload.is_visible_to_client;
 
       if (payload.name) {
         const eventNameTaken = await this.eventRepository.findOne({ name: payload.name, project_id });
@@ -225,9 +228,15 @@ export class EventService {
     }
   }
 
-  public async getAllEvents(user: UserModelType, project_id: string): Promise<ServiceType> {
+  public async getAllEvents(user: UserModelType, project_id?: string): Promise<ServiceType> {
     try {
-      const records = await this.eventRepository.findMany({ project_id });
+      const { company_id } = user;
+
+      const queryData: Partial<EventModelType> = { company_id };
+
+      if (project_id) queryData.project_id = project_id;
+
+      const records = await this.eventRepository.findMany(queryData);
 
       const mappedRecords = await Promise.all(
         records.map(async (record) => {

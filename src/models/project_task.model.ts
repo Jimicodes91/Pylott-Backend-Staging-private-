@@ -17,6 +17,7 @@ export class ProjectTask extends BaseModel {
   assignee_id: string;
   start_date: string;
   end_date: string;
+  is_visible_to_client: boolean;
 
   static relationMappings = (): ModelsRelationMapping => ({
     document: {

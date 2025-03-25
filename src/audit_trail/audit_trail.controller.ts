@@ -11,7 +11,7 @@ export class AuditTrailController {
   constructor(private readonly auditTrailService: AuditTrailService) {}
 
   getAuditTrail = async (req: Request, res: Response): Promise<void> => {
-    const { project_id } = req.params;
+    const { project_id } = req.query;
     // @ts-ignore
     const { company_id } = req.user as UserModelType;
     const filters = req.query as unknown as AuditTrailFilter;
@@ -21,7 +21,7 @@ export class AuditTrailController {
       limit: parseInt(req.query.limit as string) || 10,
     };
 
-    const { statusCode = null, ...others } = await this.auditTrailService.getAuditTrail(company_id, project_id, filters, pagination);
+    const { statusCode = null, ...others } = await this.auditTrailService.getAuditTrail(company_id, project_id as string, filters, pagination);
 
     return genericResponse({ res, data: others, statusCode });
   };

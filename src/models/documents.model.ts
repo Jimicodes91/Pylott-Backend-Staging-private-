@@ -16,6 +16,7 @@ export class Documents extends BaseModel {
   task_id?: string;
   type: MetadataType;
   description: string;
+  is_visible_to_client: boolean;
 
   static relationMappings = (): ModelsRelationMapping => ({
     attachments: {

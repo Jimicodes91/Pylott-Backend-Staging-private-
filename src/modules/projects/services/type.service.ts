@@ -1,14 +1,20 @@
+import dayjs from 'dayjs';
 import { injectable } from 'tsyringe';
 
-import { ProjectTypeRepository } from '@/repositories';
+import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
+
 import { ServiceType } from '@/shared/types/general.type';
-import { CreateProjectType } from '@/shared/types/projects.type';
+import { CreateProjectType, PhaseProgress } from '@/shared/types/projects.type';
+import { MilestonesModelType } from '@/models';
 
 @injectable()
 export class TypeService {
   private traceId = '[TYPE SERVICE]';
 
-  constructor(private readonly projectTypeRepository: ProjectTypeRepository) {}
+  constructor(
+    private readonly projectTypeRepository: ProjectTypeRepository,
+    private readonly milestoneRepository: MilestonesRepository,
+  ) {}
 
   async getAllProjectTypes(company_id: string): Promise<ServiceType> {
     try {
@@ -34,10 +40,17 @@ export class TypeService {
 
       if (!projectType) return { status: false, message: 'Project type not found' };
 
+      const milestones = await this.milestoneRepository.getAllMilestones(company_id, project_type_id);
+
+      const progress = this.calculatePhaseProgress(milestones);
+
       return {
         status: true,
         message: 'Project type details fetched successfully',
-        data: projectType,
+        data: {
+          ...projectType,
+          progress_metrics: progress,
+        },
       };
     } catch (error) {
       console.log(`${this.traceId} Error occurred fetching project type details ===> ${JSON.stringify({ company_id, project_type_id, err_msg: error?.message })}`);
@@ -118,5 +131,33 @@ export class TypeService {
         data: null,
       };
     }
+  }
+
+  private calculatePhaseProgress(milestones: MilestonesModelType[]): PhaseProgress {
+    const now = dayjs();
+    let totalDays = 0;
+    let completedDays = 0;
+    let completedCount = 0;
+
+    milestones.forEach((milestone) => {
+      const start = dayjs(milestone.start_date);
+      const end = dayjs(milestone.end_date);
+      const duration = end.diff(start, 'day') + 1;
+
+      totalDays += duration;
+
+      if (milestone.completed_at) {
+        completedDays += duration;
+        completedCount++;
+      } else if (now.isAfter(end)) {
+        // If milestone is overdue but not marked complete
+        completedDays += duration;
+      }
+    });
+
+    return {
+      days_to_completion: totalDays - completedDays,
+      percentage_complete: milestones.length > 0 ? Math.round((completedCount / milestones.length) * 100) : 0,
+    };
   }
 }

@@ -8,6 +8,7 @@ export class Event extends BaseModel {
   static tableName = 'events';
 
   project_id: string;
+  company_id: string;
   event_type_id: string;
   created_by: string;
   name: string;
@@ -16,6 +17,7 @@ export class Event extends BaseModel {
   description: string;
   venue: string;
   provider_identifier: string;
+  is_visible_to_client: boolean;
 
   static relationMappings = (): ModelsRelationMapping => ({});
 }

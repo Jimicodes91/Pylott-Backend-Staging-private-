@@ -8,4 +8,5 @@ export type UploadDocumentType = {
   description: string;
   file_name: string;
   attachment: string;
+  is_visible_to_client: boolean;
 };

@@ -1,11 +1,13 @@
-import { StatusCodes } from 'http-status-codes';
+import dayjs from 'dayjs';
 import { injectable } from 'tsyringe';
+import { StatusCodes } from 'http-status-codes';
 
 import { MilestonesRepository } from '@/repositories';
 
-import { MilestonesModelType } from '@/models';
 import { ServiceType } from '@/shared/types/general.type';
-import { CreateMilestoneType } from '@/shared/types/projects.type';
+import { CreateMilestoneType, UpdateMilestoneType } from '@/shared/types/projects.type';
+import { MilestonesModelType } from '@/models';
+import { ProjectStatus } from '@/shared/enums';
 
 @injectable()
 export class MilestoneService {
@@ -15,14 +17,20 @@ export class MilestoneService {
 
   async getAllMilestones(company_id: string, project_type_id: string): Promise<ServiceType> {
     try {
-      const query: Partial<MilestonesModelType> = { company_id, project_type_id };
+      const milestones = await this.milestonesRepository.getAllMilestones(company_id, project_type_id);
 
-      const milestones = await this.milestonesRepository.findMany(query);
+      const milestonesWithDuration = milestones.map((milestone) => ({
+        ...milestone,
+        duration: this.calculateDuration(milestone.start_date, milestone.end_date),
+        completed_at: milestone?.completed_at ? dayjs(milestone.completed_at, 'DD MMM YYYY') : null,
+        start_date: dayjs(milestone.start_date, 'DD MMM YYYY'),
+        status: milestone?.completed_at ? ProjectStatus.COMPLETED : ProjectStatus.IN_PROGRESS,
+      }));
 
       return {
         status: true,
         message: 'Milestones fetched successfully',
-        data: milestones,
+        data: milestonesWithDuration,
       };
     } catch (error) {
       console.log(
@@ -43,11 +51,7 @@ export class MilestoneService {
 
   async getMilestoneDetails(company_id: string, milestone_id: string, project_type_id: string): Promise<ServiceType> {
     try {
-      const milestone = await this.milestonesRepository.findOne({
-        company_id,
-        id: milestone_id,
-        project_type_id,
-      });
+      const milestone = await this.milestonesRepository.getMilestone(company_id, milestone_id, project_type_id);
 
       if (!milestone) {
         return {
@@ -57,10 +61,18 @@ export class MilestoneService {
         };
       }
 
+      const milestoneWithDuration = {
+        ...milestone,
+        duration: this.calculateDuration(milestone.start_date, milestone.end_date),
+        completed_at: milestone?.completed_at ? dayjs(milestone.completed_at).format('DD MMM YYYY') : null,
+        start_date: dayjs(milestone.start_date, 'DD MMM YYYY'),
+        status: milestone?.completed_at ? ProjectStatus.COMPLETED : ProjectStatus.IN_PROGRESS,
+      };
+
       return {
         status: true,
         message: 'Milestone details fetched successfully',
-        data: milestone,
+        data: milestoneWithDuration,
       };
     } catch (error) {
       console.log(
@@ -100,6 +112,8 @@ export class MilestoneService {
         ...payload,
         company_id,
         is_system,
+        start_date: dayjs(payload.start_date).format(),
+        end_date: dayjs(payload.end_date).format(),
       });
 
       return {
@@ -124,7 +138,7 @@ export class MilestoneService {
     }
   }
 
-  async updateMilestone(company_id: string, milestone_id: string, updateData: Partial<CreateMilestoneType>): Promise<ServiceType> {
+  async updateMilestone(company_id: string, milestone_id: string, payload: UpdateMilestoneType): Promise<ServiceType> {
     try {
       const existingMilestone = await this.milestonesRepository.findOne({
         company_id,
@@ -147,8 +161,15 @@ export class MilestoneService {
         };
       }
 
-      if (updateData.name) {
-        const nameExists = await this.milestonesRepository.findMilestoneWhereNotName(company_id, existingMilestone.project_type_id, updateData.name, milestone_id);
+      const updateData: Partial<MilestonesModelType> = {};
+
+      if (payload.start_date && payload.end_date) {
+        updateData.start_date = dayjs(payload.start_date).format();
+        updateData.end_date = dayjs(payload.end_date).format();
+      }
+
+      if (payload.name) {
+        const nameExists = await this.milestonesRepository.findMilestoneWhereNotName(company_id, existingMilestone.project_type_id, payload.name, milestone_id);
         if (nameExists) {
           return {
             status: false,
@@ -157,7 +178,14 @@ export class MilestoneService {
             data: null,
           };
         }
+        updateData.name = payload.name;
       }
+
+      if (payload.is_completed && existingMilestone.completed_at) {
+        return { status: false, message: 'Milestone already completed' };
+      }
+
+      if (payload.is_completed) updateData.completed_at = new Date().toISOString();
 
       await this.milestonesRepository.update({ id: milestone_id, company_id }, updateData);
 
@@ -170,7 +198,7 @@ export class MilestoneService {
         `${this.traceId} Error occurred updating milestone ===> ${JSON.stringify({
           company_id,
           milestone_id,
-          updateData,
+          payload,
           err_msg: error?.message,
         })}`,
       );
@@ -180,5 +208,25 @@ export class MilestoneService {
         message: 'An error occurred, please try again later',
       };
     }
+  }
+
+  private calculateDuration(startDate: string, endDate: string, unit: 'day' | 'week' | 'month' = 'day'): number {
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+
+    if (unit === 'week') {
+      return Math.ceil(end.diff(start, 'day') / 7);
+    }
+
+    return end.diff(start, unit) + (unit === 'day' ? 1 : 0);
+  }
+
+  private getDurationString(startDate: string, endDate: string): string {
+    const days = this.calculateDuration(startDate, endDate);
+
+    if (days < 7) return `${days} day${days !== 1 ? 's' : ''}`;
+    if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) !== 1 ? 's' : ''}`;
+
+    return `${Math.floor(days / 30)} month${Math.floor(days / 30) !== 1 ? 's' : ''}`;
   }
 }

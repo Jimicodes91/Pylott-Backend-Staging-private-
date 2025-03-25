@@ -9,6 +9,9 @@ export async function up(knex: Knex): Promise<void> {
     table.string('company_id').notNullable().index();
     table.string('name');
     table.boolean('is_system').nullable().defaultTo(false);
+    table.timestamp("start_date")
+    table.timestamp("end_date")
+    table.timestamp("completed_at")
     table.timestamps(true, true);
     table.timestamp('deleted_at').nullable();
   });

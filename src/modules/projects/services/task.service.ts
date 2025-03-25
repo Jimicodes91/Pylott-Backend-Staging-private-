@@ -86,6 +86,7 @@ export class TaskService {
           assignee_id: payload.assignee_id,
           start_date: payload.start_date,
           end_date: payload.end_date,
+          is_visible_to_client: payload.is_visible_to_client,
         };
 
         const documentData: Partial<DocumentsModelType> = {
@@ -96,6 +97,7 @@ export class TaskService {
           type: MetadataType.TASK,
           document_type_id: task_type_id,
           name: payload.name,
+          is_visible_to_client: payload.is_visible_to_client,
         };
 
         const documentAttachmentData: Partial<AttachmentsModelType> = {
@@ -116,13 +118,17 @@ export class TaskService {
         }
       });
 
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.TASK_ADDED, {
-        user_id: user.id,
-        company_id,
-        description: 'Task added',
-        entity_description: user.name.replace(/^./, (c) => c.toUpperCase()),
-        entity_id: task_id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.TASK_ADDED,
+        {
+          user_id: user.id,
+          company_id,
+          description: 'Task added',
+          entity_description: user.name.replace(/^./, (c) => c.toUpperCase()),
+          entity_id: task_id,
+        },
+        project_id,
+      );
 
       return {
         status: true,
@@ -186,6 +192,7 @@ export class TaskService {
       if (payload.start_date) updateData.start_date = dayjs(payload.start_date).format();
       if (payload.end_date) updateData.end_date = dayjs(payload.end_date).format();
       if (payload.status) updateData.status = payload.status as ProjectTaskStatus;
+      if (payload.is_visible_to_client !== null || payload.is_visible_to_client !== undefined) updateData.is_visible_to_client = payload.is_visible_to_client;
 
       await Objection.Model.transaction(async (trx) => {
         await this.projectTaskRepository.update({ id: task_id, company_id }, updateData, trx);

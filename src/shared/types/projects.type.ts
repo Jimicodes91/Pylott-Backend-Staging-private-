@@ -13,7 +13,16 @@ export type CreateProjectType = {
 
 export type CreateMilestoneType = {
   name: string;
+  start_date: string;
+  end_date: string;
   project_type_id: string;
+};
+
+export type UpdateMilestoneType = {
+  name?: string;
+  start_date?: string;
+  end_date?: string;
+  is_completed?: boolean;
 };
 
 export type CreateMilestoneStagesType = {
@@ -34,6 +43,7 @@ export type CreateTask = {
   end_date: string;
   assignee_id: string;
   attachments?: [string];
+  is_visible_to_client: boolean;
 };
 
 export type AuditTrailPayload = {
@@ -49,4 +59,9 @@ export type AuditTrailFilter = {
   start_date?: string;
   end_date?: string;
   action?: string;
+};
+
+export type PhaseProgress = {
+  days_to_completion: number;
+  percentage_complete: number;
 };

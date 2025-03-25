@@ -55,6 +55,7 @@ export class DocsService {
         type: MetadataType.DOCUMENT,
         document_type_id: others.document_type_id,
         name: others.file_name,
+        is_visible_to_client: others.is_visible_to_client,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
         const fileName = `${project_id}/${docFileName}`.toLowerCase();
@@ -158,6 +159,7 @@ export class DocsService {
 
       if (payload.description) updateData.description = payload.description;
       if (payload.file_name) updateData.name = payload.file_name.replaceAll(' ', '-');
+      if (payload.is_visible_to_client !== null || payload.is_visible_to_client !== undefined) updateData.is_visible_to_client = payload.is_visible_to_client;
 
       await this.documentRepository.update({ id: document_id, project_id, company_id }, updateData);
 

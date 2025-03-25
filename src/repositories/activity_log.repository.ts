@@ -15,7 +15,9 @@ export class ActivityLogRepository extends BaseRepository<ActivityLogsModelType,
     const { page, limit } = pagination;
     const offset = (page - 1) * limit;
 
-    const query = this.model.query().where('company_id', company_id).where('project_id', project_id).orderBy('created_at', 'desc');
+    const query = this.model.query().where('company_id', company_id);
+
+    if (project_id) query.where('project_id', project_id);
 
     if (start_date && end_date) {
       query.whereBetween('created_at', [start_date, end_date]);
@@ -25,7 +27,7 @@ export class ActivityLogRepository extends BaseRepository<ActivityLogsModelType,
       query.where('name', action);
     }
 
-    const logs = await query.offset(offset).limit(limit);
+    const logs = await query.orderBy('created_at', 'desc').offset(offset).limit(limit);
     const totalCount = await query.clone().clearOrder().resultSize();
 
     return {

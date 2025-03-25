@@ -6,4 +6,5 @@ export type EventDto = {
   venue: string;
   description: string;
   invites: Array<string>;
+  is_visible_to_client: boolean;
 };

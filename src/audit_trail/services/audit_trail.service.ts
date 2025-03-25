@@ -22,7 +22,7 @@ export class AuditTrailService {
     }
   }
 
-  async getAuditTrail(company_id: string, project_id: string, filters: AuditTrailFilter = {}, pagination: { page: number; limit: number } = { page: 1, limit: 10 }): Promise<ServiceType> {
+  async getAuditTrail(company_id: string, project_id?: string, filters: AuditTrailFilter = {}, pagination: { page: number; limit: number } = { page: 1, limit: 10 }): Promise<ServiceType> {
     try {
       const { start_date, end_date, action } = filters;
 

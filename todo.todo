@@ -1,12 +1,23 @@
 - Convert all console.log to logger (pino)
-Questions
-- Phase stat (40%) - How is this determined
-- Phase date left till completion - not stated when creating a phase
-- Document request ?
-- Project members (internal and client) ?
-- Projects routes and validation
+
+
+Tuesday
+- Project members (internal and client) ? (Create client project members table and endpoint and endpoint to fetch members or add to existing endpoint)
+- Project settings (task, notes, activity, documents) - toggle on/off
+- Calender switch from google to cal
 
 - Comments
-- Notes
+- Notes (needs comment and attachments), in a note you can tag someone (@mention)
+- Notification module (?) - Send email notification
 
-- Notification module
+
+Thursday/Friday
+- Client management (Client on a project is a user)
+- If not user, invite user as client
+
+Awaiting segun
+- Document request ? (Awaiting segun)
+
+Others
+- Permissions (Client perform task assigned to them, view a note, mainly view operations)
+- Get client project view ()

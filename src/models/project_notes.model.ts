@@ -7,6 +7,7 @@ export class ProjectNotes extends BaseModel {
   static tableName = 'project_notes';
 
   project_id: string;
+  company_id: string;
   author_id: string;
   name: string;
   description: string;
