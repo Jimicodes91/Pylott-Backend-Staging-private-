@@ -10,7 +10,7 @@ export class CompanyController {
 
   public createCompany = async (req: Request, res: Response) => {
     try {
-      const adminId = (req as any).user._id;
+      const adminId = (req as any).user.userId;
 
       const companyData = req.body;
 

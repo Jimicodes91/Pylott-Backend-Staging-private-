@@ -119,4 +119,13 @@ export class SysAdminController {
       return errorResponse(res, 'DEACTIVATE_SYSADMIN_ERROR', error.message, error.statusCode || 500);
     }
   };
+
+  public getAllAdmins = async (req: Request, res: Response) => {
+    try {
+      const result = await this.sysAdminService.getAllAdmins();
+      return successResponse(res, 'System admins fetched', result);
+    } catch (error: any) {
+      return errorResponse(res, 'GET_ALL_ADMINS_ERROR', error.message, error.statusCode || 500);
+    }
+  };
 }

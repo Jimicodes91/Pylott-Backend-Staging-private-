@@ -18,10 +18,12 @@ export class SysAdminService {
     const count = await this.companyRepository.count({});
     return count.count;
   }
+
   // Get total number of users
   public async getTotalUsers(): Promise<number> {
-    const count = await this.userRepository.count({});
-    return count.count;
+    const count: any = await this.userRepository.getAllUsers();
+    console.log(count);
+    return count;
   }
 
   public async getActiveUsers() {
@@ -140,5 +142,9 @@ export class SysAdminService {
 
   public async deactivateSysAdmin(userId: string) {
     return this.userRepository.deactivateSysAdmin(userId);
+  }
+
+  public async getAllAdmins() {
+    return this.userRepository.getAllAdmins();
   }
 }
