@@ -64,6 +64,12 @@ export const storage = {
   },
 };
 
+export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+export const TOKEN_EXPIRATION_MS = Date.now() + 900000;
+export const PASSWORD_RESET_TOKEN_LENGTH = 15;
+export const TEMP_PASSWORD_LENGTH = 8;
+
 /**
  * Configures the environment variables for the application and throws an error if
  * any required environment variables are missing.

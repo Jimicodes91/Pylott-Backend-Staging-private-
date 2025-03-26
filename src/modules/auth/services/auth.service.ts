@@ -10,6 +10,8 @@ import { strongPassword } from '@/shared/utils/any';
 import { UserRoles } from '@/shared/enums';
 import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
+import { FRONTEND_URL, JWT_SECRET_KEY, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 @injectable()
 export class AuthService {
@@ -19,186 +21,209 @@ export class AuthService {
     @inject(ClientRepository) private clientRepository: ClientRepository,
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
   ) {}
-  public async adminSignup(data: AdminSignupData) {
-    const { email, password } = data;
-    if (!email || !password) {
-      throw new HttpError('Please fill all the required fields', 400);
-    }
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpires = Date.now() + 900000; // Token valid for 15 minutes
 
-    const userData = {
+  private async sendEmailTemplate(email: string, subject: string, title: string, content: string, actionLink: string, actionText: string) {
+    await sendEmail(
       email,
-      password,
-      verification_token: verificationToken,
-      token_expires: tokenExpires,
-      role: UserRoles.SUPER_ADMIN,
-    };
+      subject,
+      `<html>
+        <body>
+          <h2>${title}</h2>
+          <p>${content}</p>
+          <a style="font-size: 16px; color: #ffffff; background-color: #2563eb; 
+             padding: 10px 15px; text-decoration: none; border-radius: 5px;" 
+             href="${actionLink}">${actionText}</a>
+          <p><small>This link expires in 15 minutes.</small></p>
+          <p>Best regards,<br/>Pylott Team</p>
+        </body>
+      </html>`,
+    );
+  }
 
+  private async sendVerificationEmail(email: string, token: string) {
+    const verificationLink = `${FRONTEND_URL}/verify-account?token=${token}`;
+
+    await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
+  }
+  private async sendPasswordResetEmail(email: string, token: string) {
+    const resetLink = `${FRONTEND_URL}/reset-password?token=${token}`;
+    await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
+  }
+
+  private async sendTemporaryPasswordEmail(email: string, tempPassword: string) {
+    await sendEmail(
+      email,
+      'Your Temporary Password',
+      `<html>
+        <body>
+          <h2>Welcome to Pylott</h2>
+          <p>Your temporary password is: <strong>${tempPassword}</strong></p>
+          <p>Please log in and change it immediately for security.</p>
+          <p>Best regards,<br/>Pylott Team</p>
+        </body>
+      </html>`,
+    );
+  }
+
+  private async validatePasswordStrength(password: string) {
+    if (!strongPassword(password)) {
+      throw new HttpError('Password must be at least 8 characters with uppercase, lowercase, number, and special character', 400);
+    }
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hashSync(password, salt);
+  }
+
+  public async adminSignup(data: AdminSignupData) {
     try {
+      const { email, password } = data;
+
+      if (!email || !password) {
+        throw new HttpError('Email and password are required', 400);
+      }
+
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
-        throw new HttpError('Email is taken, use a different email address', 400);
+        throw new HttpError('Email is already in use', 400);
       }
 
-      if (!strongPassword(password)) {
-        throw new HttpError('Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character', 400);
-      }
+      await this.validatePasswordStrength(password);
 
-      if (password) {
-        const salt = await bcrypt.genSalt(10);
-        userData.password = bcrypt.hashSync(password, salt);
-      }
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await this.hashPassword(password);
 
-      const newUser = await this.userRepository.create(userData);
+      const newUser = await this.userRepository.create({
+        email,
+        password: hashedPassword,
+        verification_token: verificationToken,
+        token_expires: Date.now() + TOKEN_EXPIRATION_MS,
+        role: UserRoles.SUPER_ADMIN,
+      });
 
-      const userResponse = { ...newUser };
-      if (userResponse.password) {
-        userResponse.password = '';
-      }
-
-      const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify?token=${verificationToken}&email=${encodeURIComponent(email)}`;
-
-      await sendEmail(
-        newUser.email,
-        'Pylott email verification',
-        `<html>
-			  <body>
-				  <h2>Welcome to Pylott</h2>
-				  <p>Thank you for signing up with us. To verify your email address, please use the link below:</p>
-				  <a style="font-size: 20px;" href="${verificationLink}">${verificationLink}</a>
-				  <p>Best regards,</p>
-				  <p>Pylott</p>
-			  </body>
-			</html>`,
-      );
-
+      await this.sendVerificationEmail(email, verificationToken);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userResponse } = newUser;
       return userResponse;
-    } catch (error: any) {
-      console.log(error);
-      throw new HttpError(error.message || 'Unable to create user', error.statusCode || 500);
+    } catch (error) {
+      throw new HttpError(error.message || 'SIGNUP_ADMIN_ERROR', 500);
     }
   }
 
   public async companyAdminSignup(data: CompanyAdminSignpData) {
-    const { email, password, name } = data;
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpires = Date.now() + 900000; // Token valid for 15 minutes
-
-    const userData = {
-      name,
-      email,
-      password,
-      verification_token: verificationToken,
-      token_expires: tokenExpires,
-      role: UserRoles.ADMIN,
-    };
-
     try {
+      const { email, password, name } = data;
+
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
-        throw new HttpError('Email is taken, use a different email address', 400);
-      }
-      if (!strongPassword(password)) {
-        throw new HttpError('Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character', 400);
-      }
-      if (password) {
-        const salt = await bcrypt.genSalt(10);
-        userData.password = bcrypt.hashSync(password, salt);
-      }
-      const newUser = await this.userRepository.create(userData);
-
-      const userResponse = { ...newUser };
-      if (userResponse.password) {
-        userResponse.password = '';
+        throw new HttpError('Email is already in use', 400);
       }
 
-      const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+      await this.validatePasswordStrength(password);
 
-      await sendEmail(
-        newUser.email,
-        'Pylott email verification',
-        `<html>
-            <body>
-                <h2>Welcome to Pylott</h2>
-                <p>Thank you for signing up with us. To verify your email address, please use the link below:</p>
-                <a style="font-size: 20px;" href="${verificationLink}">${verificationLink}</a>
-                <p>Best regards,</p>
-                <p>Pylott</p>
-            </body>
-          </html>`,
-      );
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await this.hashPassword(password);
 
+      const newUser = await this.userRepository.create({
+        name,
+        email,
+        password: hashedPassword,
+        verification_token: verificationToken,
+        token_expires: Date.now() + TOKEN_EXPIRATION_MS,
+        role: UserRoles.ADMIN,
+      });
+
+      await this.sendVerificationEmail(email, verificationToken);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userResponse } = newUser;
       return userResponse;
-    } catch (error: any) {
-      console.log(error);
-      throw new HttpError(error.message || 'Unable to create user', error.statusCode || 500);
+    } catch (error) {
+      throw new HttpError(error.message || 'SIGNUP_COMPANY_ADMIN_ERROR', 500);
     }
   }
 
   public async signIn(data: loginData) {
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
     try {
       const user = await this.userRepository.findOne({ email: data.email });
-
       if (!user) {
         throw new HttpError('Invalid email or password', 401);
       }
 
       if (!user.is_verified) {
-        const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify?token=${verificationToken}&email=${encodeURIComponent(data.email)}`;
-
-        await this.userRepository.update({ id: user.id }, { verification_token: verificationToken });
-
-        await sendEmail(
-          user.email,
-          'Pylott email verification',
-          `<html>
-                <body>
-                    <h2>Welcome to Pylott</h2>
-                    <p>Thank you for signing up with us. To verify your email address, please use the link below:</p>
-                    <a style="font-size: 20px;" href="${verificationLink}">${verificationLink}</a>
-                    <p>Best regards,</p>
-                    <p>Pylott</p>
-                </body>
-              </html>`,
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        await this.userRepository.update(
+          { id: user.id },
+          {
+            verification_token: verificationToken,
+            token_expires: Date.now() + TOKEN_EXPIRATION_MS,
+          },
         );
-        throw new HttpError('Verify email before log in, Verification link has been sent to your email', 404);
+        await this.sendVerificationEmail(user.email, verificationToken);
+        throw new HttpError('Verify your email first. A new link has been sent.', 403);
       }
 
-      const password_valid = bcrypt.compareSync(data.password, user.password);
-
-      if (!password_valid) {
+      const isPasswordValid = bcrypt.compareSync(data.password, user.password);
+      if (!isPasswordValid) {
         throw new HttpError('Invalid email or password', 401);
       }
 
-      const token = jwt.sign({ email: user.email, role: user.role, _id: user.id }, process.env.JWT_SECRET as string, { expiresIn: '1d' });
+      const accessToken = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        JWT_SECRET_KEY,
+        { expiresIn: '7d' }, // Short-lived access token (15 minutes)
+      );
 
-      return { user, token };
-    } catch (error: any) {
-      console.error('Error logging in user:', error);
-      throw new HttpError(error.message || 'Unable to log in user', error.statusCode || 500);
+      // const refreshToken = jwt.sign(
+      //   { userId: user.id },
+      //   JWT_SECRET_KEY + user.password, // Changes when password changes
+      //   { expiresIn: '7d' } // Long-lived refresh token (7 days)
+      // );
+      // await this.userRepository.update(
+      //   { id: user.id },
+      //   {
+      //     refresh_token: refreshToken,
+      //     last_login: new Date()
+      //   }
+      // );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userData } = user;
+      return {
+        user: userData,
+        token: accessToken,
+      };
+    } catch (error) {
+      throw new HttpError(error.message || 'SIGNIN_ERROR', 500);
     }
+  }
+
+  public async refreshAccessToken(refreshToken: string) {
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, JWT_SECRET_KEY) as { userId: string };
+    const user = await this.userRepository.getById(decoded.userId);
+
+    // Validate token matches stored token
+    if (!user || user.refresh_token !== refreshToken) {
+      throw new HttpError('Invalid refresh token', 401);
+    }
+
+    // Generate new access token
+    const newAccessToken = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET_KEY, { expiresIn: '15m' });
+
+    return { accessToken: newAccessToken };
   }
 
   public async verifyEmail(token: string) {
     try {
-      // Find the user by verification token
       const user = await this.userRepository.findOne({ verification_token: token });
-
       if (!user) {
-        throw new HttpError('Invalid token', 400);
+        throw new HttpError('Invalid or expired token', 400);
       }
 
-      // Check if the token has expired
       if (user.token_expires && user.token_expires < Date.now()) {
         throw new HttpError('Token has expired', 400);
       }
 
-      const bearerToken = generateToken(user.email, user.id);
-
-      // Mark the user as verified and clear the verification token
       await this.userRepository.update(
         { id: user.id },
         {
@@ -208,16 +233,18 @@ export class AuthService {
         },
       );
 
-      return { user, token: bearerToken };
-    } catch (error: any) {
-      throw new HttpError(error.message || 'Email verification failed', 500);
+      const bearerToken = generateToken(user.email, user.id);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userData } = user;
+      return { user: userData, token: bearerToken };
+    } catch (error) {
+      throw new HttpError(error.message || 'VERIFY_TOKEN_ERROR', 500);
     }
   }
 
   public async resendVerificationEmail(email: string) {
     try {
       const user = await this.userRepository.findOne({ email });
-
       if (!user) {
         throw new HttpError('User not found', 404);
       }
@@ -226,73 +253,33 @@ export class AuthService {
         throw new HttpError('Email is already verified', 400);
       }
 
-      // Generate a new verification token
       const verificationToken = crypto.randomBytes(32).toString('hex');
-      const tokenExpires = Date.now() + 900000; // Token valid for 15 minutes
-
       await this.userRepository.update(
         { id: user.id },
         {
           verification_token: verificationToken,
-          token_expires: tokenExpires,
+          token_expires: Date.now() + TOKEN_EXPIRATION_MS,
         },
       );
 
-      // Send new verification email
-      const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify?token=${verificationToken}&email=${encodeURIComponent(email)}`;
-
-      await sendEmail(
-        user.email,
-        'Pylott Email Verification - Resend',
-        `<html>
-            <body>
-                <h2>Email Verification</h2>
-                <p>You requested a new verification email. Click the link below to verify your email:</p>
-                <a style="font-size: 20px;" href="${verificationLink}">${verificationLink}</a>
-                <p>Best regards,</p>
-                <p>Pylott</p>
-            </body>
-          </html>`,
-      );
-
+      await this.sendVerificationEmail(email, verificationToken);
       return { message: 'Verification email sent successfully' };
-    } catch (error: any) {
-      throw new HttpError(error.message || 'Failed to resend verification email', error.statusCode || 500);
+    } catch (error) {
+      throw new HttpError(error.message || 'RESEND_EMAIL_ERROR', 500);
     }
   }
 
   public async forgotPassword(email: string) {
     try {
       const user = await this.userRepository.findOne({ email });
-
       if (!user) {
         throw new HttpError('User not found', 404);
       }
 
-      // Generate a password reset token
-      const passwordResetToken = crypto.randomBytes(32).toString('hex');
-
-      // Save the token to the user
+      const passwordResetToken = crypto.randomBytes(PASSWORD_RESET_TOKEN_LENGTH).toString('hex');
       await this.userRepository.update({ id: user.id }, { verification_token: passwordResetToken });
 
-      // Send the password reset email
-      const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${passwordResetToken}&email=${encodeURIComponent(email)}`;
-
-      await sendEmail(
-        user.email,
-        'Reset Your Password',
-        `<html>
-            <body>
-                <h2>Password Reset Request</h2>
-                <p>You requested to reset your password. Click the link below to proceed:</p>
-                <a style="font-size: 20px;" href="${resetLink}">${resetLink}</a>
-                <p>If you did not request this, please ignore this email.</p>
-                <p>Best regards,</p>
-                <p>Pylott</p>
-            </body>
-          </html>`,
-      );
-
+      await this.sendPasswordResetEmail(email, passwordResetToken);
       return { message: 'Password reset email sent successfully' };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to send password reset email', 500);
@@ -302,22 +289,13 @@ export class AuthService {
   public async resetPassword(token: string, newPassword: string) {
     try {
       const user = await this.userRepository.findOne({ verification_token: token });
-
       if (!user) {
         throw new HttpError('Invalid or expired token', 400);
       }
 
-      const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
-      const strongPassword = passwordRegex.test(newPassword);
-      if (!strongPassword) {
-        throw new HttpError('Password must be 8+ chars with uppercase, lowercase, number, and special character', 400);
-      }
+      await this.validatePasswordStrength(newPassword);
+      const hashedPassword = await this.hashPassword(newPassword);
 
-      // Hash the new password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = bcrypt.hashSync(newPassword, salt);
-
-      // Update user with new password and clear reset token
       await this.userRepository.update(
         { id: user.id },
         {
@@ -338,9 +316,7 @@ export class AuthService {
       if (!admin || admin.role !== UserRoles.ADMIN) {
         throw new HttpError('Only company admins can send invitations', 403);
       }
-      //console.log(admin);
 
-      // Ensure the admin is associated with a company
       if (!admin.company_id) {
         throw new HttpError('Admin is not associated with a company', 400);
       }
@@ -351,21 +327,15 @@ export class AuthService {
       }
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
+      const registrationLink = `${FRONTEND_URL}/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
 
-      const registrationLink = `${process.env.FRONTEND_URL}/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
-
-      await sendEmail(
+      await this.sendEmailTemplate(
         email,
         "You've Been Invited to Join Pylott",
-        `<html>
-			<body>
-				<h2>Welcome to Pylott</h2>
-				<p>You have been invited to join Pylott as a ${role}. Click the link below to complete your registration:</p>
-				<a style="font-size: 20px;" href="${registrationLink}">Complete Registration</a>
-				<p>Best regards,</p>
-				<p>Pylott</p>
-			</body>
-		  </html>`,
+        'Welcome to Pylott',
+        `You have been invited to join Pylott as a ${role}. Click the button below to complete your registration:`,
+        registrationLink,
+        'Complete Registration',
       );
 
       return { message: 'Invitation sent successfully' };
@@ -381,12 +351,8 @@ export class AuthService {
         throw new HttpError('Email is already registered', 400);
       }
 
-      if (!strongPassword(password)) {
-        throw new HttpError('Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character', 400);
-      }
-
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = bcrypt.hashSync(password, salt);
+      await this.validatePasswordStrength(password);
+      const hashedPassword = await this.hashPassword(password);
 
       const newUser = await this.userRepository.create({
         email,
@@ -396,19 +362,15 @@ export class AuthService {
         is_verified: true,
       });
 
-      await this.companyRepository.pushToArray(
-        { id: companyId }, // query_identifier
-        'consultant_id', // column
-        newUser.id, // value
-      );
+      await this.companyRepository.pushToArray({ id: companyId }, 'consultant_id', newUser.id);
 
       await this.consultantRepository.create({
         user_id: newUser.id,
         company_id: companyId,
       });
-
-      newUser.password = '';
-      return newUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userResponse } = newUser;
+      return userResponse;
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to complete registration', 500);
     }
@@ -421,10 +383,8 @@ export class AuthService {
         throw new HttpError('Email is already registered', 400);
       }
 
-      const temporaryPassword = crypto.randomBytes(5).toString('hex').slice(0, 9);
-      //console.log('temp', temporaryPassword);
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = bcrypt.hashSync(temporaryPassword, salt);
+      const temporaryPassword = crypto.randomBytes(32).toString('hex').slice(0, TEMP_PASSWORD_LENGTH);
+      const hashedPassword = await this.hashPassword(temporaryPassword);
 
       const newUser = await this.userRepository.create({
         name,
@@ -432,15 +392,16 @@ export class AuthService {
         password: hashedPassword,
         role: UserRoles.CLIENT,
         company_id: companyId,
-        is_verified: true, // Mark as verified since they were added by the admin
+        is_verified: true,
       });
+
       if (!newUser) {
         throw new HttpError('Error creating user', 400);
       }
 
       const client = await this.clientRepository.create({
         company_id: companyId,
-        user_id: newUser._id,
+        user_id: newUser.id,
         is_active: true,
       });
 
@@ -448,26 +409,9 @@ export class AuthService {
         throw new HttpError('Error creating client', 500);
       }
 
-      await this.companyRepository.update(
-        { id: companyId }, // query_identifier
-        { client_id: newUser._id }, // payload
-      );
+      await this.companyRepository.update({ id: companyId }, { client_id: newUser.id });
 
-      await sendEmail(
-        email,
-        'Welcome to Pylott - Your Temporary Password',
-        `<html>
-			<body>
-				<h2>Welcome to Pylott</h2>
-				<p>You have been added as a client. Use the temporary password below to log in:</p>
-				<p><strong>Temporary Password:</strong> ${temporaryPassword}</p>
-				<p>Please log in and update your password for security.</p>
-				<p>Best regards,</p>
-				<p>Pylott</p>
-			</body>
-		  </html>`,
-      );
-
+      await this.sendTemporaryPasswordEmail(email, temporaryPassword);
       return { message: 'Client added successfully. Temporary password sent via email.' };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to add client', 500);

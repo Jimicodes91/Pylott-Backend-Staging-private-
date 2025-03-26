@@ -26,6 +26,9 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
     const result = await this.count({ is_active: true });
     return result.count;
   }
+  public async getAllUsers() {
+    return this.findMany({});
+  }
   public async getAllAdmins() {
     return this.findMany({ role: UserRoles.SUPER_ADMIN });
   }

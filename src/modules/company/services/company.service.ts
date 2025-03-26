@@ -14,7 +14,7 @@ export class CompanyService {
     try {
       // Add the admin ID to the company data
       const adminRole = await this.userRepository.getById(adminId);
-      console.log('add', adminRole);
+      //console.log('add', adminRole);
       if (adminRole.role !== 'ADMIN') {
         throw new HttpError('You are not allowed to access this resource', 400);
       }

@@ -6,6 +6,7 @@ import HttpError from '../utils/errorHandler';
 import { UserRoles } from '../enums';
 import { CustomRequest, UserPayload } from '../interface';
 import { UserRepository } from '@/repositories';
+import { JWT_SECRET_KEY } from '@/config/env';
 
 const userRepo = container.resolve(UserRepository);
 
@@ -20,7 +21,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     }
 
     // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    const decoded = jwt.verify(token, JWT_SECRET_KEY as string) as {
       email: string;
       role: string;
       _id: any;
@@ -71,7 +72,7 @@ export const verifyJWT = (req: CustomRequest, res: Response, next: NextFunction)
     }
 
     // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as UserPayload;
+    const decoded = jwt.verify(token, JWT_SECRET_KEY as string) as UserPayload;
     req.user = decoded;
 
     return next();

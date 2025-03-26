@@ -34,7 +34,7 @@ export default abstract class BaseRepository<T, M extends BaseModel> {
   }
 
   public async getById(id: string, trx?: Objection.Transaction) {
-    return await this.model.query(trx).where({ id }).whereNull('deleted_at').first();
+    return await this.model.query(trx).where({ id }).whereNull('deleted_at').first().skipUndefined();
   }
 
   public async findOne(query_identifier: Partial<T>, trx?: Objection.Transaction) {
@@ -47,7 +47,7 @@ export default abstract class BaseRepository<T, M extends BaseModel> {
    * @returns Array of matching users
    */
   public async findMany(query: Partial<T>, trx?: Objection.Transaction) {
-    return await this.model.query(trx).where(query).whereNull('deleted_at');
+    return await this.model.query(trx).where(query).whereNull('deleted_at').skipUndefined().orderBy('created_at', 'desc');
   }
   /**
    * @param query_identifier - clause object to identify a record
