@@ -99,7 +99,7 @@ export class AuthService {
         password: hashedPassword,
         verification_token: verificationToken,
         token_expires: Date.now() + TOKEN_EXPIRATION_MS,
-        role: UserRoles.SUPER_ADMIN,
+        role: UserRoles.ADMIN,
       });
 
       await this.sendVerificationEmail(email, verificationToken);
@@ -186,6 +186,13 @@ export class AuthService {
       //     last_login: new Date()
       //   }
       // );
+      await this.userRepository.update(
+        { id: user.id },
+        {
+          last_login: new Date(),
+          login_count: (user.login_count || 0) + 1,
+        },
+      );
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userData } = user;
       return {

@@ -25,6 +25,7 @@ export class User extends BaseModel {
   refresh_token?: string; // Add this to your User model
   refresh_token_expires?: number; // Optional: Add expiry for refresh tokens
   password_setup_token?: string;
+  login_count?: number;
   password_setup_token_expires?: number;
 
   static relationMappings = (): ModelsRelationMapping => ({});
