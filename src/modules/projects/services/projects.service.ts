@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
-import { ProjectRepository, MilestonesRepository, ClientRepository, ProjectTypeRepository, MilestoneStagesRepository } from '@/repositories';
+import { ProjectRepository, MilestonesRepository, ClientRepository, ProjectTypeRepository, MilestoneStagesRepository, ProjectSettingsRepository } from '@/repositories';
 
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { UserModelType } from '@/models';
@@ -26,6 +26,7 @@ export class ProjectService {
     private readonly mileStoneStagesRepository: MilestoneStagesRepository,
     private readonly clientRepository: ClientRepository,
     private readonly projectTypeRepository: ProjectTypeRepository,
+    private readonly projectSettingsRepository: ProjectSettingsRepository,
   ) {}
 
   async getAllProjects(
@@ -189,6 +190,8 @@ export class ProjectService {
         status: payload.status || ProjectStatus.NOT_STARTED,
         created_by: user.id,
       });
+
+      await this.projectSettingsRepository.create({ company_id, project_id: project.id });
 
       return {
         status: true,

@@ -65,3 +65,10 @@ export type PhaseProgress = {
   days_to_completion: number;
   percentage_complete: number;
 };
+
+export type ToggleProjectSettings = {
+  client_can_view_task: boolean;
+  client_can_view_notes: boolean;
+  client_can_view_documents: boolean;
+  client_can_view_activity: boolean;
+};

@@ -11,7 +11,7 @@ import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
 import { TypeService } from './services/type.service';
 import { MemberService } from './services/members.service';
-import { AuditTrailService } from '@/audit_trail/services/audit_trail.service';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class ProjectController {

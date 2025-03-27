@@ -11,7 +11,7 @@ import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType, ProjectTaskStatus
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateTask } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
-import { AuditTrailService } from '@/audit_trail/services/audit_trail.service';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class TaskService {

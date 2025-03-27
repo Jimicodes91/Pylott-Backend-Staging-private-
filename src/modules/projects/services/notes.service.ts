@@ -2,7 +2,7 @@ import { injectable } from 'tsyringe';
 
 import { ProjectNotesRepository } from '@/repositories';
 
-import { AuditTrailService } from '@/audit_trail/services/audit_trail.service';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 // @audit trail here
 @injectable()

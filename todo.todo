@@ -2,9 +2,8 @@
 
 
 Tuesday
-- Project members (internal and client) ? (Create client project members table and endpoint and endpoint to fetch members or add to existing endpoint)
-- Project settings (task, notes, activity, documents) - toggle on/off
 - Calender switch from google to cal
+- Project members (internal and client) ? (Create client project members table and endpoint and endpoint to fetch members or add to existing endpoint)
 
 - Comments
 - Notes (needs comment and attachments), in a note you can tag someone (@mention)
