@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { inject, injectable } from 'tsyringe';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 
 import { ClientRepository, CompanyRepository, ConsultantRepository, UserRepository } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
@@ -10,17 +11,98 @@ import { strongPassword } from '@/shared/utils/any';
 import { UserRoles } from '@/shared/enums';
 import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
-import { FRONTEND_URL, JWT_SECRET_KEY, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
+import { FRONTEND_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
+import { GoogleAuthData } from '@/shared/types/google.type';
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 @injectable()
 export class AuthService {
+  private googleClient: OAuth2Client;
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(ClientRepository) private clientRepository: ClientRepository,
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${FRONTEND_URL}/auth/google/callback`);
+  }
+
+  // Generate Google OAuth URL for client-side redirection
+  public generateGoogleAuthURL(): string {
+    return this.googleClient.generateAuthUrl({
+      access_type: 'online',
+      scope: ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
+      prompt: 'consent',
+    });
+  }
+  public async verifyGoogleToken(code: string): Promise<GoogleAuthData> {
+    try {
+      // Exchange authorization code for tokens
+      const { tokens } = await this.googleClient.getToken(code);
+
+      // Verify the ID token
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: tokens.id_token,
+        audience: GOOGLE_CLIENT_ID,
+      });
+
+      // Extract user information
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new HttpError('Invalid Google authentication payload', 400);
+      }
+
+      return {
+        googleId: payload.sub,
+        email: payload.email,
+        name: payload.name,
+        profilePicture: payload.picture,
+      };
+    } catch (error) {
+      throw new HttpError(`Google authentication failed: ${error.message}`, 401);
+    }
+  }
+  public async handleGoogleAuth(googleAuthData: GoogleAuthData) {
+    try {
+      // Check if user already exists
+      let user = await this.userRepository.findOne({
+        email: googleAuthData.email,
+      });
+
+      // If user doesn't exist, create a new user
+      if (!user) {
+        user = await this.userRepository.create({
+          email: googleAuthData.email,
+          name: googleAuthData.name,
+          googleId: googleAuthData.googleId,
+          role: UserRoles.CLIENT, // Default role, adjust as needed
+          is_verified: true, // Google users are considered verified
+        });
+      }
+
+      // Generate JWT token for authentication
+      const token = jwt.sign(
+        {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        },
+        JWT_SECRET_KEY,
+        { expiresIn: '7d' },
+      );
+
+      // Return user info and token
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userResponse } = user;
+      return {
+        user: userResponse,
+        token,
+      };
+    } catch (error) {
+      throw new HttpError(`Google authentication error: ${error.message}`, 500);
+    }
+  }
 
   private async sendEmailTemplate(email: string, subject: string, title: string, content: string, actionLink: string, actionText: string) {
     await sendEmail(

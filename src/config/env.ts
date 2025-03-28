@@ -64,11 +64,24 @@ export const storage = {
   },
 };
 
-export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+// export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173' || "https://silly-choux-da3934.netlify.app/";
+const urlConfig = {
+  development: {
+    FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  },
+  production: {
+    FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
+  },
+};
+
+export const FRONTEND_URL = urlConfig[process.env.NODE_ENV || 'development'].FRONTEND_URL;
+console.log(FRONTEND_URL);
 
 export const TOKEN_EXPIRATION_MS = Date.now() + 900000;
 export const PASSWORD_RESET_TOKEN_LENGTH = 15;
 export const TEMP_PASSWORD_LENGTH = 8;
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '653485325620-j99cl2a2c48054rr4725ot7ub9j8mb85.apps.g';
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
 
 /**
  * Configures the environment variables for the application and throws an error if
