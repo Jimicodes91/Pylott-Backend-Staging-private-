@@ -67,7 +67,7 @@ export const storage = {
 // export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173' || "https://silly-choux-da3934.netlify.app/";
 const urlConfig = {
   development: {
-    FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+    FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
   },
   production: {
     FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
