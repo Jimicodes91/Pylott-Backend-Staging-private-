@@ -65,16 +65,16 @@ export const storage = {
 };
 
 // export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173' || "https://silly-choux-da3934.netlify.app/";
-const urlConfig = {
-  development: {
-    FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
-  },
-  production: {
-    FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
-  },
-};
+// const urlConfig = {
+//   development: {
+//     FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
+//   },
+//   production: {
+//     FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
+//   },
+// };
 
-export const FRONTEND_URL = urlConfig[process.env.NODE_ENV || 'development'].FRONTEND_URL;
+export const FRONTEND_URL = 'https://silly-choux-da3934.netlify.app';
 console.log(FRONTEND_URL);
 
 export const TOKEN_EXPIRATION_MS = Date.now() + 900000;
