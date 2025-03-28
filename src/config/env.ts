@@ -64,17 +64,15 @@ export const storage = {
   },
 };
 
-// export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173' || "https://silly-choux-da3934.netlify.app/";
-// const urlConfig = {
-//   development: {
-//     FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
-//   },
-//   production: {
-//     FRONTEND_URL: 'https://silly-choux-da3934.netlify.app',
-//   },
-// };
+let FRONTEND_URL: string;
 
-export const FRONTEND_URL = 'https://silly-choux-da3934.netlify.app';
+if (process.env.NODE_ENV === 'development') {
+  FRONTEND_URL = 'https://silly-choux-da3934.netlify.app';
+} else {
+  FRONTEND_URL = process.env.FRONTEND_URL;
+}
+
+export { FRONTEND_URL };
 console.log(FRONTEND_URL);
 
 export const TOKEN_EXPIRATION_MS = Date.now() + 900000;
