@@ -1,8 +1,9 @@
 import { injectable } from 'tsyringe';
-import { Response, Request } from 'express';
+import { Response, Request, NextFunction } from 'express';
 
 import { AuthService } from './services/auth.service';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
+import HttpError from '@/shared/utils/errorHandler';
 
 @injectable()
 export class AuthController {
@@ -146,6 +147,37 @@ export class AuthController {
       return successResponse(res, 'Password updated successfully', result);
     } catch (error: any) {
       return errorResponse(res, 'UPDATE_PASSWORD_ERROR', error.message, error.statusCode);
+    }
+  };
+
+  public getGoogleAuthURL = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const authURL = this.authService.generateGoogleAuthURL();
+      res.json({ authURL });
+    } catch (error) {
+      next(new HttpError(error.message, 500));
+    }
+  };
+
+  // Handle Google callback and authentication
+  public googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { code } = req.query;
+
+      if (!code || typeof code !== 'string') {
+        throw new HttpError('Authorization code is required', 400);
+      }
+
+      // Verify Google token and get user info
+      const googleUserData = await this.authService.verifyGoogleToken(code);
+
+      // Complete authentication process
+      const authResult = await this.authService.handleGoogleAuth(googleUserData);
+
+      // Redirect to frontend with token (or send JSON response)
+      res.redirect(`${process.env.FRONTEND_URL}/login?token=${authResult.token}`);
+    } catch (error) {
+      next(new HttpError(error.message, 401));
     }
   };
 

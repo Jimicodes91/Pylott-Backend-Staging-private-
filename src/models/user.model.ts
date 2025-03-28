@@ -22,6 +22,7 @@ export class User extends BaseModel {
   last_login?: Date;
   verification_token?: string;
   token_expires?: number;
+  googleId?: string;
   refresh_token?: string; // Add this to your User model
   refresh_token_expires?: number; // Optional: Add expiry for refresh tokens
   password_setup_token?: string;

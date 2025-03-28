@@ -40,4 +40,7 @@ export const authRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/add-client`, schemaValidator(addClientValidator), authController.addClient);
 
   server.post(`${prefix}/update-password`, schemaValidator(updatePasswordValidatorRule), authController.updatePassword);
+
+  server.get(`${prefix}/auth/google`, authController.getGoogleAuthURL);
+  server.get(`${prefix}/auth/google/callback`, authController.googleAuthCallback);
 };
