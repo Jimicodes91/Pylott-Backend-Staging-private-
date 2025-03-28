@@ -94,7 +94,9 @@ export class AuthController {
   public sendInvite = async (req: Request, res: Response) => {
     try {
       //console.log(req)
-      const adminId = (req as any).user._id;
+      const adminId = (req as any).user.userId;
+      console.log(req);
+      console.log(adminId);
       if (!adminId) {
         return errorResponse(res, 'Admin Id is required');
       }
