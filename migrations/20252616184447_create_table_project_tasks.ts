@@ -3,7 +3,7 @@ import type { Knex } from 'knex';
 const tableName = 'project_tasks';
 
 export async function up(knex: Knex): Promise<void> {
-	await knex.schema.createTableIfNotExists(tableName, (table) => {
+	await knex.schema.createTable(tableName, (table) => {
 		table.string('id').primary();
 		table.string('project_id').notNullable().index();
 		table.string('assignee_id').notNullable().index();
@@ -21,5 +21,5 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-	await knex.schema.dropTableIfExists(tableName);
+	await knex.schema.dropTable(tableName);
 }
