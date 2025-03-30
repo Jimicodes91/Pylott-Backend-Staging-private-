@@ -11,9 +11,10 @@ export class Documents extends BaseModel {
 
   company_id: string;
   project_id: string;
-  document_type_id: string;
+  document_type_id?: string;
   name: string;
   task_id?: string;
+  note_id?: string;
   type: MetadataType;
   description: string;
   is_visible_to_client: boolean;

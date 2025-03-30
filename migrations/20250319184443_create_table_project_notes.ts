@@ -7,9 +7,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string('id').unique().notNullable();
     table.string('project_id').notNullable().index();
     table.string('author_id').notNullable().index();
-    table.string('name');
-    table.string('description');
-    table.boolean("is_pinned").defaultTo(false);
+    table.string('content');
+    table.string("metadata");
     table.timestamps(true, true);
     table.timestamp('deleted_at').nullable();
   });

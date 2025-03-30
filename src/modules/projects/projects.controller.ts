@@ -2,16 +2,16 @@ import { Request, Response } from 'express';
 import { injectable } from 'tsyringe';
 
 import { UserModelType } from '@/models';
-import { AddProjectMember, CreateMilestoneStagesType, CreateMilestoneType, CreateProjectType, CreateTask } from '@/shared/types/projects.type';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
+import { AddProjectMember, CreateComment, CreateMilestoneStagesType, CreateMilestoneType, CreateNote, CreateProjectType, CreateTask } from '@/shared/types/projects.type';
 import { genericResponse } from '@/shared/utils/api-response';
+import { MemberService } from './services/members.service';
 import { MilestoneService } from './services/milestone.service';
 import { NotesService } from './services/notes.service';
 import { PhasesService } from './services/phases.service';
 import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
 import { TypeService } from './services/type.service';
-import { MemberService } from './services/members.service';
-import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class ProjectController {
@@ -260,9 +260,60 @@ export class ProjectController {
     genericResponse({ res, data: others, statusCode });
   };
 
-  // Notes endpoints
-  // (Implementation for other controller methods would go here)
+  createNote = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id } = req.params;
+    const payload = req.body as CreateNote;
 
-  // ActivityLogs endpoints
-  // (Implementation for other controller methods would go here)
+    const { statusCode = null, ...others } = await this.noteService.createNote(user, project_id, payload);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getAllNotes = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.noteService.getAllNotes(project_id, user.company_id, user.id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getNoteDetails = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id, note_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.noteService.getNoteDetails(project_id, user.company_id, note_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  // Comments endpoints
+  createComment = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id, note_id } = req.params;
+    const payload = req.body as CreateComment;
+
+    const { statusCode = null, ...others } = await this.noteService.createComment(user, project_id, note_id, payload);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getNoteComments = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id, note_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.noteService.getNoteComments(user, project_id, note_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  deleteComment = async (req: Request, res: Response): Promise<void> => {
+    // @ts-ignore
+    const user = req.user as UserModelType;
+    const { project_id, note_id, comment_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.noteService.deleteComment(user, project_id, note_id, comment_id);
+    genericResponse({ res, data: others, statusCode });
+  };
 }

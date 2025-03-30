@@ -81,6 +81,11 @@ export const TEMP_PASSWORD_LENGTH = 8;
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '653485325620-j99cl2a2c48054rr4725ot7ub9j8mb85.apps.g';
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
 
+export const calender = {
+  api_key: process.env.CALCOM_API_KEY ?? 'https://api.cal.com/v2',
+  base_url: process.env.CALCOM_API_BASE_URL,
+};
+
 /**
  * Configures the environment variables for the application and throws an error if
  * any required environment variables are missing.

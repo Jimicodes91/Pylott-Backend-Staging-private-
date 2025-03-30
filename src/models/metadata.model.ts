@@ -10,6 +10,7 @@ export class Metadata extends BaseModel {
   company_id: string;
   project_id: string;
   name: string;
+  is_system: boolean;
   type: MetadataType;
   description: string;
 

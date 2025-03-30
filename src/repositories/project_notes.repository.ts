@@ -8,4 +8,19 @@ export class ProjectNotesRepository extends BaseRepository<ProjectNotesModelType
   constructor() {
     super(ProjectNotes);
   }
+
+  async getNoteDetails(company_id: string, project_id: string, note_id: string) {
+    return await this.model
+      .query()
+      .where({ company_id, project_id, id: note_id })
+      .withGraphFetched({ document: { attachments: true }, author: true })
+      .first();
+  }
+
+  async getAllNotes(company_id: string, project_id: string) {
+    return await this.model
+      .query()
+      .where({ company_id, project_id })
+      .withGraphFetched({ document: { attachments: true }, author: true });
+  }
 }

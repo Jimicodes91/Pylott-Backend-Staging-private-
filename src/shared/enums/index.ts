@@ -39,11 +39,13 @@ export enum MetadataType {
   DOCUMENT = 'document',
   EVENT = 'event',
   TASK = 'task',
+  NOTE = 'note',
 }
 
 export enum DocumentsDirectory {
   DOCS = 'docs',
   TASKS = 'tasks',
+  NOTES = 'notes',
 }
 
 export enum EventStatus {
@@ -56,4 +58,6 @@ export enum AUDIT_TRAIL_ACTION {
   TASK_ADDED = 'TASK_ADDED',
   NOTE_PINNED = 'NOTE_PINNED',
   NOTE_CREATED = 'NOTE_CREATED',
+  COMMENT_CREATED = 'COMMENT_CREATED',
+  COMMENT_DELETED = 'COMMENT_DELETED',
 }

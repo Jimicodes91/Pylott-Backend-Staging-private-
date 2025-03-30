@@ -1,3 +1,5 @@
+import { CommentsModelType } from '@/models';
+
 export type CreateProjectType = {
   name: string;
   description?: string;
@@ -71,4 +73,45 @@ export type ToggleProjectSettings = {
   client_can_view_notes: boolean;
   client_can_view_documents: boolean;
   client_can_view_activity: boolean;
+};
+
+export type CreateNote = {
+  content: string;
+  mentions?: [string];
+  attachments: [string];
+};
+
+export type MentionedUser = {
+  id: string;
+  name: string;
+  avatar?: string;
+};
+
+export type NoteMentionMetadata = {
+  mentions: string[];
+};
+
+export type EnrichedNote = {
+  id: string;
+  content: string;
+  metadata: NoteMentionMetadata;
+  parsed_mentions?: {
+    user_ids: string[];
+    display_names: string[];
+    highlighted_content: string;
+    is_mentioned_user?: boolean;
+  };
+};
+
+export type CreateComment = {
+  content: string;
+};
+
+export type EnrichedComment = CommentsModelType & {
+  author: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  } | null;
 };

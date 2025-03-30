@@ -10,6 +10,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('type').notNullable().index();
     table.string('name');
     table.string('description');
+    table.boolean('is_system').defaultTo(false);
     table.timestamps(true, true);
     table.timestamp('deleted_at').nullable();
   });

@@ -9,6 +9,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('project_id').nullable().index();
     table.string('document_type_id').nullable().index();
     table.string('task_id').nullable().index();
+    table.string('note_id').nullable().index();
     table.string('name').index();
     table.string('type');
     table.string('description');

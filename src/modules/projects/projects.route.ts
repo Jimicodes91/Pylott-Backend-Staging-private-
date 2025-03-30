@@ -7,9 +7,12 @@ import { updateDocumentAttachmentValidationRules, updateUploadDocumentValidation
 import { createEventValidationRules, updateEventValidationRules } from '@/shared/validations/event';
 import { DocsController } from '../docs/docs.controller';
 import { EventController } from '../events/event.controller';
+import { ProjectController } from './projects.controller';
 
 const documentController = container.resolve(DocsController);
 const eventsController = container.resolve(EventController);
+const projectController = container.resolve(ProjectController);
+
 export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Events
@@ -39,15 +42,67 @@ export const projectRoutes = (prefix: string, server: Server) => {
     schemaValidator(updateDocumentAttachmentValidationRules),
     documentController.updateDocumentAttachment,
   );
+
+  /**
+   * Project Types
+   */
+  server.get(`${prefix}/types`, authGuard, projectController.getAllProjectTypes);
+  server.get(`${prefix}/types/:project_type_id`, authGuard, projectController.getProjectTypeDetails);
+  server.post(`${prefix}/types`, authGuard, projectController.createProjectType);
+  server.patch(`${prefix}/types/:project_type_id`, authGuard, projectController.updateProjectTypeDetails);
+
+  /**
+   * Milestones
+   */
+  server.get(`${prefix}/types/:project_type_id/milestones`, authGuard, projectController.getAllMilestones);
+  server.get(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, projectController.getMilestoneDetails);
+  server.post(`${prefix}/types/milestones`, authGuard, projectController.createMilestone);
+  server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, projectController.updateMilestone);
+
+  /**
+   * Milestone Stages
+   */
+  server.get(`${prefix}/stages/:stage_id`, authGuard, projectController.getMilestoneStageDetails);
+  server.get(`${prefix}/milestones/:milestone_id/stages`, authGuard, projectController.getMilestoneStagesByMilestone);
+  server.post(`${prefix}/stages`, authGuard, projectController.createMilestoneStage);
+  server.patch(`${prefix}/stages/:stage_id`, authGuard, projectController.updateMilestoneStage);
+
+  /**
+   * Projects
+   */
+  server.get(`${prefix}`, authGuard, projectController.getAllProjects);
+  server.get(`${prefix}/:project_id`, authGuard, projectController.getProject);
+  server.post(`${prefix}`, authGuard, projectController.createProject);
+  server.patch(`${prefix}/:project_id`, authGuard, projectController.updateProject);
+
+  /**
+   * Project Members
+   */
+  server.get(`${prefix}/:project_id/members`, authGuard, projectController.getProjectMembers);
+  server.post(`${prefix}/:project_id/members`, authGuard, projectController.addProjectMember);
+  server.delete(`${prefix}/:project_id/members/:member_id`, authGuard, projectController.removeProjectMember);
+
   /**
    * Tasks
    */
-
-  /**
-   * Comments
-   */
+  server.post(`${prefix}/:project_id/tasks`, authGuard, projectController.createTask);
+  server.get(`${prefix}/:project_id/tasks`, authGuard, projectController.getAllTasks);
+  server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.getTaskById);
+  server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.updateTask);
+  server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.deleteTask);
+  server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, projectController.deleteTaskAttachment);
 
   /**
    * Notes
    */
+  server.post(`${prefix}/:project_id/notes`, authGuard, projectController.createNote);
+  server.get(`${prefix}/:project_id/notes`, authGuard, projectController.getAllNotes);
+  server.get(`${prefix}/:project_id/notes/:note_id`, authGuard, projectController.getNoteDetails);
+
+  /**
+   * Comments
+   */
+  server.post(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, projectController.createComment);
+  server.get(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, projectController.getNoteComments);
+  server.delete(`${prefix}/:project_id/notes/:note_id/comments/:comment_id`, authGuard, projectController.deleteComment);
 };
