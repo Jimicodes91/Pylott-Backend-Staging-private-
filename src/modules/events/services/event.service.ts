@@ -7,14 +7,16 @@ import advancedFormat from 'dayjs/plugin/advancedFormat';
 
 dayjs.extend(advancedFormat);
 
-import { EventsRepository, MetadataRepository, ProjectRepository } from '@/repositories';
+import { EventsRepository, MetadataRepository, ProjectRepository, UserRepository } from '@/repositories';
 
 import { EventDto } from '@/shared/types/dto/event.dto';
-import { MetadataType } from '@/shared/enums';
+import { EmailSubject, MetadataType } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { EventModelType, UserModelType } from '@/models';
 import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
 import { CreateCalenderEvent } from '@/shared/types/events.type';
+import sendEmail from '@/shared/utils/nodemailer';
+import { eventCreatedEmail } from '@/shared/utils/email';
 
 @injectable()
 export class EventService {
@@ -24,6 +26,7 @@ export class EventService {
     private readonly metadataRepository: MetadataRepository,
     private readonly eventRepository: EventsRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly userRepository: UserRepository,
     private readonly googleCalender: GoogleAPIsCalender,
   ) {}
 
@@ -78,6 +81,16 @@ export class EventService {
       };
 
       await this.eventRepository.create(insertData);
+
+      if (payload.invites && payload.invites.length) {
+        const users = await this.userRepository.findAllWhereEmailIn(payload.invites);
+
+        users.forEach(async (user) => {
+          const emailSubject = `${EmailSubject.EVENT_CREATED} - ${payload.name}`;
+          const email = eventCreatedEmail(user.name, payload.name, payload.start_datetime, '');
+          await sendEmail(user.email, emailSubject, email);
+        });
+      }
 
       return { status: true, message: 'Event created successfully', statusCode: StatusCodes.CREATED };
     } catch (error: any) {

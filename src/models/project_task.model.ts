@@ -11,6 +11,7 @@ export class ProjectTask extends BaseModel {
 
   project_id: string;
   company_id: string;
+  author_id: string;
   name: string;
   description: string;
   status: ProjectTaskStatus;

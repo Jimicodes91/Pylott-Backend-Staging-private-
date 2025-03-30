@@ -61,3 +61,11 @@ export enum AUDIT_TRAIL_ACTION {
   COMMENT_CREATED = 'COMMENT_CREATED',
   COMMENT_DELETED = 'COMMENT_DELETED',
 }
+
+export enum EmailSubject {
+  EVENT_CREATED = 'New Event Scheduled',
+  TASK_COMPLETED = 'Task Completed',
+  TASK_ASSIGNED = 'New Task Assigned',
+  MILESTONE_CREATED = 'New Milestone Added',
+  PROJECT_CREATED = 'New Project Created',
+}

@@ -11,6 +11,7 @@ import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType } from '@/shared/e
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateComment, CreateNote, EnrichedComment, EnrichedNote, NoteMentionMetadata } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
+// import sendEmail from '@/shared/utils/nodemailer';
 
 @injectable()
 export class NotesService {
@@ -80,6 +81,7 @@ export class NotesService {
         project_id,
       );
 
+      // await sendEmail();
       // if (payload.mentions && payload.mentions.length) {
       //   const mentionedUsers = await this.userRepository.findAllWhereIdIn(payload.mentions);
       //   // send mail

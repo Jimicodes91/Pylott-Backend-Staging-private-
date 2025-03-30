@@ -14,6 +14,10 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
     return await this.model.query().whereIn('id', userIds);
   }
 
+  async findAllWhereEmailIn(emails: Array<string>) {
+    return await this.model.query().whereIn('email', emails);
+  }
+
   // Add a new SysAdmin
   public async addSysAdmin(name: string, email: string, role: UserRoles.SUPER_ADMIN, password: string) {
     return this.create({ name, email, role, is_active: true, password });

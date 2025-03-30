@@ -7,11 +7,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository, ProjectRepository, ProjectTaskRepository, UserRepository } from '@/repositories';
 
 import { AttachmentsModelType, DocumentsModelType, ProjectTaskModelType, UserModelType } from '@/models';
-import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType, ProjectTaskStatus } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, DocumentsDirectory, EmailSubject, MetadataType, ProjectTaskStatus } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateTask } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
+import sendEmail from '@/shared/utils/nodemailer';
+import { newTaskAssignedEmail, taskCompletedEmail } from '@/shared/utils/email';
 
 @injectable()
 export class TaskService {
@@ -87,6 +89,7 @@ export class TaskService {
           start_date: payload.start_date,
           end_date: payload.end_date,
           is_visible_to_client: payload.is_visible_to_client,
+          author_id: user.id,
         };
 
         const documentData: Partial<DocumentsModelType> = {
@@ -130,6 +133,11 @@ export class TaskService {
         project_id,
       );
 
+      const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
+      const taskAuthor = await this.userRepository.findOne({ id: payload.assignee_id });
+      const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, payload.end_date, '');
+      await sendEmail(taskAuthor.email, emailSubject, email);
+
       return {
         status: true,
         message: 'Task created successfully',
@@ -163,6 +171,15 @@ export class TaskService {
           status: false,
           message: 'Task not found',
           statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+
+      const project = await this.projectRepository.findOne({ id: project_id, company_id });
+      if (!project) {
+        return {
+          status: false,
+          message: 'Project not found',
+          statusCode: StatusCodes.NOT_FOUND,
         };
       }
 
@@ -214,6 +231,20 @@ export class TaskService {
           }
         }
       });
+
+      if (payload.status && payload.status === ProjectTaskStatus.COMPLETED) {
+        const emailSubject = `${EmailSubject.TASK_COMPLETED} - ${task.name}`;
+        const taskAuthor = await this.userRepository.findOne({ id: task.author_id });
+        const email = taskCompletedEmail(taskAuthor.name, task.name, '');
+        await sendEmail(taskAuthor.email, emailSubject, email);
+      }
+
+      if (payload.assignee_id) {
+        const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
+        const taskAuthor = await this.userRepository.findOne({ id: payload.assignee_id });
+        const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, payload.end_date, '');
+        await sendEmail(taskAuthor.email, emailSubject, email);
+      }
 
       return {
         status: true,
