@@ -4,7 +4,7 @@ const tableName = 'project_settings';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTableIfNotExists(tableName, (table) => {
-    table.string('id').unique().notNullable();
+    table.string('id').primary();
     table.string('company_id').notNullable().index();
     table.string('project_id').notNullable().index();
     table.boolean('client_can_view_task').defaultTo(false);

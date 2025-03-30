@@ -4,10 +4,11 @@ const tableName = "project_notes";
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTableIfNotExists(tableName, (table) => {
-    table.string('id').unique().notNullable();
+    table.string('id').primary();
     table.string('project_id').notNullable().index();
     table.string('author_id').notNullable().index();
-    table.string('content');
+    table.string('company_id').notNullable().index();
+    table.text('content');
     table.string("metadata");
     table.timestamps(true, true);
     table.timestamp('deleted_at').nullable();

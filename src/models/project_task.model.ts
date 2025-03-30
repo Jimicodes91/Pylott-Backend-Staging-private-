@@ -12,10 +12,10 @@ export class ProjectTask extends BaseModel {
   project_id: string;
   company_id: string;
   author_id: string;
+  assignee_id: string;
   name: string;
   description: string;
   status: ProjectTaskStatus;
-  assignee_id: string;
   start_date: string;
   end_date: string;
   is_visible_to_client: boolean;

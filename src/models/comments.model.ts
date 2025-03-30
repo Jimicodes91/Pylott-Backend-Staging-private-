@@ -7,8 +7,8 @@ export class Comments extends BaseModel {
   static tableName = 'comments';
 
   project_id: string;
-  author_id: string;
   note_id: string;
+  author_id: string;
   content: string;
 
   static relationMappings = (): ModelsRelationMapping => ({});

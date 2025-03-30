@@ -1,25 +1,24 @@
-import type { Knex } from "knex";
+import type { Knex } from 'knex';
 
-const tableName = "documents";
+const tableName = 'documents';
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTableIfNotExists(tableName, table => {
-    table.string('id').unique().notNullable();
-    table.string('company_id').notNullable().index();
-    table.string('project_id').nullable().index();
-    table.string('document_type_id').nullable().index();
-    table.string('task_id').nullable().index();
-    table.string('note_id').nullable().index();
-    table.string('name').index();
-    table.string('type');
-    table.string('description');
-    table.timestamps(true, true);
-    table.timestamp('deleted_at').nullable();
-  })
+	await knex.schema.createTable(tableName, (table) => {
+		table.string('id').primary();
+		table.string('company_id').notNullable().index();
+		table.string('project_id').nullable().index();
+		table.string('document_type_id').nullable().index();
+		table.string('task_id').nullable().index();
+		table.string('note_id').nullable().index();
+		table.string('name').notNullable().index();
+		table.string('type').notNullable();
+		table.text('description').nullable();
+		table.boolean('is_visible_to_client').defaultTo(false).notNullable();
+		table.timestamps(true, true);
+		table.timestamp('deleted_at').nullable();
+	});
 }
-
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists(tableName);
+	await knex.schema.dropTableIfExists(tableName);
 }
-

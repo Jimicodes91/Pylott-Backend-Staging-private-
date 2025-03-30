@@ -4,11 +4,12 @@ import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
 
 export class ProjectType extends BaseModel {
-  static tableName = 'project_type';
+  static tableName = 'project_types';
 
-  name: string;
-  is_system: boolean;
   company_id: string;
+  name: string;
+  slug: string;
+  is_system: boolean;
 
   static relationMappings = (): ModelsRelationMapping => ({});
 }

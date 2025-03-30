@@ -4,7 +4,7 @@ const tableName = "milestones";
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTableIfNotExists(tableName, (table) => {
-    table.string('id').unique().notNullable();
+    table.string('id').primary();
     table.string('project_type_id').notNullable().index();
     table.string('company_id').notNullable().index();
     table.string('name');

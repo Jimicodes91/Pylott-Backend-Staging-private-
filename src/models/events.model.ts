@@ -3,7 +3,6 @@ import { ModelObject } from 'objection';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
 
-// @todo @Oluwatunmise-olat Create this migration file
 export class Event extends BaseModel {
   static tableName = 'events';
 
