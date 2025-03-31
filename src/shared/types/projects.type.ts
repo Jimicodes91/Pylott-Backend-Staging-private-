@@ -6,7 +6,6 @@ export type CreateProjectType = {
   client_id: string;
   consultant_id?: string;
   project_type_id: string;
-  stage_id?: string;
   start_date: string;
   end_date: string;
   milestone_id?: string;
@@ -114,4 +113,9 @@ export type EnrichedComment = CommentsModelType & {
     email: string;
     avatar?: string;
   } | null;
+};
+
+export type _ProjectType = {
+  company_id: string;
+  name: string;
 };

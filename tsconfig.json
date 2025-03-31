@@ -11,7 +11,8 @@
 		"forceConsistentCasingInFileNames": true,
 		"baseUrl": ".",
 		"noUnusedLocals": false,
-		"typeRoots": ["./node_modules/@types"],
+		"typeRoots": ["./node_modules/@types", "./src/shared/types"],
+		"types": ["express"],
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"paths": {

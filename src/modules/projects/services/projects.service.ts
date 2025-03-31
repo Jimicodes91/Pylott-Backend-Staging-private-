@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
-import { ProjectRepository, MilestonesRepository, ClientRepository, ProjectTypeRepository, MilestoneStagesRepository, ProjectSettingsRepository, MetadataRepository } from '@/repositories';
+import { ProjectRepository, MilestonesRepository, ClientRepository, ProjectTypeRepository, ProjectSettingsRepository, MetadataRepository } from '@/repositories';
 
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { UserModelType } from '@/models';
@@ -21,7 +21,6 @@ export class ProjectService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly milestonesRepository: MilestonesRepository,
-    private readonly mileStoneStagesRepository: MilestoneStagesRepository,
     private readonly clientRepository: ClientRepository,
     private readonly projectTypeRepository: ProjectTypeRepository,
     private readonly projectSettingsRepository: ProjectSettingsRepository,
@@ -157,22 +156,6 @@ export class ProjectService {
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
-
-        if (payload.stage_id) {
-          const stage = await this.mileStoneStagesRepository.findOne({
-            milestone_id: payload.milestone_id,
-            company_id,
-            id: payload.stage_id,
-          });
-
-          if (!stage) {
-            return {
-              status: false,
-              message: 'Milestone stage not found',
-              statusCode: StatusCodes.NOT_FOUND,
-            };
-          }
-        }
       }
 
       const project = await this.projectRepository.create({
@@ -185,7 +168,6 @@ export class ProjectService {
         start_date: payload.start_date,
         end_date: payload.end_date,
         milestone_id: payload.milestone_id || null,
-        stage_id: payload.stage_id,
         status: payload.status || ProjectStatus.NOT_STARTED,
         created_by: user.id,
       });
@@ -269,7 +251,6 @@ export class ProjectService {
 
             if (milestone && milestone.project_type_id !== payload.project_type_id) {
               payload.milestone_id = null;
-              payload.stage_id = null;
             }
           }
         }
@@ -295,61 +276,6 @@ export class ProjectService {
           return {
             status: false,
             message: 'Milestone is not compatible with this project type',
-            statusCode: StatusCodes.BAD_REQUEST,
-          };
-        }
-
-        // If changing milestone, reset stage or validate stage compatibility
-        if (payload.milestone_id !== project.milestone_id) {
-          // If stage_id is provided, validate it
-          if (payload.stage_id) {
-            const stage = await this.mileStoneStagesRepository.findOne({
-              id: payload.stage_id,
-              milestone_id: payload.milestone_id,
-              company_id,
-            });
-
-            if (!stage) {
-              return {
-                status: false,
-                message: 'Stage not found or not compatible with selected milestone',
-                statusCode: StatusCodes.BAD_REQUEST,
-              };
-            }
-          } else {
-            // Get default stage for this milestone
-            const stages = await this.mileStoneStagesRepository.findMany({
-              milestone_id: payload.milestone_id,
-              company_id,
-            });
-
-            if (stages.length > 0) {
-              payload.stage_id = stages[0].id;
-            } else {
-              payload.stage_id = null;
-            }
-          }
-        }
-      }
-
-      if (payload.stage_id && !payload.milestone_id) {
-        const stage = await this.mileStoneStagesRepository.findOne({
-          id: payload.stage_id,
-          company_id,
-        });
-
-        if (!stage) {
-          return {
-            status: false,
-            message: 'Stage not found',
-            statusCode: StatusCodes.NOT_FOUND,
-          };
-        }
-
-        if (stage.milestone_id !== project.milestone_id) {
-          return {
-            status: false,
-            message: 'Stage is not part of the current milestone',
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }

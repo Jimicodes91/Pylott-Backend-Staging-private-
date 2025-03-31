@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
-import BaseRepository from './base.repository';
 import { Milestones, MilestonesModelType } from '@/models';
+import BaseRepository from './base.repository';
 
 @injectable()
 export class MilestonesRepository extends BaseRepository<MilestonesModelType, Milestones> {

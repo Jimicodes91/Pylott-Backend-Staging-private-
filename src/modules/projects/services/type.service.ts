@@ -4,7 +4,7 @@ import { injectable } from 'tsyringe';
 import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
 
 import { ServiceType } from '@/shared/types/general.type';
-import { CreateProjectType, PhaseProgress } from '@/shared/types/projects.type';
+import { _ProjectType, PhaseProgress } from '@/shared/types/projects.type';
 import { MilestonesModelType } from '@/models';
 
 @injectable()
@@ -62,18 +62,19 @@ export class TypeService {
     }
   }
 
-  async createProjectType(company_id: string, payload: CreateProjectType, is_system: boolean = false): Promise<ServiceType> {
+  async createProjectType(company_id: string, payload: _ProjectType, is_system: boolean = false): Promise<ServiceType> {
     try {
       const existingProjectType = await this.projectTypeRepository.findOne({
         company_id,
         ...payload,
       });
 
-      if (existingProjectType)
+      if (existingProjectType) {
         return {
           status: false,
           message: 'A project type with name already exists',
         };
+      }
 
       await this.projectTypeRepository.create({
         company_id,
@@ -95,7 +96,7 @@ export class TypeService {
     }
   }
 
-  async updateProjectTypeDetails(company_id: string, project_type_id: string, updateData: Partial<CreateProjectType>): Promise<ServiceType> {
+  async updateProjectTypeDetails(company_id: string, project_type_id: string, updateData: Partial<_ProjectType>): Promise<ServiceType> {
     try {
       const existingProjectType = await this.projectTypeRepository.findOne({
         company_id,

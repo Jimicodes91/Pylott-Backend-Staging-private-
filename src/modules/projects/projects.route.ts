@@ -8,6 +8,7 @@ import { createEventValidationRules, updateEventValidationRules } from '@/shared
 import { DocsController } from '../docs/docs.controller';
 import { EventController } from '../events/event.controller';
 import { ProjectController } from './projects.controller';
+import { createProjectTypeValidationRules } from '@/shared/validations/projects';
 
 const documentController = container.resolve(DocsController);
 const eventsController = container.resolve(EventController);
@@ -17,7 +18,6 @@ export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Events
    */
-
   server.post(`${prefix}/:product_id/events`, authGuard, schemaValidator(createEventValidationRules), eventsController.createEvent);
   server.get(`${prefix}/:product_id/events`, authGuard, eventsController.getAllEvents);
   server.patch(`${prefix}/:product_id/events/:event_id`, authGuard, schemaValidator(updateEventValidationRules), eventsController.updateEvent);
@@ -48,7 +48,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
    */
   server.get(`${prefix}/types`, authGuard, projectController.getAllProjectTypes);
   server.get(`${prefix}/types/:project_type_id`, authGuard, projectController.getProjectTypeDetails);
-  server.post(`${prefix}/types`, authGuard, projectController.createProjectType);
+  server.post(`${prefix}/types`, authGuard, schemaValidator(createProjectTypeValidationRules), projectController.createProjectType);
   server.patch(`${prefix}/types/:project_type_id`, authGuard, projectController.updateProjectTypeDetails);
 
   /**
@@ -58,14 +58,6 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, projectController.getMilestoneDetails);
   server.post(`${prefix}/types/milestones`, authGuard, projectController.createMilestone);
   server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, projectController.updateMilestone);
-
-  /**
-   * Milestone Stages
-   */
-  server.get(`${prefix}/stages/:stage_id`, authGuard, projectController.getMilestoneStageDetails);
-  server.get(`${prefix}/milestones/:milestone_id/stages`, authGuard, projectController.getMilestoneStagesByMilestone);
-  server.post(`${prefix}/stages`, authGuard, projectController.createMilestoneStage);
-  server.patch(`${prefix}/stages/:stage_id`, authGuard, projectController.updateMilestoneStage);
 
   /**
    * Projects
