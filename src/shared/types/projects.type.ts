@@ -1,4 +1,7 @@
 import { CommentsModelType } from '@/models';
+import { FieldTypeEnum, ProjectStatus } from '../enums';
+
+type CustomFieldValue = string | number | boolean | Date | File | string[];
 
 export type CreateProjectType = {
   name: string;
@@ -9,7 +12,8 @@ export type CreateProjectType = {
   start_date: string;
   end_date: string;
   milestone_id?: string;
-  status?: string;
+  status?: ProjectStatus;
+  custom_fields?: Record<string, CustomFieldValue>;
 };
 
 export type CreateMilestoneType = {
@@ -118,4 +122,19 @@ export type EnrichedComment = CommentsModelType & {
 export type _ProjectType = {
   company_id: string;
   name: string;
+  custom_fields: Array<{
+    name: string;
+    field_key: string;
+    field_type: FieldTypeEnum;
+    is_required: boolean;
+    order: number;
+    options?: any;
+  }>;
+};
+
+export type ProcessCustomFieldsResult = {
+  valid: boolean;
+  message?: string;
+  fields: Record<string, any>;
+  documentData: Array<{ name: string; files: string[] }>;
 };

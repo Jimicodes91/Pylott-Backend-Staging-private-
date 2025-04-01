@@ -18,7 +18,7 @@ export const metadataRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/projects/:project_id/type/documents`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createDocumentType);
 
-  server.post(`${prefix}/:projects/project_id/type/tasks`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createTaskType);
+  server.post(`${prefix}/projects/:project_id/type/tasks`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createTaskType);
 
   server.post(`${prefix}/projects/:project_id/type/events`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createEventType);
 };

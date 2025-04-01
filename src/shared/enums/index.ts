@@ -40,12 +40,14 @@ export enum MetadataType {
   EVENT = 'event',
   TASK = 'task',
   NOTE = 'note',
+  PROJECT = 'project',
 }
 
 export enum DocumentsDirectory {
   DOCS = 'docs',
   TASKS = 'tasks',
   NOTES = 'notes',
+  PROJECTS = 'projects',
 }
 
 export enum EventStatus {
@@ -68,4 +70,15 @@ export enum EmailSubject {
   TASK_ASSIGNED = 'New Task Assigned',
   MILESTONE_CREATED = 'New Milestone Added',
   PROJECT_CREATED = 'New Project Created',
+}
+
+export enum FieldTypeEnum {
+  TEXT = 'text',
+  TEXTAREA = 'textarea',
+  NUMBER = 'number',
+  DATE = 'date',
+  SELECT = 'select',
+  CHECKBOX = 'checkbox',
+  RADIO = 'radio',
+  FILE = 'file',
 }

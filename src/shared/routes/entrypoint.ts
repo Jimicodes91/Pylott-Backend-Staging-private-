@@ -10,6 +10,7 @@ import { sysAdminRoutes } from '@/modules/admin/admin.route';
 import { auditTrailRoutes } from '@/modules/audit_trail/audit_trail.route';
 import { projectSettingRoutes } from '@/modules/project_settings/project_settings.route';
 import { projectRoutes } from '@/modules/projects/projects.route';
+import { metadataRoutes } from '@/modules/metadata/metadata.route';
 
 export default (server: Server) => {
   server.get('/', (_: Request, response: Response) => successResponse(response, 'Welcome to Pylott 🚀'));
@@ -21,4 +22,6 @@ export default (server: Server) => {
   auditTrailRoutes(`${RoutePrefix.V1}/audit-trails`, server);
   projectSettingRoutes(`${RoutePrefix.V1}/settings`, server);
   projectRoutes(`${RoutePrefix.V1}/projects`, server);
+  metadataRoutes(`${RoutePrefix.V1}/metadata`, server);
+  auditTrailRoutes(`${RoutePrefix.V1}/audit-trail`, server);
 };

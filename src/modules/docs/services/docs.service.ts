@@ -55,7 +55,7 @@ export class DocsService {
         type: MetadataType.DOCUMENT,
         document_type_id: others.document_type_id,
         name: others.file_name,
-        is_visible_to_client: others.is_visible_to_client,
+        is_visible_to_client: others?.is_visible_to_client,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
         const fileName = `${project_id}/${docFileName}`.toLowerCase();
@@ -142,6 +142,10 @@ export class DocsService {
 
       const updateData: Partial<DocumentsModelType> = {};
 
+      if (payload.document_type_id && document.document_type_id === 'custom_field') {
+        return { status: false, message: 'Cannot modify document_type_id for custom document' };
+      }
+
       if (payload.document_type_id) {
         const metadataQuery = {
           company_id,
@@ -173,12 +177,14 @@ export class DocsService {
     }
   }
 
-  public async updateDocumentAttachment(project_id: string, company_id: string, document_id: string, payload: Pick<UploadDocumentType, 'attachment'>): Promise<ServiceType> {
+  public async updateDocumentAttachment(project_id: string, company_id: string, document_id: string, attachment_id: string, payload: Pick<UploadDocumentType, 'attachment'>): Promise<ServiceType> {
     try {
       const document = await this.documentRepository.findOne({ project_id, id: document_id, company_id });
       if (!document) return { status: false, message: 'Document not found', statusCode: StatusCodes.NOT_FOUND };
 
-      let attachmentUrl;
+      let attachmentUrl = payload.attachment;
+
+      console.log(attachmentUrl);
 
       if (payload.attachment && !payload.attachment.includes('http')) {
         const fileName = `${project_id}/${document.name}`;
@@ -188,7 +194,7 @@ export class DocsService {
         attachmentUrl = data;
       }
 
-      if (attachmentUrl) await this.documentAttachmentRepository.update({ id: document_id }, { media_url: attachmentUrl });
+      if (attachmentUrl) await this.documentAttachmentRepository.update({ document_id, id: attachment_id }, { media_url: attachmentUrl });
 
       return { status: true, message: 'Document details updated successfully' };
     } catch (error) {

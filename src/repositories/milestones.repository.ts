@@ -10,7 +10,7 @@ export class MilestonesRepository extends BaseRepository<MilestonesModelType, Mi
   }
 
   async findMilestoneWhereNotName(company_id: string, project_type_id: string, name: string, id: string) {
-    return await this.model.query().where('company_id', company_id).where('project_type_id', project_type_id).where('name', name).whereNot('id', id).first();
+    return await this.model.query().where('company_id', company_id).where('project_type_id', project_type_id).where('name', name).whereNull('deleted_at').whereNot('id', id).first();
   }
 
   async getMilestone(company_id: string, milestone_id: string, project_type_id: string) {
@@ -20,8 +20,9 @@ export class MilestonesRepository extends BaseRepository<MilestonesModelType, Mi
         company_id,
         id: milestone_id,
         project_type_id,
+        deleted_at: null,
       })
-      .withGraphFetched('stages')
+      .withGraphFetched({ projects: true })
       .first();
   }
 
@@ -31,7 +32,8 @@ export class MilestonesRepository extends BaseRepository<MilestonesModelType, Mi
       .where({
         company_id,
         project_type_id,
+        deleted_at: null,
       })
-      .withGraphFetched('stages');
+      .withGraphFetched({ projects: true });
   }
 }

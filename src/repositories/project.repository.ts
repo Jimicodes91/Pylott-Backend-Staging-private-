@@ -11,10 +11,18 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
   }
 
   async getProjectsAndAssociatedEntities(query: ObjectLiteral) {
-    return await this.model.query().where(query).withGraphFetched('[client, project_type, milestone, stage]').orderBy('created_at', 'desc');
+    return await this.model
+      .query()
+      .where(query)
+      .withGraphFetched({ documents: { attachments: true }, milestone: true })
+      .orderBy('created_at', 'desc');
   }
 
   async getProjectDetails(company_id: string, project_id: string) {
-    return this.model.query().where({ id: project_id, company_id }).withGraphFetched('[client, projectType, milestone, stage, consultants]').first();
+    return this.model
+      .query()
+      .where({ id: project_id, company_id })
+      .withGraphFetched({ documents: { attachments: true }, milestone: true })
+      .first();
   }
 }

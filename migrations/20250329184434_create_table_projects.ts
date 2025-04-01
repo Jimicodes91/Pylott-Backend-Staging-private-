@@ -5,15 +5,14 @@ const tableName = "projects";
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable(tableName, (table) => {
     table.string('id').primary();
-    table.string('client_id').notNullable().index();
+    table.string('client_id').nullable().index();
     table.string('company_id').notNullable().index();
     table.string('consultant_id').nullable().index();
     table.string('milestone_id').index();
-    table.string('stage_id').index();
     table.string('project_type_id').index();
     table.string("name");
     table.string("status");
-    table.string("description").nullable()
+    table.json('custom_fields').nullable();
     table.timestamp("start_date").nullable();
     table.timestamp("end_date").nullable();
     table.timestamp("completed_at").nullable();

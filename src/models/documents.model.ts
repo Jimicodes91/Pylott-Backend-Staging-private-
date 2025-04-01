@@ -19,10 +19,12 @@ export class Documents extends BaseModel {
   description: string;
   is_visible_to_client: boolean;
 
+  attachments: Attachments[];
+
   static relationMappings = (): ModelsRelationMapping => ({
     attachments: {
       modelClass: Attachments,
-      relation: Model.BelongsToOneRelation,
+      relation: Model.HasManyRelation,
       join: { from: 'documents.id', to: 'attachments.document_id' },
     },
   });

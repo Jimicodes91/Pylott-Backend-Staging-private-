@@ -33,7 +33,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
       return next(new HttpError('User not found.', 404));
     }
 
-    (req as any).user = { ...decoded, company_id: user?.company_id ?? null };
+    (req as any).user = { ...decoded, ...user };
 
     return next();
   } catch (error: any) {

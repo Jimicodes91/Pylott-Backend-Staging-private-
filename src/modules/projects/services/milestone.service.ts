@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
 
-import { MilestonesRepository } from '@/repositories';
+import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
 
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateMilestoneType, UpdateMilestoneType } from '@/shared/types/projects.type';
@@ -13,19 +13,26 @@ import { ProjectStatus } from '@/shared/enums';
 export class MilestoneService {
   private traceId = '[MILESTONE SERVICE]';
 
-  constructor(private readonly milestonesRepository: MilestonesRepository) {}
+  constructor(
+    private readonly milestonesRepository: MilestonesRepository,
+    private readonly projectTypeRepository: ProjectTypeRepository,
+  ) {}
 
   async getAllMilestones(company_id: string, project_type_id: string): Promise<ServiceType> {
     try {
       const milestones = await this.milestonesRepository.getAllMilestones(company_id, project_type_id);
 
-      const milestonesWithDuration = milestones.map((milestone) => ({
-        ...milestone,
-        duration: this.calculateDuration(milestone.start_date, milestone.end_date),
-        completed_at: milestone?.completed_at ? dayjs(milestone.completed_at, 'DD MMM YYYY') : null,
-        start_date: dayjs(milestone.start_date, 'DD MMM YYYY'),
-        status: milestone?.completed_at ? ProjectStatus.COMPLETED : ProjectStatus.IN_PROGRESS,
-      }));
+      const milestonesWithDuration = milestones.map((milestone) => {
+        const duration = this.getDurationString(milestone.start_date, milestone.end_date);
+        return {
+          ...milestone,
+          duration,
+          completed_at: milestone?.completed_at ? dayjs(milestone.completed_at).format('DD MMM YYYY') : null,
+          start_date: dayjs(milestone.start_date).format('DD MMM YYYY'),
+          end_date: dayjs(milestone.end_date).format('DD MMM YYYY'),
+          status: milestone?.completed_at ? ProjectStatus.COMPLETED : ProjectStatus.IN_PROGRESS,
+        };
+      });
 
       return {
         status: true,
@@ -63,9 +70,10 @@ export class MilestoneService {
 
       const milestoneWithDuration = {
         ...milestone,
-        duration: this.calculateDuration(milestone.start_date, milestone.end_date),
+        duration: this.getDurationString(milestone.start_date, milestone.end_date),
         completed_at: milestone?.completed_at ? dayjs(milestone.completed_at).format('DD MMM YYYY') : null,
-        start_date: dayjs(milestone.start_date, 'DD MMM YYYY'),
+        start_date: dayjs(milestone.start_date).format('DD MMM YYYY'),
+        end_date: dayjs(milestone.end_date).format('DD MMM YYYY'),
         status: milestone?.completed_at ? ProjectStatus.COMPLETED : ProjectStatus.IN_PROGRESS,
       };
 
@@ -93,10 +101,16 @@ export class MilestoneService {
 
   async createMilestone(company_id: string, payload: CreateMilestoneType, is_system: boolean = false): Promise<ServiceType> {
     try {
+      const projectType = await this.projectTypeRepository.findOne({ id: payload.project_type_id, company_id, deleted_at: null });
+      if (!projectType) {
+        return { status: false, message: 'Project Type not found', statusCode: StatusCodes.NOT_FOUND };
+      }
+
       const existingMilestone = await this.milestonesRepository.findOne({
         company_id,
         project_type_id: payload.project_type_id,
         name: payload.name,
+        deleted_at: null,
       });
 
       if (existingMilestone) {
@@ -114,6 +128,7 @@ export class MilestoneService {
         is_system,
         start_date: dayjs(payload.start_date).format(),
         end_date: dayjs(payload.end_date).format(),
+        completed_at: null,
       });
 
       return {
@@ -185,7 +200,7 @@ export class MilestoneService {
         return { status: false, message: 'Milestone already completed' };
       }
 
-      if (payload.is_completed) updateData.completed_at = new Date().toISOString();
+      if (payload.is_completed) updateData.completed_at = dayjs().format();
 
       await this.milestonesRepository.update({ id: milestone_id, company_id }, updateData);
 
@@ -227,6 +242,10 @@ export class MilestoneService {
     if (days < 7) return `${days} day${days !== 1 ? 's' : ''}`;
     if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) !== 1 ? 's' : ''}`;
 
-    return `${Math.floor(days / 30)} month${Math.floor(days / 30) !== 1 ? 's' : ''}`;
+    const val = `${Math.floor(days / 30)} month${Math.floor(days / 30) !== 1 ? 's' : ''}`;
+
+    console.log('...', days, val);
+
+    return val;
   }
 }

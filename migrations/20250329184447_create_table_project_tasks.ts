@@ -6,7 +6,7 @@ export async function up(knex: Knex): Promise<void> {
 	await knex.schema.createTable(tableName, (table) => {
 		table.string('id').primary();
 		table.string('project_id').notNullable().index();
-		table.string('assignee_id').notNullable().index();
+		table.string('assignee_id').nullable().index();
 		table.string('author_id').notNullable().index();
 		table.string('company_id').notNullable().index();
 		table.string('name');

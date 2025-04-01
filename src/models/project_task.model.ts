@@ -25,7 +25,7 @@ export class ProjectTask extends BaseModel {
       relation: BaseModel.HasManyRelation,
       modelClass: Documents,
       join: {
-        from: 'projects_tasks.id',
+        from: 'project_tasks.id',
         to: 'documents.task_id',
       },
     },
@@ -33,7 +33,7 @@ export class ProjectTask extends BaseModel {
       relation: BaseModel.HasManyRelation,
       modelClass: User,
       join: {
-        from: 'projects_tasks.assignee_id',
+        from: 'project_tasks.assignee_id',
         to: 'users.id',
       },
     },

@@ -46,7 +46,7 @@ export class ProjectController {
   updateProjectTypeDetails = async (req: AuthenticatedRequest, res: Response) => {
     const company_id = req.user.company_id;
     const { project_type_id } = req.params;
-    const payload = req.body as Partial<CreateProjectType>;
+    const payload = req.body as Partial<_ProjectType>;
     const { statusCode = null, ...others } = await this.typeService.updateProjectTypeDetails(company_id, project_type_id, payload);
     return genericResponse({ res, data: others, statusCode });
   };
@@ -67,14 +67,14 @@ export class ProjectController {
   };
 
   createMilestone = async (req: AuthenticatedRequest, res: Response) => {
-    const company_id = (req.user as UserModelType)?.company_id;
+    const company_id = req.user.company_id;
     const payload = req.body as CreateMilestoneType;
     const { statusCode = null, ...others } = await this.milestoneService.createMilestone(company_id, payload);
     return genericResponse({ res, data: others, statusCode });
   };
 
   updateMilestone = async (req: AuthenticatedRequest, res: Response) => {
-    const company_id = (req.user as UserModelType)?.company_id;
+    const company_id = req.user.company_id;
     const { milestone_id } = req.params;
     const updateData = req.body as Partial<CreateMilestoneType>;
     const { statusCode = null, ...others } = await this.milestoneService.updateMilestone(company_id, milestone_id, updateData);
@@ -82,7 +82,7 @@ export class ProjectController {
   };
 
   getAllProjects = async (req: AuthenticatedRequest, res: Response) => {
-    const company_id = (req.user as UserModelType)?.company_id;
+    const company_id = req.user.company_id;
     const { status, client_id, consultant_id, project_type_id } = req.query;
 
     const filters = {
@@ -97,7 +97,7 @@ export class ProjectController {
   };
 
   getProject = async (req: AuthenticatedRequest, res: Response) => {
-    const company_id = (req.user as UserModelType)?.company_id;
+    const company_id = req.user.company_id;
     const { project_id } = req.params;
 
     const { statusCode = null, ...others } = await this.projectService.getProject(company_id, project_id);
@@ -116,7 +116,6 @@ export class ProjectController {
     const user = req.user as UserModelType;
     const { project_id } = req.params;
     const payload = req.body as Partial<CreateProjectType>;
-
     const { statusCode = null, ...others } = await this.projectService.updateProject(user, project_id, payload);
     return genericResponse({ res, data: others, statusCode });
   };

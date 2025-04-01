@@ -2,7 +2,7 @@ import { ModelObject } from 'objection';
 
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
-import { MileStoneStages } from './milestone_stages.model';
+import { Project } from './project.model';
 
 export class Milestones extends BaseModel {
   static tableName = 'milestones';
@@ -15,13 +15,15 @@ export class Milestones extends BaseModel {
   name: string;
   is_system: boolean;
 
+  projects: [Project];
+
   static relationMappings = (): ModelsRelationMapping => ({
-    stages: {
+    projects: {
       relation: BaseModel.HasManyRelation,
-      modelClass: MileStoneStages,
+      modelClass: Project,
       join: {
         from: 'milestones.id',
-        to: 'milestone_stages.milestone_id',
+        to: 'projects.milestone_id',
       },
     },
   });

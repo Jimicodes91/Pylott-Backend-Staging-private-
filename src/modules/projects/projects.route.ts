@@ -8,7 +8,16 @@ import { createEventValidationRules, updateEventValidationRules } from '@/shared
 import { DocsController } from '../docs/docs.controller';
 import { EventController } from '../events/event.controller';
 import { ProjectController } from './projects.controller';
-import { createProjectTypeValidationRules } from '@/shared/validations/projects';
+import {
+  createMilestoneValidationRules,
+  createProjectTypeValidationRules,
+  createProjectValidationRules,
+  createTaskValidationRules,
+  updateMilestoneValidationRules,
+  updateProjectTypeValidationRules,
+  updateProjectValidationRules,
+  updateTaskValidationRules,
+} from '@/shared/validations/projects';
 
 const documentController = container.resolve(DocsController);
 const eventsController = container.resolve(EventController);
@@ -18,26 +27,26 @@ export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Events
    */
-  server.post(`${prefix}/:product_id/events`, authGuard, schemaValidator(createEventValidationRules), eventsController.createEvent);
-  server.get(`${prefix}/:product_id/events`, authGuard, eventsController.getAllEvents);
-  server.patch(`${prefix}/:product_id/events/:event_id`, authGuard, schemaValidator(updateEventValidationRules), eventsController.updateEvent);
-  server.get(`${prefix}/:product_id/events/:event_id`, authGuard, eventsController.getEventDetails);
-  server.delete(`${prefix}/:product_id/events/:event_id`, authGuard, eventsController.deleteEvent);
+  server.post(`${prefix}/:project_id/events`, authGuard, schemaValidator(createEventValidationRules), eventsController.createEvent);
+  server.get(`${prefix}/:project_id/events`, authGuard, eventsController.getAllEvents);
+  server.patch(`${prefix}/:project_id/events/:event_id`, authGuard, schemaValidator(updateEventValidationRules), eventsController.updateEvent);
+  server.get(`${prefix}/:project_id/events/:event_id`, authGuard, eventsController.getEventDetails);
+  server.delete(`${prefix}/:project_id/events/:event_id`, authGuard, eventsController.deleteEvent);
   // New event invitation response endpoints
-  server.post(`${prefix}/:product_id/events/:event_id/accept`, authGuard, eventsController.acceptEventInvite);
-  server.post(`${prefix}/:product_id/events/:event_id/decline`, authGuard, eventsController.declineEventInvite);
+  server.post(`${prefix}/:project_id/events/:event_id/accept`, authGuard, eventsController.acceptEventInvite);
+  server.post(`${prefix}/:project_id/events/:event_id/decline`, authGuard, eventsController.declineEventInvite);
 
   /**
    * Documents
    */
-  server.get(`${prefix}/:product_id/documents`, authGuard, documentController.getAllDocuments);
-  server.get(`${prefix}/:product_id/documents/:document_id`, authGuard, documentController.getDocumentDetails);
-  server.delete(`${prefix}/:product_id/documents/:document_id`, authGuard, documentController.deleteDocument);
-  server.patch(`${prefix}/:product_id/documents/:document_id`, authGuard, schemaValidator(updateUploadDocumentValidationRules), documentController.updateDocumentUpload);
-  server.post(`${prefix}/:product_id/documents`, authGuard, schemaValidator(uploadDocumentValidationRules), documentController.uploadDocument);
-  server.delete(`${prefix}/:product_id/documents/:document_id/attachments/:attachment_id`, authGuard, documentController.deleteDocumentAttachment);
+  server.get(`${prefix}/:project_id/documents`, authGuard, documentController.getAllDocuments);
+  server.get(`${prefix}/:project_id/documents/:document_id`, authGuard, documentController.getDocumentDetails);
+  server.delete(`${prefix}/:project_id/documents/:document_id`, authGuard, documentController.deleteDocument);
+  server.patch(`${prefix}/:project_id/documents/:document_id`, authGuard, schemaValidator(updateUploadDocumentValidationRules), documentController.updateDocumentUpload);
+  server.post(`${prefix}/:project_id/documents`, authGuard, schemaValidator(uploadDocumentValidationRules), documentController.uploadDocument);
+  server.delete(`${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`, authGuard, documentController.deleteDocumentAttachment);
   server.patch(
-    `${prefix}/:product_id/documents/:document_id/attachments/:attachment_id`,
+    `${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`,
     authGuard,
     schemaValidator(updateDocumentAttachmentValidationRules),
     documentController.updateDocumentAttachment,
@@ -49,23 +58,23 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/types`, authGuard, projectController.getAllProjectTypes);
   server.get(`${prefix}/types/:project_type_id`, authGuard, projectController.getProjectTypeDetails);
   server.post(`${prefix}/types`, authGuard, schemaValidator(createProjectTypeValidationRules), projectController.createProjectType);
-  server.patch(`${prefix}/types/:project_type_id`, authGuard, projectController.updateProjectTypeDetails);
+  server.patch(`${prefix}/types/:project_type_id`, authGuard, schemaValidator(updateProjectTypeValidationRules), projectController.updateProjectTypeDetails);
 
   /**
    * Milestones
    */
   server.get(`${prefix}/types/:project_type_id/milestones`, authGuard, projectController.getAllMilestones);
   server.get(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, projectController.getMilestoneDetails);
-  server.post(`${prefix}/types/milestones`, authGuard, projectController.createMilestone);
-  server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, projectController.updateMilestone);
+  server.post(`${prefix}/types/milestones`, authGuard, schemaValidator(createMilestoneValidationRules), projectController.createMilestone);
+  server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, schemaValidator(updateMilestoneValidationRules), projectController.updateMilestone);
 
   /**
    * Projects
    */
   server.get(`${prefix}`, authGuard, projectController.getAllProjects);
   server.get(`${prefix}/:project_id`, authGuard, projectController.getProject);
-  server.post(`${prefix}`, authGuard, projectController.createProject);
-  server.patch(`${prefix}/:project_id`, authGuard, projectController.updateProject);
+  server.post(`${prefix}`, authGuard, schemaValidator(createProjectValidationRules), projectController.createProject);
+  server.patch(`${prefix}/:project_id`, authGuard, schemaValidator(updateProjectValidationRules), projectController.updateProject);
 
   /**
    * Project Members
@@ -77,10 +86,10 @@ export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Tasks
    */
-  server.post(`${prefix}/:project_id/tasks`, authGuard, projectController.createTask);
+  server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), projectController.createTask);
   server.get(`${prefix}/:project_id/tasks`, authGuard, projectController.getAllTasks);
   server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.getTaskById);
-  server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.updateTask);
+  server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), projectController.updateTask);
   server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.deleteTask);
   server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, projectController.deleteTaskAttachment);
 

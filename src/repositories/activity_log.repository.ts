@@ -31,7 +31,10 @@ export class ActivityLogRepository extends BaseRepository<ActivityLogsModelType,
     const totalCount = await query.clone().clearOrder().resultSize();
 
     return {
-      trails: logs,
+      trails: logs.map((trail) => {
+        const { entity, ...others } = trail;
+        return { ...others, entity: JSON.parse(entity) };
+      }),
       pagination: {
         page,
         limit,
