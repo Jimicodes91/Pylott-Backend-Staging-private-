@@ -4,7 +4,7 @@ const tableName = "activity_logs"
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable(tableName, (table) => {
-    table.string('id').unique().notNullable();
+    table.string('id').primary();
     table.string('company_id').notNullable().index();
     table.string('project_id').notNullable().index();
     table.string('user_id').notNullable().index();
