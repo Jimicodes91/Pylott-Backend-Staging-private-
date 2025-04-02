@@ -8,7 +8,7 @@ export const app = {
   port: process.env.PORT || 5000,
   env: process.env.NODE_ENV || 'development',
   name: process.env.APP_NAME || 'Pylott',
-  email: process.env.APP_EMAIL || '',
+  email: process.env.APP_EMAIL || 'oolat31@gmail.com',
 };
 
 export const database = {
@@ -73,13 +73,17 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export { FRONTEND_URL };
-console.log(FRONTEND_URL);
 
 export const TOKEN_EXPIRATION_MS = Date.now() + 900000;
 export const PASSWORD_RESET_TOKEN_LENGTH = 15;
 export const TEMP_PASSWORD_LENGTH = 8;
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '653485325620-j99cl2a2c48054rr4725ot7ub9j8mb85.apps.g';
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
+
+export const calender = {
+  api_key: process.env.CALCOM_API_KEY ?? 'https://api.cal.com/v2',
+  base_url: process.env.CALCOM_API_BASE_URL,
+};
 
 /**
  * Configures the environment variables for the application and throws an error if

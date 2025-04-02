@@ -30,7 +30,6 @@ export class User extends BaseModel {
   password_setup_token_expires?: number;
 
   static relationMappings = (): ModelsRelationMapping => ({});
-  _id: any;
 }
 
 export type UserModelType = ModelObject<User>;

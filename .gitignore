@@ -26,3 +26,5 @@ google.json
 
 package-lock.json
 dist
+service-account-key.json
+config/*.json
