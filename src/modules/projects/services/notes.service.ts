@@ -42,11 +42,13 @@ export class NotesService {
         company_id: user.company_id,
         content: payload.content,
         metadata: JSON.stringify({ mentions: payload.mentions ?? [] }),
+        project_id,
+        is_pinned: payload?.is_pinned,
       };
 
       const documentData: Partial<DocumentsModelType> = {
         company_id: user.company_id,
-        type: MetadataType.TASK,
+        type: MetadataType.NOTE,
         is_visible_to_client: true,
         id: documentId,
         note_id: noteId,
@@ -63,7 +65,9 @@ export class NotesService {
             if (!fileData.includes('http')) {
               const fileName = `${project_id}/${noteId}`;
               const { data } = await this.cloudinary.upload(DocumentsDirectory.NOTES, fileData, fileName);
-              if (data) await this.attachmentRepository.create({ document_id: documentId, media_url: data }, trx);
+              if (data) await this.attachmentRepository.create({ document_id: documentId, media_url: data });
+            } else {
+              await this.attachmentRepository.create({ document_id: documentId, media_url: fileData });
             }
           });
         }
@@ -82,6 +86,7 @@ export class NotesService {
       );
 
       // await sendEmail();
+      // @here Mail draft is inaccurate
       // if (payload.mentions && payload.mentions.length) {
       //   const mentionedUsers = await this.userRepository.findAllWhereIdIn(payload.mentions);
       //   // send mail
@@ -179,11 +184,13 @@ export class NotesService {
     }
   }
 
-  async createComment(user: UserModelType, project_id: string, note_id: string, payload: CreateComment): Promise<ServiceType> {
+  async toggleNotePinStatus(user: UserModelType, project_id: string, note_id: string, pinStatus: boolean): Promise<ServiceType> {
     try {
-      const commentId = uuidv4();
-
-      const project = await this.projectRepository.findOne({ id: project_id, company_id: user.company_id });
+      const project = await this.projectRepository.findOne({
+        id: project_id,
+        company_id: user.company_id,
+        deleted_at: null,
+      });
 
       if (!project) {
         return {
@@ -193,7 +200,81 @@ export class NotesService {
         };
       }
 
-      const note = await this.notesRepository.findOne({ id: note_id, company_id: user.company_id });
+      const note = await this.notesRepository.findOne({
+        id: note_id,
+        project_id,
+        company_id: user.company_id,
+        deleted_at: null,
+      });
+
+      if (!note) {
+        return {
+          status: false,
+          message: 'Note not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      // 3. Check permissions (only note author or admin can pin)
+      const isAuthor = note.author_id === user.id;
+
+      if (!isAuthor) {
+        return {
+          status: false,
+          message: 'Unauthorized to modify pin status',
+          statusCode: StatusCodes.FORBIDDEN,
+        };
+      }
+
+      await this.notesRepository.update({ id: note_id }, { is_pinned: pinStatus });
+
+      this.auditTrailService.createEvent(
+        pinStatus ? AUDIT_TRAIL_ACTION.NOTE_PINNED : AUDIT_TRAIL_ACTION.NOTE_UNPINNED,
+        {
+          user_id: user.id,
+          company_id: user.company_id,
+          description: `Note ${pinStatus ? 'pinned' : 'unpinned'}`,
+          entity_description: note.content.substring(0, 50) + (note.content.length > 50 ? '...' : ''),
+          entity_id: note_id,
+        },
+        project_id,
+      );
+
+      return {
+        status: true,
+        message: `Note ${pinStatus ? 'pinned' : 'unpinned'} successfully`,
+        data: { is_pinned: pinStatus },
+      };
+    } catch (error) {
+      console.error(`${this.traceId} Error toggling note pin status`, {
+        user_id: user.id,
+        note_id,
+        error: error?.message,
+      });
+
+      return {
+        status: false,
+        message: 'Failed to update pin status',
+        statusCode: StatusCodes.BAD_REQUEST,
+      };
+    }
+  }
+
+  async createComment(user: UserModelType, project_id: string, note_id: string, payload: CreateComment): Promise<ServiceType> {
+    try {
+      const commentId = uuidv4();
+
+      const project = await this.projectRepository.findOne({ id: project_id, company_id: user.company_id, deleted_at: null });
+
+      if (!project) {
+        return {
+          status: false,
+          message: 'Project not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      const note = await this.notesRepository.findOne({ id: note_id, company_id: user.company_id, deleted_at: null });
       if (!note) {
         return {
           status: false,
@@ -223,6 +304,9 @@ export class NotesService {
         },
         project_id,
       );
+
+      // @here
+      // Send email notification (No mail draft yet)
 
       return {
         status: true,

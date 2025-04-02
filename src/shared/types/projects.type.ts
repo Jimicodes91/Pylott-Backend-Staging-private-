@@ -82,6 +82,7 @@ export type CreateNote = {
   content: string;
   mentions?: [string];
   attachments: [string];
+  is_pinned?: boolean;
 };
 
 export type MentionedUser = {

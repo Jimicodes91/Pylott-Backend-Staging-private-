@@ -15,6 +15,7 @@ export async function up(knex: Knex): Promise<void> {
 		table.text('description');
 		table.string('venue');
 		table.string('provider_identifier');
+		table.text("invites").nullable();
 		table.boolean('is_visible_to_client').defaultTo(false);
 		table.timestamps(true, true);
 		table.timestamp('deleted_at').nullable();

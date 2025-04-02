@@ -15,7 +15,7 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
   }
 
   async findAllWhereEmailIn(emails: Array<string>) {
-    return await this.model.query().whereIn('email', emails);
+    return await this.model.query().whereIn('email', emails).whereNull('deleted_at');
   }
 
   // Add a new SysAdmin

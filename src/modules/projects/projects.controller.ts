@@ -203,6 +203,15 @@ export class ProjectController {
     genericResponse({ res, data: others, statusCode });
   };
 
+  toggleNotePin = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { project_id, note_id } = req.params;
+    const { is_pinned } = req.body as Pick<CreateNote, 'is_pinned'>;
+
+    const { statusCode = null, ...others } = await this.noteService.toggleNotePinStatus(user, project_id, note_id, !!is_pinned);
+    genericResponse({ res, data: others, statusCode });
+  };
+
   getAllNotes = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = req.user as UserModelType;
     const { project_id } = req.params;

@@ -496,3 +496,55 @@ export const updateTaskValidationRules = [
 
   body('is_visible_to_client').optional().isBoolean().withMessage('Visibility must be a boolean').toBoolean(),
 ];
+
+export const addProjectMemberValidationRules = [
+  body('user_id').notEmpty().withMessage('User ID is required').isString().withMessage('User ID must be a string').trim(),
+
+  body('is_visible_to_client').optional().isBoolean().withMessage('is_visible_to_client must be a boolean').toBoolean(),
+];
+
+export const createNoteValidationRules = [
+  body('content').trim().notEmpty().withMessage('Content is required').isString().withMessage('Content must be a string').isLength({ max: 2000 }).withMessage('Content cannot exceed 2000 characters'),
+
+  body('mentions')
+    .optional()
+    .isArray()
+    .withMessage('Mentions must be an array')
+    .custom((value: any[]) => {
+      if (value.some((item) => typeof item !== 'string')) {
+        throw new Error('All mentions must be strings');
+      }
+      return true;
+    }),
+
+  body('attachments')
+    .isArray({ min: 1 })
+    .withMessage('At least one attachment is required')
+    .custom((value: any[]) => {
+      if (value.some((item) => typeof item !== 'string')) {
+        throw new Error('All attachments must be strings');
+      }
+      return true;
+    }),
+
+  body('attachments.*').optional().isURL().withMessage('Each attachment must be a valid URL'),
+
+  body('is_pinned').optional().isBoolean().withMessage('is_pinned must be a boolean').toBoolean(),
+];
+
+export const createCommentValidationRules = [
+  body('content')
+    .trim()
+    .notEmpty()
+    .withMessage('Comment content is required')
+    .isString()
+    .withMessage('Content must be a string')
+    .isLength({
+      min: 1,
+      max: 1000,
+    })
+    .withMessage('Comment must be between 1-1000 characters')
+    .escape(),
+];
+
+export const toggleNotePinValidationRules = [body('is_pinned').isBoolean().withMessage('is_pinned must be a boolean').toBoolean()];

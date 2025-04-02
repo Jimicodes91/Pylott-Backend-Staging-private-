@@ -9,10 +9,14 @@ import { DocsController } from '../docs/docs.controller';
 import { EventController } from '../events/event.controller';
 import { ProjectController } from './projects.controller';
 import {
+  addProjectMemberValidationRules,
+  createCommentValidationRules,
   createMilestoneValidationRules,
+  createNoteValidationRules,
   createProjectTypeValidationRules,
   createProjectValidationRules,
   createTaskValidationRules,
+  toggleNotePinValidationRules,
   updateMilestoneValidationRules,
   updateProjectTypeValidationRules,
   updateProjectValidationRules,
@@ -80,7 +84,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
    * Project Members
    */
   server.get(`${prefix}/:project_id/members`, authGuard, projectController.getProjectMembers);
-  server.post(`${prefix}/:project_id/members`, authGuard, projectController.addProjectMember);
+  server.post(`${prefix}/:project_id/members`, authGuard, schemaValidator(addProjectMemberValidationRules), projectController.addProjectMember);
   server.delete(`${prefix}/:project_id/members/:member_id`, authGuard, projectController.removeProjectMember);
 
   /**
@@ -96,14 +100,15 @@ export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Notes
    */
-  server.post(`${prefix}/:project_id/notes`, authGuard, projectController.createNote);
+  server.post(`${prefix}/:project_id/notes`, authGuard, schemaValidator(createNoteValidationRules), projectController.createNote);
   server.get(`${prefix}/:project_id/notes`, authGuard, projectController.getAllNotes);
   server.get(`${prefix}/:project_id/notes/:note_id`, authGuard, projectController.getNoteDetails);
+  server.patch(`${prefix}/:project_id/notes/:note_id/pin-state`, authGuard, schemaValidator(toggleNotePinValidationRules), projectController.toggleNotePin);
 
   /**
    * Comments
    */
-  server.post(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, projectController.createComment);
+  server.post(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, schemaValidator(createCommentValidationRules), projectController.createComment);
   server.get(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, projectController.getNoteComments);
   server.delete(`${prefix}/:project_id/notes/:note_id/comments/:comment_id`, authGuard, projectController.deleteComment);
 };

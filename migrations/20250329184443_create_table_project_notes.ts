@@ -8,6 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('project_id').notNullable().index();
     table.string('author_id').notNullable().index();
     table.string('company_id').notNullable().index();
+    table.boolean("is_pinned").defaultTo(false);
     table.text('content');
     table.string("metadata");
     table.timestamps(true, true);

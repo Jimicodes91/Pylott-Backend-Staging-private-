@@ -38,13 +38,14 @@ export class EventService {
         company_id,
         type: MetadataType.EVENT,
         id: payload.event_type_id,
+        deleted_at: null,
       };
 
       const eventType = await this.metadataRepository.findOne(metadataQuery);
 
       if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
 
-      const project = await this.projectRepository.findOne({ id: project_id, company_id });
+      const project = await this.projectRepository.findOne({ id: project_id, company_id, deleted_at: null });
 
       if (!project) return { status: false, message: 'Project not found', statusCode: StatusCodes.NOT_FOUND };
 
@@ -65,18 +66,19 @@ export class EventService {
         endDateTime: payload.end_datetime,
       };
 
-      const gcalResponse = await this.googleCalender.createEvent(gcalData, { email: user.email, displayName: user.name }, payload.invites);
+      // const gcalResponse = await this.googleCalender.createEvent(gcalData, { email: user.email, displayName: user.name }, payload.invites);
 
-      if (!gcalResponse) return { status: false, message: 'Could not sync event at the moment' };
+      // if (!gcalResponse) return { status: false, message: 'Could not sync event at the moment' };
 
       const insertData: Partial<EventModelType> = {
         ...payload,
         start_datetime: payload.start_datetime,
         end_datetime: payload.end_datetime,
         project_id,
-        provider_identifier: gcalResponse.id,
+        // provider_identifier: gcalResponse.id,
         created_by: user.id,
         company_id: user.company_id,
+        invites: JSON.stringify(Array.from(new Set([...payload.invites, user.email])) ?? []),
         is_visible_to_client: payload.is_visible_to_client,
       };
 
@@ -103,7 +105,7 @@ export class EventService {
   }
   public async updateEvent(company_id: string, event_id: string, project_id: string, payload: Partial<EventDto>): Promise<ServiceType> {
     try {
-      const record = await this.eventRepository.findOne({ project_id, id: event_id });
+      const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
 
       const metadataQuery = {
@@ -115,9 +117,9 @@ export class EventService {
       const eventType = await this.metadataRepository.findOne(metadataQuery);
       if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
 
-      if (payload.name) payload.name = payload.name.trim();
-      const eventNameTaken = await this.eventRepository.findOneWhereNameEquals(payload.name, project_id, event_id);
-      if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
+      if (payload.name) {
+        payload.name = payload.name.trim();
+      }
 
       if ((payload.start_datetime && !payload.end_datetime) || (payload.end_datetime && !payload.start_datetime)) {
         return { status: false, message: 'Fields `start_datetime` and `end_datetime` are required when performing updates' };
@@ -130,22 +132,25 @@ export class EventService {
       if (payload.is_visible_to_client !== null || payload.is_visible_to_client !== undefined) updateData.is_visible_to_client = payload.is_visible_to_client;
 
       if (payload.name) {
-        const eventNameTaken = await this.eventRepository.findOne({ name: payload.name, project_id });
+        const eventNameTaken = await this.eventRepository.findOneWhereNameEquals(payload.name, project_id, event_id);
         if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
         updateData.name = payload.name;
       }
 
-      const gcalData: Partial<CreateCalenderEvent> = {
-        summary: payload?.name,
-        description: payload?.description,
-        location: payload?.venue,
-        startDateTime: payload?.start_datetime,
-        endDateTime: payload?.end_datetime,
-      };
+      if (payload.invites) updateData.invites = JSON.stringify(Array.from(new Set([...payload.invites])) ?? []);
 
-      const gcalResponse = await this.googleCalender.updateEvent(record.provider_identifier, gcalData, payload?.invites ?? []);
+      // const gcalData: Partial<CreateCalenderEvent> = {
+      //   summary: payload?.name,
+      //   description: payload?.description,
+      //   location: payload?.venue,
+      //   startDateTime: payload?.start_datetime,
+      //   endDateTime: payload?.end_datetime,
+      // };
 
-      if (gcalResponse) await this.eventRepository.update({ id: event_id, project_id }, updateData);
+      // const gcalResponse = await this.googleCalender.updateEvent(record.provider_identifier, gcalData, payload?.invites ?? []);
+
+      // if (gcalResponse);
+      await this.eventRepository.update({ id: event_id, project_id }, updateData);
 
       return { status: true, message: 'Event updated successfully', statusCode: StatusCodes.OK };
     } catch (error: any) {
@@ -159,17 +164,18 @@ export class EventService {
 
   public async getEventDetails(user: UserModelType, event_id: string, project_id: string): Promise<ServiceType> {
     try {
-      const record = await this.eventRepository.findOne({ project_id, id: event_id });
+      const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
 
       const formattedStartTime = dayjs(record.start_datetime).format('ha').toLowerCase();
       const formattedEndTime = dayjs(record.end_datetime).format('ha').toLowerCase();
       const formattedDate = dayjs(record.start_datetime).format('MMM DD, YYYY');
 
-      const gcalEvent = await this.googleCalender.getEvent(record.provider_identifier);
-      if (!gcalEvent) return { status: false, message: 'Could not retrieve event details', statusCode: 400 };
+      // const gcalEvent = await this.googleCalender.getEvent(record.provider_identifier);
+      // if (!gcalEvent) return { status: false, message: 'Could not retrieve event details', statusCode: 400 };
 
-      const attendees = gcalEvent.attendees || [];
+      // const attendees = gcalEvent.attendees || [];
+      const attendees = JSON.parse(record.invites || '[]');
 
       const currentUserAttendee = attendees.find((attendee) => attendee.email === user.email);
       const userResponseStatus = currentUserAttendee ? currentUserAttendee.responseStatus : null;
@@ -178,7 +184,7 @@ export class EventService {
       const formattedAttendees = attendees.map((attendee) => {
         return {
           email: attendee.email,
-          name: attendee?.displayName || attendee.email.split('@')[0],
+          name: attendee?.displayName || attendee?.email?.split('@')[0] || attendee?.split('@')[0],
           response_status: attendee.responseStatus || 'No Action',
           is_organizer: !!attendee.organizer,
           status_display: attendee.responseStatus,
@@ -221,13 +227,13 @@ export class EventService {
 
   public async deleteEvent(event_id: string, project_id: string): Promise<ServiceType> {
     try {
-      const record = await this.eventRepository.findOne({ project_id, id: event_id });
+      const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
 
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
 
-      const result = await this.googleCalender.deleteEvent(record.provider_identifier);
+      // const result = await this.googleCalender.deleteEvent(record.provider_identifier);
 
-      if (!result) return { status: false, message: 'Could not complete sync action, please try again later' };
+      // if (!result) return { status: false, message: 'Could not complete sync action, please try again later' };
 
       await this.eventRepository.delete({ id: event_id, project_id }, true);
 
@@ -245,7 +251,7 @@ export class EventService {
     try {
       const { company_id } = user;
 
-      const queryData: Partial<EventModelType> = { company_id };
+      const queryData: Partial<EventModelType> = { company_id, deleted_at: null };
 
       if (project_id) queryData.project_id = project_id;
 
@@ -265,7 +271,7 @@ export class EventService {
               start_datetime: formattedStartDatetime,
               end_datetime: formattedEndDatetime,
               date: formattedDate,
-              invites: [],
+              invites: JSON.parse(record.invites),
               is_creator: record.created_by === user.id,
               is_attendee: false,
               user_response: null,
@@ -337,7 +343,7 @@ export class EventService {
    */
   public async respondToEventInvite(user: UserModelType, event_id: string, project_id: string, response: 'accepted' | 'declined' | 'tentative'): Promise<ServiceType> {
     try {
-      const record = await this.eventRepository.findOne({ project_id, id: event_id });
+      const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record)
         return {
           status: false,

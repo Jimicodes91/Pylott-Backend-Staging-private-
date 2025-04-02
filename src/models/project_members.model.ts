@@ -1,6 +1,6 @@
 import { ModelObject } from 'objection';
 
-import { ModelsRelationMapping } from '@/shared/types/models.type';
+import { ModelsRelationMapping, RelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
 import { User } from './user.model';
 import { Project } from './project.model';
@@ -15,14 +15,15 @@ export class ProjectMembers extends BaseModel {
   added_by: string;
 
   static relationMappings = (): ModelsRelationMapping => ({
-    user: {
-      relation: BaseModel.BelongsToOneRelation,
+    users: {
+      relation: BaseModel.HasManyRelation,
       modelClass: User,
+      filter: (query) => query.select('id', 'name', 'role', 'email'),
       join: {
         from: 'project_members.user_id',
         to: 'users.id',
       },
-    },
+    } as RelationMapping<User>,
     project: {
       relation: BaseModel.BelongsToOneRelation,
       modelClass: Project,
@@ -34,11 +35,12 @@ export class ProjectMembers extends BaseModel {
     creator: {
       relation: BaseModel.BelongsToOneRelation,
       modelClass: User,
+      filter: (query) => query.select('id', 'name', 'role', 'email'),
       join: {
         from: 'project_members.added_by',
         to: 'users.id',
       },
-    },
+    } as RelationMapping<User>,
   });
 }
 

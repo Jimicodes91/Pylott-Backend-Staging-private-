@@ -12,7 +12,7 @@ export class ProjectNotesRepository extends BaseRepository<ProjectNotesModelType
   async getNoteDetails(company_id: string, project_id: string, note_id: string) {
     return await this.model
       .query()
-      .where({ company_id, project_id, id: note_id })
+      .where({ company_id, project_id, id: note_id, deleted_at: null })
       .withGraphFetched({ document: { attachments: true }, author: true })
       .first();
   }
@@ -20,7 +20,7 @@ export class ProjectNotesRepository extends BaseRepository<ProjectNotesModelType
   async getAllNotes(company_id: string, project_id: string) {
     return await this.model
       .query()
-      .where({ company_id, project_id })
+      .where({ company_id, project_id, deleted_at: null })
       .withGraphFetched({ document: { attachments: true }, author: true });
   }
 }

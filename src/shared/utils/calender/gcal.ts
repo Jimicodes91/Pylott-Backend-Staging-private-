@@ -13,7 +13,7 @@ export class GoogleAPIsCalender {
   private traceId = '[Google APIs]';
   private calendar: calendar_v3.Calendar;
   private auth: GoogleAuth<JSONClient>;
-  private readonly keyfilePath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE || path.join(__dirname, '../config/service-account-key.json');
+  private readonly keyfilePath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE || path.join(__dirname, '../../../config/service-account-key.json');
 
   constructor() {
     this.auth = this.googleClient();
@@ -119,6 +119,8 @@ export class GoogleAPIsCalender {
    */
   public async getEvent(eventId, calendarId = 'primary') {
     try {
+      if (!eventId) return null;
+
       const response = await this.calendar.events.get({
         calendarId,
         eventId,
@@ -162,6 +164,7 @@ export class GoogleAPIsCalender {
    */
   public async deleteEvent(eventId: string, calendarId = 'primary', sendUpdates = true) {
     try {
+      if (!eventId) return null;
       await this.calendar.events.delete({
         calendarId,
         eventId,
@@ -171,7 +174,7 @@ export class GoogleAPIsCalender {
       return true;
     } catch (error) {
       console.error(`${this.traceId} Failed to delete event ${eventId}: ===>`, error.message);
-      throw null;
+      return null;
     }
   }
 
@@ -268,7 +271,7 @@ export class GoogleAPIsCalender {
     try {
       return new google.auth.GoogleAuth({
         keyFile: this.keyfilePath,
-        scopes: ['https://www.googleapis.com/auth/calendar'],
+        scopes: ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'],
       });
     } catch (error) {
       console.error(`${this.traceId} Failed to initialize Google client: ==>`, error.message);

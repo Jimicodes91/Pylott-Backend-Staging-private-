@@ -8,7 +8,7 @@ export const app = {
   port: process.env.PORT || 5000,
   env: process.env.NODE_ENV || 'development',
   name: process.env.APP_NAME || 'Pylott',
-  email: process.env.APP_EMAIL || '',
+  email: process.env.APP_EMAIL || 'oolat31@gmail.com',
 };
 
 export const database = {
@@ -73,7 +73,6 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export { FRONTEND_URL };
-console.log(FRONTEND_URL);
 
 export const TOKEN_EXPIRATION_MS = Date.now() + 900000;
 export const PASSWORD_RESET_TOKEN_LENGTH = 15;

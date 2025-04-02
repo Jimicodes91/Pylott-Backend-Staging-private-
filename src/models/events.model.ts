@@ -15,6 +15,7 @@ export class Event extends BaseModel {
   end_datetime: string;
   description: string;
   venue: string;
+  invites: string;
   provider_identifier: string;
   is_visible_to_client: boolean;
 

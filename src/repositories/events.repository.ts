@@ -10,6 +10,6 @@ export class EventsRepository extends BaseRepository<EventModelType, Event> {
   }
 
   async findOneWhereNameEquals(name: string, project_id: string, event_id: string) {
-    return await this.model.query().where({ project_id, name }).where('id', '<>', event_id).first();
+    return await this.model.query().where({ project_id, name }).where('id', '<>', event_id).whereNull('deleted_at').first();
   }
 }

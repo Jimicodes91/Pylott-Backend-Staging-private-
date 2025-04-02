@@ -13,21 +13,23 @@ export class ProjectNotes extends BaseModel {
   author_id: string;
   content: string;
   metadata?: string;
+  is_pinned?: boolean;
 
   static relationMappings = (): ModelsRelationMapping => ({
     document: {
       relation: BaseModel.HasManyRelation,
       modelClass: Documents,
       join: {
-        from: 'projects_notes.id',
+        from: 'project_notes.id',
         to: 'documents.note_id',
       },
     },
     author: {
-      relation: BaseModel.HasManyRelation,
+      relation: BaseModel.BelongsToOneRelation,
       modelClass: User,
+      filter: (query) => query.select('id', 'name', 'email'),
       join: {
-        from: 'projects_notes.author_id',
+        from: 'project_notes.author_id',
         to: 'users.id',
       },
     },

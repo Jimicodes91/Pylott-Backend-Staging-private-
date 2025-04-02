@@ -19,7 +19,7 @@ export class TypeService {
 
   async getAllProjectTypes(company_id: string): Promise<ServiceType> {
     try {
-      const projectTypes = await this.projectTypeRepository.findMany({ company_id });
+      const projectTypes = await this.projectTypeRepository.findMany({ company_id, deleted_at: null });
       return { status: true, message: 'Project types fetched successfully', data: projectTypes };
     } catch (error) {
       console.log(`${this.traceId} Error occurred fetching project types ===> ${JSON.stringify({ company_id, err_msg: error?.message })}`);
@@ -36,6 +36,7 @@ export class TypeService {
       const projectType = await this.projectTypeRepository.findOne({
         company_id,
         id: project_type_id,
+        deleted_at: null,
       });
 
       if (!projectType) return { status: false, message: 'Project type not found' };
@@ -66,6 +67,7 @@ export class TypeService {
       const existingProjectType = await this.projectTypeRepository.findOne({
         company_id,
         name: payload.name,
+        deleted_at: null,
       });
 
       if (existingProjectType) {
@@ -105,6 +107,7 @@ export class TypeService {
       const existingProjectType = await this.projectTypeRepository.findOne({
         company_id,
         id: project_type_id,
+        deleted_at: null,
       });
 
       if (!existingProjectType) return { status: false, message: 'Project type not found', statusCode: 404 };

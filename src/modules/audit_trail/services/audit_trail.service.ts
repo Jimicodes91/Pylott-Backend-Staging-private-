@@ -15,10 +15,14 @@ export class AuditTrailService {
   async createEvent(action: AUDIT_TRAIL_ACTION, payload: AuditTrailPayload, project_id: string) {
     if (action === AUDIT_TRAIL_ACTION.NOTE_CREATED) {
       await this.logNoteCreatedActivity(project_id, payload);
+    } else if (action === AUDIT_TRAIL_ACTION.COMMENT_DELETED) {
+      await this.logCommentDeletedActivity(project_id, payload);
     } else if (action === AUDIT_TRAIL_ACTION.TASK_ADDED) {
       await this.logTaskAddedActivity(project_id, payload);
     } else if (action === AUDIT_TRAIL_ACTION.NOTE_PINNED) {
       await this.logNotePinnedActivity(project_id, payload);
+    } else if (action === AUDIT_TRAIL_ACTION.NOTE_UNPINNED) {
+      await this.logNoteUnPinnedActivity(project_id, payload);
     }
   }
 
@@ -66,6 +70,19 @@ export class AuditTrailService {
     });
   }
 
+  private async logCommentDeletedActivity(project_id: string, payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'project_notes';
+    const ACTIVITY_DESCRIPTION = `${payload.entity_description} deleted a note`;
+
+    await this.save({
+      project_id,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.COMMENT_DELETED,
+    });
+  }
+
   private async logTaskAddedActivity(project_id: string, payload: AuditTrailPayload) {
     const ASSOCIATED_ENTITY_TABLE = 'project_tasks';
     const ACTIVITY_DESCRIPTION = `${payload.entity_description} added a task`;
@@ -89,6 +106,19 @@ export class AuditTrailService {
       db_table: ASSOCIATED_ENTITY_TABLE,
       activity_description: ACTIVITY_DESCRIPTION,
       activity_name: AUDIT_TRAIL_ACTION.NOTE_PINNED,
+    });
+  }
+
+  private async logNoteUnPinnedActivity(project_id: string, payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'project_notes';
+    const ACTIVITY_DESCRIPTION = `${payload.entity_description} pinned a note`;
+
+    await this.save({
+      project_id,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.NOTE_UNPINNED,
     });
   }
 
