@@ -16,6 +16,7 @@ import {
   createProjectTypeValidationRules,
   createProjectValidationRules,
   createTaskValidationRules,
+  documentRequestValidationRules,
   toggleNotePinValidationRules,
   updateMilestoneValidationRules,
   updateProjectTypeValidationRules,
@@ -55,6 +56,11 @@ export const projectRoutes = (prefix: string, server: Server) => {
     schemaValidator(updateDocumentAttachmentValidationRules),
     documentController.updateDocumentAttachment,
   );
+
+  /**
+   * Document Request
+   */
+  server.post(`${prefix}/:project_id/document-requests`, authGuard, schemaValidator(documentRequestValidationRules), documentController.createDocumentRequest);
 
   /**
    * Project Types

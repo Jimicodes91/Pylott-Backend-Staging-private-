@@ -139,3 +139,12 @@ export type ProcessCustomFieldsResult = {
   fields: Record<string, any>;
   documentData: Array<{ name: string; files: string[] }>;
 };
+
+export type DocumentRequestType = {
+  document_type_id: string;
+  assignee_id: string;
+  name: string;
+  description: string;
+  is_visible_to_client: boolean;
+  end_date: string;
+};

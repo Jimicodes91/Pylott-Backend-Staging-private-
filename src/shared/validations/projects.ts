@@ -548,3 +548,28 @@ export const createCommentValidationRules = [
 ];
 
 export const toggleNotePinValidationRules = [body('is_pinned').isBoolean().withMessage('is_pinned must be a boolean').toBoolean()];
+
+export const documentRequestValidationRules = [
+  body('document_type_id').trim().notEmpty().withMessage('Document type ID is required').isString().withMessage('Document type ID must be a string'),
+
+  body('assignee_id').trim().notEmpty().withMessage('Assignee ID is required').isString().withMessage('Assignee ID must be a string'),
+
+  body('name').trim().notEmpty().withMessage('Name is required').isString().withMessage('Name must be a string').isLength({ max: 100 }).withMessage('Name cannot exceed 100 characters'),
+
+  body('description').trim().notEmpty().withMessage('Description is required').isString().withMessage('Description must be a string'),
+
+  body('is_visible_to_client').notEmpty().withMessage('Visibility flag is required').isBoolean().withMessage('Visibility must be a boolean').toBoolean(),
+
+  body('end_date')
+    .trim()
+    .notEmpty()
+    .withMessage('End date is required')
+    .isISO8601()
+    .withMessage('End date must be in ISO8601 format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ)')
+    .custom((value) => {
+      if (new Date(value) < new Date()) {
+        throw new Error('End date cannot be in the past');
+      }
+      return true;
+    }),
+];

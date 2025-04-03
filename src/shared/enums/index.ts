@@ -71,6 +71,7 @@ export enum EmailSubject {
   TASK_ASSIGNED = 'New Task Assigned',
   MILESTONE_CREATED = 'New Milestone Added',
   PROJECT_CREATED = 'New Project Created',
+  DOCUMENT_REQUEST = 'Document Request',
 }
 
 export enum FieldTypeEnum {

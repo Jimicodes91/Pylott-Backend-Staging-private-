@@ -142,3 +142,65 @@ export const newTaskAssignedEmail = (userName: string, taskName: string, project
 </html>
   `;
 };
+
+export const documentRequestEmail = (recipientName: string, requesterName: string, projectName: string, documentName: string, description: string, requestLink: string) => {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { color: #2c3e50; font-size: 24px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .content { margin-bottom: 25px; }
+        .highlight { color: #3498db; font-weight: bold; }
+        .document-details {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            min-width: 120px;
+            display: inline-block;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .footer { margin-top: 30px; font-size: 14px; color: #7f8c8d; border-top: 1px solid #eee; padding-top: 15px; }
+        .urgent { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">Document Request: ${documentName}</div>
+    
+    <div class="content">
+        <p>Hello <span class="highlight">${recipientName}</span>,</p>
+        
+        <p><span class="highlight">${requesterName}</span> has requested a document from you for the project <span class="highlight">${projectName}</span>.</p>
+        
+        <div class="document-details">
+            <div><span class="detail-label">Document Name:</span> ${documentName}</div>
+            <div><span class="detail-label">Description:</span> ${description}</div>
+        </div>
+        
+        <p>Please upload the document as soon as possible.</p>
+        
+        <a href="${requestLink}" class="button">Complete Document Request</a>
+    </div>
+    
+    <div class="footer">
+        <p>Best regards,<br>The Pylott Team</p>
+    </div>
+</body>
+</html>
+  `;
+};
