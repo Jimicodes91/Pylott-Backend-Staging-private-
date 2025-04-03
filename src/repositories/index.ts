@@ -15,3 +15,4 @@ export * from './comments.repository';
 export * from './project.repository';
 export * from './activity_log.repository';
 export * from './project_settings.repository';
+export * from './document_request.repository';

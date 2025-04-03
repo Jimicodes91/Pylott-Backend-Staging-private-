@@ -7,11 +7,7 @@ Thursday/Friday (CLIENT MANAGEMENT)
 - If not user, invite user as client
 - Project members (internal and client) ? (Create client project members table and endpoint and endpoint to fetch members or add to existing endpoint)
 
-Awaiting segun
-- Document request ? (Awaiting segun)
 
 Others/Extras
 - Permissions (Client perform task assigned to them, view a note, mainly view operations)
 - Get client project view ()
-
--- Custom project forms

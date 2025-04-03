@@ -135,10 +135,12 @@ export class TaskService {
         project_id,
       );
 
-      const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
-      const taskAuthor = await this.userRepository.findOne({ id: user.id });
-      const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, payload.end_date, '');
-      await sendEmail(taskAuthor.email, emailSubject, email);
+      if (payload.assignee_id) {
+        const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
+        const taskAuthor = await this.userRepository.findOne({ id: payload.assignee_id });
+        const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, payload.end_date, '');
+        await sendEmail(taskAuthor.email, emailSubject, email);
+      }
 
       return {
         status: true,

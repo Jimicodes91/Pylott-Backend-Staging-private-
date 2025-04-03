@@ -5,10 +5,16 @@ import { DocsService } from './services/docs.service';
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { genericResponse } from '@/shared/utils/api-response';
 import { AuthenticatedRequest } from '@/shared/types/express';
+import { DocRequestService } from './services/docs-request.service';
+import { DocumentRequestType } from '@/shared/types/projects.type';
+import { UserModelType } from '@/models';
 
 @injectable()
 export class DocsController {
-  constructor(private readonly docService: DocsService) {}
+  constructor(
+    private readonly docService: DocsService,
+    private readonly docRequestService: DocRequestService,
+  ) {}
 
   uploadDocument = async (req: AuthenticatedRequest, res: Response) => {
     const { project_id } = req.params;
@@ -57,6 +63,16 @@ export class DocsController {
   getAllDocuments = async (req: AuthenticatedRequest, res: Response) => {
     const { project_id } = req.params;
     const { statusCode = null, ...others } = await this.docService.getAllDocuments(project_id);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  createDocumentRequest = async (req: AuthenticatedRequest, res: Response) => {
+    const { project_id } = req.params;
+    const payload = req.body as DocumentRequestType;
+    const user = req.user;
+
+    const { statusCode = null, ...others } = await this.docRequestService.createDocumentRequest(user as UserModelType, project_id, payload);
+
     return genericResponse({ res, data: others, statusCode });
   };
 }
