@@ -17,4 +17,3 @@ export * from './project_members.model';
 export * from './comments.model';
 export * from './project_settings.model';
 export * from './document_request.model';
-export * from './document_request.model';
