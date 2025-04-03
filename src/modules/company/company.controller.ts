@@ -12,14 +12,13 @@ export class CompanyController {
     //console.log(req);
     try {
       const adminId = (req as any).user.id;
-      const role = (req as any).user.role;
       const companyData = req.body;
 
       if (!adminId) {
         return errorResponse(res, 'Admin ID is required');
       }
 
-      const company = await this.companyService.createCompany(companyData, adminId, role);
+      const company = await this.companyService.createCompany(companyData, adminId);
 
       return successResponse(res, 'Company created successfully', company);
     } catch (error: any) {

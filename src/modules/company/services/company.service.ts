@@ -10,12 +10,11 @@ export class CompanyService {
     @inject(UserRepository) private userRepository: UserRepository,
   ) {}
 
-  public async createCompany(data: CompanySignupData, adminId: string, role: string) {
+  public async createCompany(data: CompanySignupData, adminId: string) {
     try {
       // Add the admin ID to the company data
-
-      if (role !== 'ADMIN') {
-        throw new HttpError('You are not allowed to access this resource', 400);
+      if (!adminId) {
+        throw new HttpError('Admin Id is required', 500);
       }
 
       const companyData = {
