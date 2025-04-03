@@ -14,6 +14,10 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
     return await this.model.query().whereIn('id', userIds);
   }
 
+  async findUser(id: string) {
+    return await this.model.query().where('id', id);
+  }
+
   async findAllWhereEmailIn(emails: Array<string>) {
     return await this.model.query().whereIn('email', emails).whereNull('deleted_at');
   }
