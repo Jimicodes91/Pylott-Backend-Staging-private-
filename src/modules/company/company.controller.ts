@@ -9,9 +9,9 @@ export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
   public createCompany = async (req: Request, res: Response) => {
+    console.log(req);
     try {
-      const adminId = (req as any).user.userId;
-
+      const adminId = (req as any).user.id;
       const companyData = req.body;
 
       if (!adminId) {
