@@ -9,16 +9,17 @@ export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
   public createCompany = async (req: Request, res: Response) => {
-    console.log(req);
+    //console.log(req);
     try {
       const adminId = (req as any).user.id;
+      const role = (req as any).user.role;
       const companyData = req.body;
 
       if (!adminId) {
         return errorResponse(res, 'Admin ID is required');
       }
 
-      const company = await this.companyService.createCompany(companyData, adminId);
+      const company = await this.companyService.createCompany(companyData, adminId, role);
 
       return successResponse(res, 'Company created successfully', company);
     } catch (error: any) {
