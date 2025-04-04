@@ -11,7 +11,7 @@ import { strongPassword } from '@/shared/utils/any';
 import { UserRoles } from '@/shared/enums';
 import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
-import { FRONTEND_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
 import { GoogleAuthData } from '@/shared/types/google.type';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,13 +19,14 @@ import { GoogleAuthData } from '@/shared/types/google.type';
 @injectable()
 export class AuthService {
   private googleClient: OAuth2Client;
+  private FRONTEND_URL = 'https://silly-choux-da3934.netlify.app';
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(ClientRepository) private clientRepository: ClientRepository,
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
   ) {
-    this.googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${FRONTEND_URL}/auth/google/callback`);
+    this.googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${this.FRONTEND_URL}/auth/google/callback`);
   }
 
   // Generate Google OAuth URL for client-side redirection
@@ -123,12 +124,12 @@ export class AuthService {
   }
 
   private async sendVerificationEmail(email: string, token: string) {
-    const verificationLink = `${FRONTEND_URL}/verify-account?token=${token}`;
+    const verificationLink = `${this.FRONTEND_URL}/verify-account?token=${token}`;
 
     await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
   }
   private async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `${FRONTEND_URL}/reset-password?token=${token}`;
+    const resetLink = `${this.FRONTEND_URL}/reset-password?token=${token}`;
     await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
   }
 
@@ -416,7 +417,7 @@ export class AuthService {
       }
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
-      const registrationLink = `${FRONTEND_URL}/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
+      const registrationLink = `${this.FRONTEND_URL}/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
 
       await this.sendEmailTemplate(
         email,
