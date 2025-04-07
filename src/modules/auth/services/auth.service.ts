@@ -124,12 +124,12 @@ export class AuthService {
   }
 
   private async sendVerificationEmail(email: string, token: string) {
-    const verificationLink = `${this.FRONTEND_URL}/verify-account?token=${token}`;
+    const verificationLink = `https://silly-choux-da3934.netlify.app/verify-account?token=${token}`;
 
     await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
   }
   private async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `${this.FRONTEND_URL}/reset-password?token=${token}`;
+    const resetLink = `https://silly-choux-da3934.netlify.app/reset-password?token=${token}`;
     await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
   }
 
@@ -417,7 +417,7 @@ export class AuthService {
       }
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
-      const registrationLink = `${this.FRONTEND_URL}/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
+      const registrationLink = `https://silly-choux-da3934.netlify.app/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
 
       await this.sendEmailTemplate(
         email,
