@@ -29,6 +29,7 @@ export interface IVerificationToken {
 export interface AdminSignupData {
   email: string;
   password: string;
+  name: string;
 }
 
 export interface UserUpdateData {

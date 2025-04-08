@@ -19,7 +19,7 @@ import { GoogleAuthData } from '@/shared/types/google.type';
 @injectable()
 export class AuthService {
   private googleClient: OAuth2Client;
-  private FRONTEND_URL = 'https://silly-choux-da3934.netlify.app';
+  private FRONTEND_URL = 'https://monumental-fenglisu-de57c2.netlify.app';
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
@@ -116,7 +116,9 @@ export class AuthService {
           <a style="font-size: 16px; color: #ffffff; background-color: #2563eb; 
              padding: 10px 15px; text-decoration: none; border-radius: 5px;" 
              href="${actionLink}">${actionText}</a>
-          <p><small>This link expires in 15 minutes.</small></p>
+          <p>If you didn't request this, please ignore this email.</p>
+          <p>This link will expire in 24 hours.</p>
+          <p>If you have any questions, feel free to reach out to us.</p>
           <p>Best regards,<br/>Pylott Team</p>
         </body>
       </html>`,
@@ -124,12 +126,12 @@ export class AuthService {
   }
 
   private async sendVerificationEmail(email: string, token: string) {
-    const verificationLink = `https://silly-choux-da3934.netlify.app/verify-account?token=${token}`;
+    const verificationLink = `https://monumental-fenglisu-de57c2.netlify.app/verify-account?token=${token}`;
 
     await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
   }
   private async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `https://silly-choux-da3934.netlify.app/reset-password?token=${token}`;
+    const resetLink = `https://monumental-fenglisu-de57c2.netlify.app/reset-password?token=${token}`;
     await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
   }
 
@@ -161,10 +163,10 @@ export class AuthService {
 
   public async adminSignup(data: AdminSignupData) {
     try {
-      const { email, password } = data;
+      const { email, password, name } = data;
 
-      if (!email || !password) {
-        throw new HttpError('Email and password are required', 400);
+      if (!email || !password || !name) {
+        throw new HttpError('Email, name and password are required', 400);
       }
 
       const existingUser = await this.userRepository.findOne({ email });
@@ -179,6 +181,7 @@ export class AuthService {
 
       const newUser = await this.userRepository.create({
         email,
+        name,
         password: hashedPassword,
         verification_token: verificationToken,
         token_expires: Date.now() + TOKEN_EXPIRATION_MS,
@@ -403,9 +406,9 @@ export class AuthService {
   public async sendConsultantInvitation(adminId: string, email: string, role: UserRoles) {
     try {
       const admin = await this.userRepository.getById(adminId);
-      if (!admin || admin.role !== UserRoles.ADMIN) {
-        throw new HttpError('Only company admins can send invitations', 403);
-      }
+      // if (!admin || admin.role !== UserRoles.ADMIN) {
+      //   throw new HttpError('Only company admins can send invitations', 403);
+      // }
 
       if (!admin.company_id) {
         throw new HttpError('Admin is not associated with a company', 400);
@@ -417,7 +420,7 @@ export class AuthService {
       }
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
-      const registrationLink = `https://silly-choux-da3934.netlify.app/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
+      const registrationLink = `https://monumental-fenglisu-de57c2.netlify.app/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
 
       await this.sendEmailTemplate(
         email,
@@ -434,7 +437,7 @@ export class AuthService {
     }
   }
 
-  public async completeRegistration(email: string, password: string, companyId: string) {
+  public async completeRegistration(email: string, password: string, name: string, companyId: string) {
     try {
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
@@ -446,6 +449,7 @@ export class AuthService {
 
       const newUser = await this.userRepository.create({
         email,
+        name,
         password: hashedPassword,
         company_id: companyId,
         role: UserRoles.CONSULTANT,

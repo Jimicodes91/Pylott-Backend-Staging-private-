@@ -74,7 +74,7 @@ if (process.env.NODE_ENV === 'development') {
 
 export { FRONTEND_URL };
 
-export const TOKEN_EXPIRATION_MS = Date.now() + 900000;
+export const TOKEN_EXPIRATION_MS = Date.now() + 30000000;
 export const PASSWORD_RESET_TOKEN_LENGTH = 15;
 export const TEMP_PASSWORD_LENGTH = 8;
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '653485325620-j99cl2a2c48054rr4725ot7ub9j8mb85.apps.g';
