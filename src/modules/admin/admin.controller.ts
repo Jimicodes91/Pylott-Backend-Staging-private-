@@ -3,6 +3,7 @@ import { injectable } from 'tsyringe';
 
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { SysAdminService } from './admin.service';
+import { SubscriptionStatus } from '@/shared/utils/subscription.type';
 
 @injectable()
 export class SysAdminController {
@@ -38,7 +39,7 @@ export class SysAdminController {
       const { status, subscription_status } = req.query;
       const filters = {
         status: status as string,
-        subscription_status: subscription_status as string,
+        subscription_status: subscription_status as SubscriptionStatus,
       };
       const companies = await this.sysAdminService.getAllCompanies(filters);
       return successResponse(res, 'Companies fetched successfully', companies);
