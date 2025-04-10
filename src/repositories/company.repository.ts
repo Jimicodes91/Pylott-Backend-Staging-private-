@@ -24,6 +24,10 @@ export class CompanyRepository extends BaseRepository<CompanyModelType, Company>
     return query.orderBy(sortBy, order);
   }
 
+  public async getCompanyNameById(companyId: string) {
+    return this.model.query().select('name').where({ id: companyId }).first();
+  }
+
   // Update company status
   public async updateCompanyStatus(companyId: string, subscription_status: 'active' | 'pending' | 'deactivated') {
     return this.model.query().where({ id: companyId }).update({ subscription_status });

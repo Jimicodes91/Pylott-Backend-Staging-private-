@@ -83,19 +83,29 @@ export default abstract class BaseRepository<T, M extends BaseModel> {
   }
 
   // public async pushToArray(query_identifier: Partial<T>, column: string, value: any, trx?: Objection.Transaction): Promise<void> {
+  //   // First verify the column exists in the table schema
+  //   if (!(column in this.model.jsonSchema.properties)) {
+  //     throw new Error(`Column ${column} does not exist in table ${this.tableName}`);
+  //   }
+
   //   await this.model
   //     .query(trx)
   //     .where(query_identifier)
   //     .patch({
-  //       [column]: this.model.raw(`array_append(??, ?)`, [column, value]),
+  //       [column]: this.model.raw(`JSON_ARRAY_APPEND(??, '$', ?)`, [column, value]),
   //     });
   // }
   public async pushToArray(query_identifier: Partial<T>, column: string, value: any, trx?: Objection.Transaction): Promise<void> {
-    await this.model
-      .query(trx)
-      .where(query_identifier)
-      .patch({
-        [column]: this.model.raw(`JSON_ARRAY_APPEND(??, '$', ?)`, [column, value]),
-      });
+    try {
+      await this.model
+        .query(trx)
+        .where(query_identifier)
+        .patch({
+          [column]: this.model.raw(`JSON_ARRAY_APPEND(??, '$', ?)`, [column, value]),
+        });
+    } catch (error) {
+      console.error(`Error pushing to array in ${this.tableName}:`, error);
+      throw new Error(`Failed to update array column ${column}`);
+    }
   }
 }

@@ -32,7 +32,7 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/reset-password`, schemaValidator(resetPasswordValidationRule), authController.resetPassword);
 
-  server.post(`${prefix}/send-consultant-invite`, authenticateUser, authController.sendInvite);
+  server.post(`${prefix}/send-invite`, authenticateUser, authController.sendInvite);
 
   server.post(`${prefix}/complete-registration`, schemaValidator(completeRegistrationValidationRule), authController.completeRegistration);
 

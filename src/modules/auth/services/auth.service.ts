@@ -403,7 +403,7 @@ export class AuthService {
     }
   }
 
-  public async sendConsultantInvitation(adminId: string, email: string, role: UserRoles) {
+  public async sendInvitation(adminId: string, email: string, role: UserRoles) {
     try {
       const admin = await this.userRepository.getById(adminId);
       // if (!admin || admin.role !== UserRoles.ADMIN) {
@@ -419,17 +419,24 @@ export class AuthService {
         throw new HttpError('Email is already registered', 400);
       }
 
-      const invitationToken = crypto.randomBytes(32).toString('hex');
-      const registrationLink = `https://monumental-fenglisu-de57c2.netlify.app/register?token=${invitationToken}&email=${encodeURIComponent(email)}&role=${role}&company=${admin.company_id}`;
+      const company = await this.companyRepository.getCompanyNameById(admin.company_id);
+      const companyName = company.name;
+      console.log(companyName);
 
-      await this.sendEmailTemplate(
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const registrationLink = `https://monumental-fenglisu-de57c2.netlify.app/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
+
+      const mail = await this.sendEmailTemplate(
         email,
-        "You've Been Invited to Join Pylott",
-        'Welcome to Pylott',
-        `You have been invited to join Pylott as a ${role}. Click the button below to complete your registration:`,
+        `Welcome to Pylott`,
+
+        `Invitation to join ${companyName}`,
+        `You have been invited to join ${companyName} as a ${role}. Click the button below to complete your registration:`,
+
         registrationLink,
         'Complete Registration',
       );
+      console.log(mail);
 
       return { message: 'Invitation sent successfully' };
     } catch (error: any) {
@@ -437,39 +444,73 @@ export class AuthService {
     }
   }
 
-  public async completeRegistration(email: string, password: string, name: string, companyId: string) {
+  public async completeRegistration(email: string, password: string, companyId: string, role: UserRoles) {
+    console.log('em', email, 'ps', password, 'cc', companyId, 'rr', role);
     try {
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
         throw new HttpError('Email is already registered', 400);
       }
 
-      await this.validatePasswordStrength(password);
       const hashedPassword = await this.hashPassword(password);
 
       const newUser = await this.userRepository.create({
         email,
-        name,
         password: hashedPassword,
         company_id: companyId,
-        role: UserRoles.CONSULTANT,
+        role,
         is_verified: true,
       });
 
-      await this.companyRepository.pushToArray({ id: companyId }, 'consultant_id', newUser.id);
+      // Define role to column mapping
+      const roleColumnMap = {
+        [UserRoles.CLIENT]: 'client_users',
+        [UserRoles.CONSULTANT]: 'consultant_users',
+      };
 
-      await this.consultantRepository.create({
-        user_id: newUser.id,
-        company_id: companyId,
-      });
+      // Verify the column exists before trying to update
+      if (!roleColumnMap[role]) {
+        throw new HttpError('Invalid user role specified', 400);
+      }
+
+      const columnName = roleColumnMap[role];
+      if (!columnName) {
+        throw new HttpError('Invalid user role specified', 400);
+      }
+      // Modified pushToArray call with error handling
+      try {
+        await this.companyRepository.pushToArray({ id: companyId }, columnName, newUser.id);
+      } catch (pushError) {
+        console.error('Failed to update company references:', pushError);
+        throw new HttpError('Failed to update company records', 500);
+      }
+
+      // 6. Create role-specific records
+      try {
+        if (role === UserRoles.CLIENT) {
+          await this.clientRepository.create({
+            user_id: newUser.id,
+            company_id: companyId,
+            is_active: true,
+          });
+        } else if (role === UserRoles.CONSULTANT) {
+          await this.consultantRepository.create({
+            user_id: newUser.id,
+            company_id: companyId,
+          });
+        }
+      } catch (roleError) {
+        console.error('Failed to create role-specific record:', roleError);
+        throw new HttpError('Failed to create role-specific profile', 500);
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _, ...userResponse } = newUser;
-      return userResponse;
+
+      return newUser;
     } catch (error: any) {
-      throw new HttpError(error.message || 'Failed to complete registration', 500);
+      throw new HttpError(error.message || 'Failed to complete registration', error.statusCode || 500);
     }
   }
-
   public async addClient(name: string, email: string, companyId: string) {
     try {
       const existingUser = await this.userRepository.findOne({ email });
