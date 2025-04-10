@@ -2,6 +2,7 @@ import { ModelObject } from 'objection';
 
 import BaseModel from './base.model';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
+import { BillingCycle, PaymentMethod, SubscriptionPlan, SubscriptionStatus } from '@/shared/utils/subscription.type';
 
 export class Company extends BaseModel {
   static tableName = 'companies';
@@ -17,8 +18,14 @@ export class Company extends BaseModel {
   consultant_id?: string[];
   client_id?: string;
   is_active?: boolean;
-  subscription_status?: string;
+  //new fields
+  subscription_status?: SubscriptionStatus;
+  subscription_plan: SubscriptionPlan;
   subscription_expiry_date?: Date;
+  billing_cycle?: BillingCycle;
+  default_payment_method?: PaymentMethod;
+  grace_period_end_date?: Date;
+  billing_email?: string;
 
   static relationMappings = (): ModelsRelationMapping => ({});
 }
