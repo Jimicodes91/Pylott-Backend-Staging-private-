@@ -4,6 +4,7 @@ import { injectable } from 'tsyringe';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import HttpError from '@/shared/utils/errorHandler';
 import { BillingService } from './billing.service';
+import { SubscriptionPlan, CreateSubscriptionPlanInput, UpdateSubscriptionPlanInput } from '@/shared/utils/subscription.type';
 
 @injectable()
 export class BillingController {
@@ -109,6 +110,58 @@ export class BillingController {
       return errorResponse(res, 'GET_INVOICES_ERROR', error.message, error.statusCode || 500);
     }
   }
+
+  //updated plans
+
+  getAllPlans = async (req: Request, res: Response) => {
+    try {
+      const plans = await this.billingService.getSubscriptionPlans();
+      return successResponse(res, 'Subscription plans retrieved', plans);
+    } catch (error: any) {
+      return errorResponse(res, 'GET_PLANS_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+
+  getPlan = async (req: Request, res: Response) => {
+    try {
+      const { planName } = req.params;
+      const plan = await this.billingService.getPlanDetails(planName as SubscriptionPlan);
+      return successResponse(res, 'Subscription plan retrieved', plan);
+    } catch (error: any) {
+      return errorResponse(res, 'GET_PLAN_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+
+  createPlan = async (req: Request, res: Response) => {
+    try {
+      const data = req.body as CreateSubscriptionPlanInput;
+      const plan = await this.billingService.createSubscriptionPlan(data);
+      return successResponse(res, 'Subscription plan created', plan, 201);
+    } catch (error: any) {
+      return errorResponse(res, 'CREATE_PLAN_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+
+  updatePlan = async (req: Request, res: Response) => {
+    try {
+      const { planName } = req.params;
+      const data = req.body as UpdateSubscriptionPlanInput;
+      const plan = await this.billingService.updateSubscriptionPlan(planName as SubscriptionPlan, data);
+      return successResponse(res, 'Subscription plan updated', plan);
+    } catch (error: any) {
+      return errorResponse(res, 'UPDATE_PLAN_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+
+  deletePlan = async (req: Request, res: Response) => {
+    try {
+      const { planName } = req.params;
+      await this.billingService.deleteSubscriptionPlan(planName as SubscriptionPlan);
+      return successResponse(res, 'Subscription plan deleted');
+    } catch (error: any) {
+      return errorResponse(res, 'DELETE_PLAN_ERROR', error.message, error.statusCode || 500);
+    }
+  };
 
   // Add more endpoints for:
   // - Adding payment methods

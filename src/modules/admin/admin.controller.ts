@@ -129,4 +129,15 @@ export class SysAdminController {
       return errorResponse(res, 'GET_ALL_ADMINS_ERROR', error.message, error.statusCode || 500);
     }
   };
+
+  // In admin.controller.ts
+  public getCompanyUsers = async (req: Request, res: Response) => {
+    try {
+      const { companyId } = req.params;
+      const users = await this.sysAdminService.getCompanyUsers(companyId);
+      return successResponse(res, 'Company users fetched successfully', users);
+    } catch (error: any) {
+      return errorResponse(res, 'COMPANY_USERS_ERROR', error.message, error.statusCode || 500);
+    }
+  };
 }

@@ -15,6 +15,9 @@ export const sysAdminRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/companies/:id`, authenticateUser, sysAdminController.getCompanyDetails);
   server.get(`${prefix}/all-admin`, authenticateUser, sysAdminController.getAllAdmins);
 
+  // In admin.routes.ts
+  server.get(`${prefix}/companies/:companyId/users`, authenticateUser, sysAdminController.getCompanyUsers);
+
   server.patch(`${prefix}/companies/:id/status`, authenticateUser, sysAdminController.updateCompanyStatus);
   server.post(`${prefix}/companies/:id/subscribe`, authenticateUser, sysAdminController.subscribeCompany);
 

@@ -11,8 +11,8 @@ export enum PaymentStatus {
 }
 
 export enum SubscriptionPlan {
-  BASIC = 'basic',
-  ELITE = 'elite',
+  STARTER = 'starter',
+  ADVANCED = 'advanced',
   PREMIUM = 'premium',
 }
 
@@ -23,3 +23,25 @@ export enum SubscriptionStatus {
   TRIAL = 'trial',
   EXPIRED = 'exprired',
 }
+
+// In subscription.type.ts or a new file like subscription-plan.type.ts
+export interface SubscriptionPlanFeature {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+}
+
+export interface SubscriptionPlanDetails {
+  id: string;
+  name: SubscriptionPlan;
+  display_name: string;
+  price: number;
+  price_per_seat: boolean;
+  currency: string;
+  features: SubscriptionPlanFeature[];
+  is_active: boolean;
+}
+
+export type CreateSubscriptionPlanInput = Omit<SubscriptionPlanDetails, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateSubscriptionPlanInput = Partial<CreateSubscriptionPlanInput>;
