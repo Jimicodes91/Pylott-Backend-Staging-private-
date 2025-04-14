@@ -24,6 +24,34 @@ export const billingRoutes = (prefix: string, server: Server) => {
   // Invoices
   server.get(`${prefix}/billing/invoices`, authenticateUser, billingController.getInvoices);
 
+  //updated routes
+
+  // Public endpoints (for viewing plans)
+  server.get(`${prefix}/plans`, billingController.getAllPlans);
+  server.get(`${prefix}/plans/:planName`, billingController.getPlan);
+
+  // Admin-only endpoints (for managing plans)
+  server.post(
+    `${prefix}/plans`,
+    authenticateUser,
+
+    billingController.createPlan,
+  );
+
+  server.put(
+    `${prefix}/plans/:planName`,
+    authenticateUser,
+
+    billingController.updatePlan,
+  );
+
+  server.delete(
+    `${prefix}/plans/:planName`,
+    authenticateUser,
+
+    billingController.deletePlan,
+  );
+
   // server.get(
   //   `${prefix}/billing/invoices/:invoiceId`,
   //   authenticateUser,

@@ -445,7 +445,6 @@ export class AuthService {
   }
 
   public async completeRegistration(email: string, password: string, companyId: string, role: UserRoles) {
-    console.log('em', email, 'ps', password, 'cc', companyId, 'rr', role);
     try {
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {

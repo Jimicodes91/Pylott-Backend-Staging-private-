@@ -4,7 +4,8 @@ import { CompanyRepository } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import { SubscriptionRepository } from '@/repositories/subscription.repository';
 import { PaymentRepository } from '@/repositories/payment.repository';
-import { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from '@/shared/utils/subscription.type';
+import { SubscriptionPlan, SubscriptionStatus, PaymentStatus, CreateSubscriptionPlanInput, SubscriptionPlanDetails, UpdateSubscriptionPlanInput } from '@/shared/utils/subscription.type';
+import { SubscriptionPlanRepository } from '@/repositories/subscription_plan.repository';
 
 @injectable()
 export class BillingService {
@@ -12,11 +13,12 @@ export class BillingService {
     @inject(PaymentRepository) private paymentRepo: PaymentRepository,
     @inject(SubscriptionRepository) private subscriptionRepo: SubscriptionRepository,
     @inject(CompanyRepository) private companyRepo: CompanyRepository,
+    @inject(SubscriptionPlanRepository) private subscriptionPlanRepo: SubscriptionPlanRepository,
   ) {}
 
   private PLANS = {
-    [SubscriptionPlan.BASIC]: { price: 29, features: [] },
-    [SubscriptionPlan.ELITE]: { price: 99, features: [] },
+    [SubscriptionPlan.STARTER]: { price: 29, features: [] },
+    [SubscriptionPlan.ADVANCED]: { price: 99, features: [] },
     [SubscriptionPlan.PREMIUM]: { price: 299, features: [] },
   };
 
@@ -31,16 +33,26 @@ export class BillingService {
     };
   }
 
+  // In billing.service.ts - update the changeSubscriptionPlan method
   async changeSubscriptionPlan(companyId: string, newPlan: SubscriptionPlan) {
     const subscription = await this.subscriptionRepo.getActiveSubscription(companyId);
     const company = await this.companyRepo.getById(companyId);
+    const planDetails = await this.getPlanDetails(newPlan);
 
     if (!company) throw new HttpError('Company not found', 404);
+
+    // Calculate price based on whether it's per seat or not
+    const amount = planDetails.price;
+    // if (planDetails.pricePerSeat) {
+    //   // Get number of users in company
+    //   const userCount = await this.userRepo.count({ company_id: companyId });
+    //   amount = planDetails.price * userCount.count;
+    // }
 
     // Process payment
     const payment = await this.processPayment({
       companyId,
-      amount: this.PLANS[newPlan].price,
+      amount,
       paymentMethod: 'card', // Default for upgrades
     });
 
@@ -151,5 +163,29 @@ export class BillingService {
     await this.companyRepo.update({ id: companyId }, { default_payment_method: paymentMethodId as any });
 
     return { success: true };
+  }
+
+  //updated plans
+
+  async getSubscriptionPlans(): Promise<SubscriptionPlanDetails[]> {
+    return this.subscriptionPlanRepo.getAllPlans();
+  }
+
+  async getPlanDetails(planName: SubscriptionPlan): Promise<SubscriptionPlanDetails> {
+    const plan = await this.subscriptionPlanRepo.getPlanByName(planName);
+    if (!plan) throw new HttpError('Plan not found', 404);
+    return plan;
+  }
+
+  async createSubscriptionPlan(data: CreateSubscriptionPlanInput): Promise<SubscriptionPlanDetails> {
+    return this.subscriptionPlanRepo.createPlan(data);
+  }
+
+  async updateSubscriptionPlan(planName: SubscriptionPlan, data: UpdateSubscriptionPlanInput): Promise<SubscriptionPlanDetails> {
+    return this.subscriptionPlanRepo.updatePlan(planName, data);
+  }
+
+  async deleteSubscriptionPlan(planName: SubscriptionPlan): Promise<void> {
+    return this.subscriptionPlanRepo.deletePlan(planName);
   }
 }

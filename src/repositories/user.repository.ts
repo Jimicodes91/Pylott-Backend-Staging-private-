@@ -44,4 +44,9 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
   public async getAllAdmins() {
     return this.findMany({ role: UserRoles.SUPER_ADMIN });
   }
+
+  // In user.repository.ts
+  public async getUsersByCompany(companyId: string) {
+    return await this.model.query().where('company_id', companyId).whereNull('deleted_at').orderBy('created_at', 'desc');
+  }
 }

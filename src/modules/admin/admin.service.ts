@@ -27,6 +27,10 @@ export class SysAdminService {
     return count;
   }
 
+  // public async getAllCompanyUsers(){
+  //   const users = await this.userRepository.
+  // }
+
   public async getActiveUsers() {
     return await this.userRepository.getAllActiveUsers();
   }
@@ -147,5 +151,14 @@ export class SysAdminService {
 
   public async getAllAdmins() {
     return this.userRepository.getAllAdmins();
+  }
+
+  // In admin.service.ts
+  public async getCompanyUsers(companyId: string) {
+    if (!companyId) {
+      throw new HttpError('Company ID is required', 400);
+    }
+
+    return await this.userRepository.getUsersByCompany(companyId);
   }
 }
