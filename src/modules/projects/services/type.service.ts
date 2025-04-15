@@ -20,7 +20,19 @@ export class TypeService {
   async getAllProjectTypes(company_id: string): Promise<ServiceType> {
     try {
       const projectTypes = await this.projectTypeRepository.findMany({ company_id, deleted_at: null });
-      return { status: true, message: 'Project types fetched successfully', data: projectTypes };
+
+      const remappedData = await Promise.all(
+        projectTypes.map(async (projectType) => {
+          const milestones = await this.milestoneRepository.getAllMilestones(company_id, projectType.id);
+
+          const progress = this.calculatePhaseProgress(milestones);
+          return {
+            ...projectType,
+            progress_metrics: progress,
+          };
+        }),
+      );
+      return { status: true, message: 'Project types fetched successfully', data: remappedData };
     } catch (error) {
       console.log(`${this.traceId} Error occurred fetching project types ===> ${JSON.stringify({ company_id, err_msg: error?.message })}`);
       return {
