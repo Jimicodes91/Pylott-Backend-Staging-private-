@@ -24,9 +24,13 @@ export class Project extends BaseModel {
   end_date: string;
   completed_at: string;
   created_by: string;
-  custom_fields?: Record<string, any>;
+  jurisdiction?: string;
+  visa_required?: string;
+  package?: string;
+  form_data: any;
 
   documents: Array<Documents>;
+  project_type: ProjectType;
 
   static relationMappings = (): ModelsRelationMapping => ({
     client: {

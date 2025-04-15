@@ -39,21 +39,21 @@ export class TypeService {
         deleted_at: null,
       });
 
-      if (!projectType) return { status: false, message: 'Project type not found' };
+      if (!projectType) return { status: false, message: 'Pipeline not found' };
 
       const milestones = await this.milestoneRepository.getAllMilestones(company_id, project_type_id);
       const progress = this.calculatePhaseProgress(milestones);
 
       return {
         status: true,
-        message: 'Project type details fetched successfully',
+        message: 'Pipeline details fetched successfully',
         data: {
           ...projectType,
           progress_metrics: progress,
         },
       };
     } catch (error) {
-      console.log(`${this.traceId} Error occurred fetching project type details ===> ${JSON.stringify({ company_id, project_type_id, err_msg: error?.message })}`);
+      console.log(`${this.traceId} Error occurred fetching Pipeline details ===> ${JSON.stringify({ company_id, project_type_id, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',
@@ -73,27 +73,23 @@ export class TypeService {
       if (existingProjectType) {
         return {
           status: false,
-          message: 'A project type with this name already exists',
+          message: 'A Pipeline with this name already exists',
         };
       }
-
-      const validationError = this.validateCustomFields(payload.custom_fields);
-      if (validationError) return validationError;
 
       const createdType = await this.projectTypeRepository.create({
         company_id,
         name: payload.name,
-        custom_fields: payload.custom_fields,
         is_system,
       });
 
       return {
         status: true,
-        message: 'Project type created successfully',
+        message: 'Pipeline created successfully',
         data: createdType,
       };
     } catch (error) {
-      console.log(`${this.traceId} Error occurred creating project type ===> ${JSON.stringify({ company_id, payload, err_msg: error?.message })}`);
+      console.log(`${this.traceId} Error occurred creating Pipeline ===> ${JSON.stringify({ company_id, payload, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',
@@ -110,7 +106,7 @@ export class TypeService {
         deleted_at: null,
       });
 
-      if (!existingProjectType) return { status: false, message: 'Project type not found', statusCode: 404 };
+      if (!existingProjectType) return { status: false, message: 'Pipeline not found', statusCode: 404 };
       if (existingProjectType.is_system) return { status: false, message: 'Cannot modify system-defined project types' };
 
       if (updateData.name) {
@@ -118,25 +114,20 @@ export class TypeService {
         if (nameExists) {
           return {
             status: false,
-            message: 'A project type with this name already exists',
+            message: 'A Pipeline with this name already exists',
           };
         }
-      }
-
-      if (updateData.custom_fields) {
-        const validationError = this.validateCustomFields(updateData.custom_fields);
-        if (validationError) return validationError;
       }
 
       const updatedType = await this.projectTypeRepository.update({ id: project_type_id, company_id }, updateData);
 
       return {
         status: true,
-        message: 'Project type updated successfully',
+        message: 'Pipeline updated successfully',
         data: updatedType,
       };
     } catch (error) {
-      console.log(`${this.traceId} Error occurred updating project type ===> ${JSON.stringify({ company_id, project_type_id, updateData, err_msg: error?.message })}`);
+      console.log(`${this.traceId} Error occurred updating Pipeline ===> ${JSON.stringify({ company_id, project_type_id, updateData, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',

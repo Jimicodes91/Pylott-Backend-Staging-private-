@@ -16,58 +16,58 @@ export const createProjectTypeValidationRules = [
 
   body('is_system').optional().isBoolean().withMessage('is_system must be a boolean').toBoolean(),
 
-  body('custom_fields')
-    .optional()
-    .isArray()
-    .withMessage('Custom fields must be an array')
-    .custom((fields) => fields.length <= 20)
-    .withMessage('Maximum 20 custom fields allowed')
-    .customSanitizer((fields) => fields || []),
+  // body('custom_fields')
+  //   .optional()
+  //   .isArray()
+  //   .withMessage('Custom fields must be an array')
+  //   .custom((fields) => fields.length <= 20)
+  //   .withMessage('Maximum 20 custom fields allowed')
+  //   .customSanitizer((fields) => fields || []),
 
-  body('custom_fields.*.name')
-    .notEmpty()
-    .withMessage('Field name is required')
-    .isString()
-    .withMessage('Field name must be a string')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Field name must be between 2 and 50 characters'),
+  // body('custom_fields.*.name')
+  //   .notEmpty()
+  //   .withMessage('Field name is required')
+  //   .isString()
+  //   .withMessage('Field name must be a string')
+  //   .trim()
+  //   .isLength({ min: 2, max: 50 })
+  //   .withMessage('Field name must be between 2 and 50 characters'),
 
-  body('custom_fields.*.field_key')
-    .notEmpty()
-    .withMessage('Field key is required')
-    .isString()
-    .withMessage('Field key must be a string')
-    .trim()
-    .matches(/^[a-z0-9_]+$/)
-    .withMessage('Field key can only contain lowercase letters, numbers and underscores')
-    .isLength({ min: 2, max: 30 })
-    .withMessage('Field key must be between 2 and 30 characters'),
+  // body('custom_fields.*.field_key')
+  //   .notEmpty()
+  //   .withMessage('Field key is required')
+  //   .isString()
+  //   .withMessage('Field key must be a string')
+  //   .trim()
+  //   .matches(/^[a-z0-9_]+$/)
+  //   .withMessage('Field key can only contain lowercase letters, numbers and underscores')
+  //   .isLength({ min: 2, max: 30 })
+  //   .withMessage('Field key must be between 2 and 30 characters'),
 
-  body('custom_fields.*.field_type')
-    .notEmpty()
-    .withMessage('Field type is required')
-    .isIn(Object.values(FieldTypeEnum))
-    .withMessage(`Invalid field type. Valid types are: ${Object.values(FieldTypeEnum).join(', ')}`),
+  // body('custom_fields.*.field_type')
+  //   .notEmpty()
+  //   .withMessage('Field type is required')
+  //   .isIn(Object.values(FieldTypeEnum))
+  //   .withMessage(`Invalid field type. Valid types are: ${Object.values(FieldTypeEnum).join(', ')}`),
 
-  body('custom_fields.*.is_required').optional().isBoolean().withMessage('is_required must be a boolean').toBoolean(),
+  // body('custom_fields.*.is_required').optional().isBoolean().withMessage('is_required must be a boolean').toBoolean(),
 
-  body('custom_fields.*.order').optional().isInt({ min: 0 }).withMessage('Order must be a positive integer').toInt(),
+  // body('custom_fields.*.order').optional().isInt({ min: 0 }).withMessage('Order must be a positive integer').toInt(),
 
-  body('custom_fields.*.options')
-    .optional()
-    .custom((value, { req }) => {
-      const field = req.body.custom_fields?.[req.path.match(/\[(\d+)\]/)?.[1]];
-      if (field?.field_type === FieldTypeEnum.SELECT) {
-        if (!Array.isArray(value)) {
-          throw new Error('Options must be an array for SELECT fields');
-        }
-        if (value.length === 0) {
-          throw new Error('SELECT fields require at least one option');
-        }
-      }
-      return true;
-    }),
+  // body('custom_fields.*.options')
+  //   .optional()
+  //   .custom((value, { req }) => {
+  //     const field = req.body.custom_fields?.[req.path.match(/\[(\d+)\]/)?.[1]];
+  //     if (field?.field_type === FieldTypeEnum.SELECT) {
+  //       if (!Array.isArray(value)) {
+  //         throw new Error('Options must be an array for SELECT fields');
+  //       }
+  //       if (value.length === 0) {
+  //         throw new Error('SELECT fields require at least one option');
+  //       }
+  //     }
+  //     return true;
+  //   }),
 ];
 
 export const updateProjectTypeValidationRules = [
@@ -573,3 +573,49 @@ export const documentRequestValidationRules = [
       return true;
     }),
 ];
+
+export const addCustomFieldValidationRules = [
+  body('name').notEmpty().withMessage('Field name is required'),
+  body('type').notEmpty().withMessage('Field type is required').isIn(['text', 'number', 'date', 'select', 'document']).withMessage('Invalid field type'),
+  body('is_required').optional().isBoolean().withMessage('is_required must be a boolean'),
+  body('options')
+    .optional()
+    .custom((value, { req }) => {
+      if (req.body.type === 'select' && (!value || !Array.isArray(value) || value.length === 0)) {
+        throw new Error('Options are required for select fields');
+      }
+      return true;
+    }),
+  body('is_multiple')
+    .optional()
+    .isBoolean()
+    .withMessage('is_multiple must be a boolean')
+    .custom((value, { req }) => {
+      if (value && req.body.type !== 'document') {
+        throw new Error('is_multiple is only applicable to document fields');
+      }
+      return true;
+    }),
+  body('max_files')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('max_files must be a positive integer')
+    .custom((value, { req }) => {
+      if (value && req.body.type !== 'document') {
+        throw new Error('max_files is only applicable to document fields');
+      }
+      return true;
+    }),
+  body('accepted_types')
+    .optional()
+    .isString()
+    .withMessage('accepted_types must be a string')
+    .custom((value, { req }) => {
+      if (value && req.body.type !== 'document') {
+        throw new Error('accepted_types is only applicable to document fields');
+      }
+      return true;
+    }),
+];
+
+export const updateFieldRequirementValidationRules = [body('is_required').isBoolean().withMessage('is_required must be a boolean')];

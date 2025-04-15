@@ -41,6 +41,7 @@ export enum MetadataType {
   TASK = 'task',
   NOTE = 'note',
   PROJECT = 'project',
+  FORM_FIELD = 'form_field',
 }
 
 export enum DocumentsDirectory {
@@ -48,6 +49,7 @@ export enum DocumentsDirectory {
   TASKS = 'tasks',
   NOTES = 'notes',
   PROJECTS = 'projects',
+  FORM_FIELD = 'form-field',
 }
 
 export enum EventStatus {

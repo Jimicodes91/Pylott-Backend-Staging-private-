@@ -19,27 +19,5 @@ export * from './project_settings.model';
 export * from './document_request.model';
 export * from './payment.model';
 export * from './subscription.model';
-
-import { Knex } from 'knex';
-
-export async function up(knex: Knex): Promise<void> {
-  return knex.schema.alterTable('companies', (table) => {
-    table.string('subscription_plan').nullable();
-
-    table.string('billing_cycle').nullable();
-    table.string('default_payment_method').nullable();
-    table.timestamp('grace_period_end_date').nullable();
-    table.string('billing_email').nullable();
-  });
-}
-
-export async function down(knex: Knex): Promise<void> {
-  return knex.schema.alterTable('companies', (table) => {
-    table.dropColumn('subscription_plan');
-
-    table.dropColumn('billing_cycle');
-    table.dropColumn('default_payment_method');
-    table.dropColumn('grace_period_end_date');
-    table.dropColumn('billing_email');
-  });
-}
+export * from './project_forms.model';
+export * from './project_form_fields.model';

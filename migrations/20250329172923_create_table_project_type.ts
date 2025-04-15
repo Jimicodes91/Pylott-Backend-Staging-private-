@@ -9,7 +9,6 @@ export async function up(knex: Knex): Promise<void> {
     table.string("name").notNullable();
     table.string("slug").nullable();
     table.boolean("is_system").nullable().defaultTo(false);
-    table.json('custom_fields').nullable();
     table.timestamps(true, true);
     table.timestamp('deleted_at').nullable();
   })

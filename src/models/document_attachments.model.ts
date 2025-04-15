@@ -7,6 +7,7 @@ export class Attachments extends BaseModel {
   static tableName = 'attachments';
 
   document_id: string;
+  field_id: string;
   media_url: string;
 
   static relationMappings = (): ModelsRelationMapping => ({});

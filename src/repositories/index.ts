@@ -16,3 +16,5 @@ export * from './project.repository';
 export * from './activity_log.repository';
 export * from './project_settings.repository';
 export * from './document_request.repository';
+export * from './project_form_field.repository';
+export * from './project_forms.repository';

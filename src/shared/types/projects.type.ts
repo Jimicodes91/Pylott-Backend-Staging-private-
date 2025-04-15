@@ -1,19 +1,19 @@
 import { CommentsModelType } from '@/models';
-import { FieldTypeEnum, ProjectStatus } from '../enums';
-
-type CustomFieldValue = string | number | boolean | Date | File | string[];
+import { ProjectStatus } from '../enums';
 
 export type CreateProjectType = {
   name: string;
   description?: string;
   client_id: string;
   consultant_id?: string;
+  jurisdiction?: string;
+  visa_required?: string;
+  package?: string;
   project_type_id: string;
   start_date: string;
   end_date: string;
   milestone_id?: string;
   status?: ProjectStatus;
-  custom_fields?: Record<string, CustomFieldValue>;
 };
 
 export type CreateMilestoneType = {
@@ -123,14 +123,14 @@ export type EnrichedComment = CommentsModelType & {
 export type _ProjectType = {
   company_id: string;
   name: string;
-  custom_fields: Array<{
-    name: string;
-    field_key: string;
-    field_type: FieldTypeEnum;
-    is_required: boolean;
-    order: number;
-    options?: any;
-  }>;
+  // custom_fields: Array<{
+  //   name: string;
+  //   field_key: string;
+  //   field_type: FieldTypeEnum;
+  //   is_required: boolean;
+  //   order: number;
+  //   options?: any;
+  // }>;
 };
 
 export type ProcessCustomFieldsResult = {
@@ -147,4 +147,11 @@ export type DocumentRequestType = {
   description: string;
   is_visible_to_client: boolean;
   end_date: string;
+};
+
+export type AddCustomField = {
+  name: string;
+  type: 'text' | 'number' | 'date' | 'select' | 'document';
+  is_required?: boolean;
+  options?: string[];
 };

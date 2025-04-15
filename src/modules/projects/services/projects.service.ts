@@ -3,7 +3,6 @@ import { injectable } from 'tsyringe';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { v4 as uuidv4 } from 'uuid';
 import Objection from 'objection';
 
 dayjs.extend(duration);
@@ -18,12 +17,14 @@ import {
   MetadataRepository,
   DocumentsRepository,
   DocumentAttachmentsRepository,
+  ProjectFormsRepository,
+  ProjectFormFieldRepository,
 } from '@/repositories';
 
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
-import { UserModelType } from '@/models';
-import { CreateProjectType, ProcessCustomFieldsResult } from '@/shared/types/projects.type';
-import { ProjectStatus, FieldTypeEnum, MetadataType, DocumentsDirectory } from '@/shared/enums';
+import { ProjectFormFieldModelType, UserModelType } from '@/models';
+import { CreateProjectType } from '@/shared/types/projects.type';
+import { DocumentsDirectory, MetadataType, ProjectStatus } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 
 @injectable()
@@ -39,8 +40,11 @@ export class ProjectService {
     private readonly metadataRepository: MetadataRepository,
     private readonly documentsRepository: DocumentsRepository,
     private readonly attachmentsRepository: DocumentAttachmentsRepository,
+    private readonly projectFormRepository: ProjectFormsRepository,
+    private readonly projectFormFieldRepository: ProjectFormFieldRepository,
     private readonly cloudinary: Cloudinary,
   ) {}
+
   async getAllProjects(
     company_id: string,
     filters: {
@@ -48,33 +52,31 @@ export class ProjectService {
       client_id?: string;
       consultant_id?: string;
       project_type_id?: string;
+      milestone_id?: string;
     } = {},
   ): Promise<ServiceType> {
     try {
-      const query: ObjectLiteral = { company_id };
+      const query: ObjectLiteral = { company_id, deleted_at: null };
 
       if (filters.status) query.status = filters.status;
       if (filters.client_id) query.client_id = filters.client_id;
       if (filters.consultant_id) query.consultant_id = filters.consultant_id;
       if (filters.project_type_id) query.project_type_id = filters.project_type_id;
+      if (filters.milestone_id) query.milestone_id = filters.milestone_id;
 
       const projects = await this.projectRepository.getProjectsAndAssociatedEntities(query);
 
-      const formattedProjects = projects.map((project) => {
-        const directDocuments =
+      const formattedProjects = projects.map((project) => ({
+        ...project,
+        timeline: this.calculateTimeline(project.start_date, project.end_date),
+        documents:
           project.documents?.map((doc) => ({
             id: doc.id,
             name: doc.name,
             attachments: doc.attachments,
             type: doc.document_type_id === 'custom_field' ? 'custom' : doc.document_type_id,
-          })) || [];
-
-        return {
-          ...project,
-          timeline: this.calculateTimeline(project.start_date, project.end_date),
-          documents: directDocuments,
-        };
-      });
+          })) || [],
+      }));
 
       return {
         status: true,
@@ -82,17 +84,11 @@ export class ProjectService {
         data: formattedProjects,
       };
     } catch (error) {
-      console.log(
-        `${this.traceId} Error occurred fetching projects ===> ${JSON.stringify({
-          company_id,
-          filters,
-          err_msg: error?.message,
-        })}`,
-      );
-
+      console.error(`${this.traceId} Error fetching projects:`, error);
       return {
         status: false,
-        message: 'An error occurred, please try again later',
+        message: 'Failed to fetch projects',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       };
     }
   }
@@ -100,7 +96,6 @@ export class ProjectService {
   async getProject(company_id: string, project_id: string): Promise<ServiceType> {
     try {
       const project = await this.projectRepository.getProjectDetails(company_id, project_id);
-
       if (!project) {
         return {
           status: false,
@@ -109,26 +104,30 @@ export class ProjectService {
         };
       }
 
-      const projectWithTimeline = this.formatProjectWithTimeline(project);
+      const form = await this.projectFormRepository.getCompanyForm(company_id);
+      const formFields = form ? await this.projectFormFieldRepository.findMany({ form_id: form.id }) : [];
 
       return {
         status: true,
         message: 'Project fetched successfully',
-        data: projectWithTimeline,
+        data: {
+          ...this.formatProjectWithTimeline(project),
+          form_fields: formFields.map((f) => ({
+            id: f.id,
+            name: f.name,
+            type: f.type,
+            is_required: f.is_required,
+            value: project.form_data?.[f.slug] || null,
+            slug: f.slug,
+          })),
+        },
       };
     } catch (error) {
-      console.log(
-        `${this.traceId} Error occurred fetching project ===> ${JSON.stringify({
-          company_id,
-          project_id,
-          err_msg: error?.message,
-        })}`,
-      );
-
+      console.error(`${this.traceId} Error fetching project:`, error);
       return {
         status: false,
-        message: 'An error occurred, please try again later',
-        data: null,
+        message: 'Failed to fetch project',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       };
     }
   }
@@ -137,12 +136,26 @@ export class ProjectService {
     try {
       const company_id = user.company_id;
 
+      if (payload['pipeline']) {
+        const projectType = await this.projectTypeRepository.findOne({
+          id: payload['pipeline'],
+          company_id,
+        });
+
+        if (!projectType) {
+          return {
+            status: false,
+            message: 'Invalid project type (pipeline)',
+            statusCode: StatusCodes.NOT_FOUND,
+          };
+        }
+      }
+
       if (payload.client_id) {
         const client = await this.clientRepository.findOne({
           id: payload.client_id,
           company_id,
         });
-
         if (!client) {
           return {
             status: false,
@@ -152,25 +165,11 @@ export class ProjectService {
         }
       }
 
-      const projectType = await this.projectTypeRepository.findOne({
-        id: payload.project_type_id,
-        company_id,
-      });
-
-      if (!projectType) {
-        return {
-          status: false,
-          message: 'Project type not found',
-          statusCode: StatusCodes.NOT_FOUND,
-        };
-      }
-
       if (payload.milestone_id) {
         const milestone = await this.milestonesRepository.findOne({
           id: payload.milestone_id,
           company_id,
         });
-
         if (!milestone) {
           return {
             status: false,
@@ -178,24 +177,39 @@ export class ProjectService {
             statusCode: StatusCodes.NOT_FOUND,
           };
         }
-
         if (milestone.project_type_id !== payload.project_type_id) {
           return {
             status: false,
-            message: 'Milestone is not compatible with selected project type',
+            message: 'Milestone does not belong to selected project type',
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
       }
 
-      const processedCustomFields = await this.processCustomFields(payload.custom_fields || {}, projectType.custom_fields || [], user.company_id, payload.project_type_id);
-
-      if (!processedCustomFields.valid) {
+      const form = await this.projectFormRepository.getCompanyForm(company_id);
+      if (!form) {
         return {
           status: false,
-          message: processedCustomFields.message,
+          message: 'Project form not configured',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      const formFields = await this.projectFormFieldRepository.findMany({ form_id: form.id });
+      const errors = this.validateFormFields(payload, formFields);
+      if (errors.length > 0) {
+        return {
+          status: false,
+          message: 'Validation failed',
+          data: { errors },
           statusCode: StatusCodes.BAD_REQUEST,
         };
+      }
+
+      const documentFields = formFields.filter((f) => f.type === 'document');
+      const documentUploads = await this.processDocumentUploads(payload, documentFields, company_id);
+      if (!documentUploads.success) {
+        return documentUploads.errorResponse;
       }
 
       let project;
@@ -203,19 +217,45 @@ export class ProjectService {
         project = await this.projectRepository.create(
           {
             company_id,
-            name: payload.name.trim(),
+            name: payload['project_name'] || null,
             client_id: payload.client_id || null,
             consultant_id: payload.consultant_id || null,
-            project_type_id: payload.project_type_id,
-            start_date: payload.start_date,
-            end_date: payload.end_date,
+            project_type_id: payload['pipeline'] || null,
             milestone_id: payload.milestone_id || null,
-            status: payload.status || ProjectStatus.NOT_STARTED,
-            created_by: user.id,
-            custom_fields: processedCustomFields.fields,
+            start_date: payload['start_date'],
+            end_date: payload['end_date'],
+            status: ProjectStatus.NOT_STARTED,
+            form_data: payload,
+            jurisdiction: payload?.jurisdiction,
+            visa_required: payload?.visa_required,
+            package: payload?.package,
           },
           trx,
         );
+
+        for (const doc of documentUploads.data) {
+          const document = await this.documentsRepository.create(
+            {
+              company_id,
+              project_id: project.id,
+              name: `Project ${doc.fieldName}`,
+              type: MetadataType.FORM_FIELD,
+              document_type_id: doc.fieldId,
+            },
+            trx,
+          );
+
+          for (const url of doc.urls) {
+            await this.attachmentsRepository.create(
+              {
+                document_id: document.id,
+                media_url: url,
+                field_id: doc.fieldId,
+              },
+              trx,
+            );
+          }
+        }
 
         await this.projectSettingsRepository.create(
           {
@@ -224,47 +264,20 @@ export class ProjectService {
           },
           trx,
         );
-
-        if (processedCustomFields.documentData.length > 0) {
-          for (const docData of processedCustomFields.documentData) {
-            const document = await this.documentsRepository.create(
-              {
-                id: uuidv4(),
-                company_id,
-                project_id: project.id,
-                name: docData.name,
-                type: MetadataType.PROJECT,
-                is_visible_to_client: true,
-                document_type_id: 'custom_field',
-              },
-              trx,
-            );
-
-            for (const fileUrl of docData.files) {
-              await this.attachmentsRepository.create(
-                {
-                  document_id: document.id,
-                  media_url: fileUrl,
-                },
-                trx,
-              );
-            }
-          }
-        }
       });
 
       return {
         status: true,
         message: 'Project created successfully',
-        statusCode: StatusCodes.CREATED,
         data: this.formatProjectWithTimeline(project),
+        statusCode: StatusCodes.CREATED,
       };
     } catch (error) {
       console.error(`${this.traceId} Error creating project:`, error);
       return {
         status: false,
-        message: 'An error occurred while creating project',
-        statusCode: StatusCodes.BAD_REQUEST,
+        message: 'Failed to create project',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       };
     }
   }
@@ -277,7 +290,6 @@ export class ProjectService {
         id: project_id,
         company_id,
       });
-
       if (!project) {
         return {
           status: false,
@@ -286,65 +298,49 @@ export class ProjectService {
         };
       }
 
-      let projectType = null;
       if (payload.project_type_id) {
-        projectType = await this.projectTypeRepository.findOne({
+        const projectType = await this.projectTypeRepository.findOne({
           id: payload.project_type_id,
           company_id,
         });
-
         if (!projectType) {
           return {
             status: false,
-            message: 'Project type not found',
+            message: 'Invalid project type (pipeline)',
             statusCode: StatusCodes.NOT_FOUND,
           };
         }
 
-        if (payload.project_type_id !== project.project_type_id) {
-          if (project.milestone_id) {
-            const milestone = await this.milestonesRepository.findOne({
-              id: project.milestone_id,
-            });
-
-            if (milestone && milestone.project_type_id !== payload.project_type_id) {
-              payload.milestone_id = null;
-            }
+        if (project.milestone_id) {
+          const milestone = await this.milestonesRepository.findOne({
+            id: project.milestone_id,
+            company_id,
+          });
+          if (milestone && milestone.project_type_id !== payload.project_type_id) {
+            payload.milestone_id = null;
           }
         }
-      } else {
-        projectType = await this.projectTypeRepository.findOne({
-          id: project.project_type_id,
+      }
+
+      if (payload.client_id && payload.client_id !== project.client_id) {
+        const client = await this.clientRepository.findOne({
+          id: payload.client_id,
           company_id,
         });
-      }
-
-      let processedCustomFields: ProcessCustomFieldsResult = {
-        valid: true,
-        fields: {},
-        documentData: [],
-      };
-
-      if (payload.custom_fields && projectType?.custom_fields) {
-        const customFieldsResult = await this.processCustomFields({ ...(project.custom_fields || {}), ...payload.custom_fields }, projectType.custom_fields, company_id, project.project_type_id);
-
-        if (!customFieldsResult.valid) {
+        if (!client) {
           return {
             status: false,
-            message: customFieldsResult.message || 'Invalid custom fields data',
-            statusCode: StatusCodes.BAD_REQUEST,
+            message: 'Client not found',
+            statusCode: StatusCodes.NOT_FOUND,
           };
         }
-
-        processedCustomFields = customFieldsResult as ProcessCustomFieldsResult;
       }
 
-      if (payload.milestone_id) {
+      if (payload.milestone_id && payload.milestone_id !== project.milestone_id) {
         const milestone = await this.milestonesRepository.findOne({
           id: payload.milestone_id,
           company_id,
         });
-
         if (!milestone) {
           return {
             status: false,
@@ -352,28 +348,45 @@ export class ProjectService {
             statusCode: StatusCodes.NOT_FOUND,
           };
         }
-
         const projectTypeId = payload.project_type_id || project.project_type_id;
-        if (milestone.project_type_id !== projectTypeId) {
+        if (projectTypeId && milestone.project_type_id !== projectTypeId) {
           return {
             status: false,
-            message: 'Milestone is not compatible with this project type',
+            message: 'Milestone does not belong to this project type',
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
       }
 
+      const form = await this.projectFormRepository.getCompanyForm(company_id);
+      if (!form) {
+        return {
+          status: false,
+          message: 'Project form not configured',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      const formFields = await this.projectFormFieldRepository.findMany({ form_id: form.id });
+      const updatedFormData = { ...project.form_data, ...payload };
+      const errors = this.validateFormFields(updatedFormData, formFields);
+      if (errors.length > 0) {
+        return {
+          status: false,
+          message: 'Validation failed',
+          data: { errors },
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+
+      const documentFields = formFields.filter((f) => f.type === 'document');
+      const documentUploads = await this.processDocumentUploads(payload, documentFields, company_id);
+      if (!documentUploads.success) {
+        return documentUploads.errorResponse;
+      }
+
       let completedAt = project.completed_at;
       if (payload.status) {
-        const validStatuses = Object.values(ProjectStatus);
-        if (!validStatuses.includes(payload.status as ProjectStatus)) {
-          return {
-            status: false,
-            message: `Invalid status. Valid statuses are: ${validStatuses.join(', ')}`,
-            statusCode: StatusCodes.BAD_REQUEST,
-          };
-        }
-
         if (payload.status === ProjectStatus.COMPLETED && project.status !== ProjectStatus.COMPLETED) {
           completedAt = new Date().toISOString();
         } else if (payload.status !== ProjectStatus.COMPLETED && project.status === ProjectStatus.COMPLETED) {
@@ -384,40 +397,41 @@ export class ProjectService {
       await Objection.Model.transaction(async (trx) => {
         const updateData = {
           ...payload,
-          custom_fields: Object.keys(processedCustomFields.fields).length ? processedCustomFields.fields : null,
-          completed_at: completedAt || project.completed_at,
+          form_data: JSON.stringify(updatedFormData),
+          completed_at: completedAt,
         };
 
         await this.projectRepository.update({ id: project_id, company_id }, updateData, trx);
 
-        if (processedCustomFields.documentData.length > 0) {
-          for (const docData of processedCustomFields.documentData) {
-            let document = await this.documentsRepository.findOne({ company_id, project_id });
+        for (const doc of documentUploads.data) {
+          let document = await this.documentsRepository.findOne({
+            company_id,
+            project_id,
+            document_type_id: doc.fieldId,
+          });
 
-            if (!document) {
-              document = await this.documentsRepository.create(
-                {
-                  id: uuidv4(),
-                  company_id,
-                  project_id: project.id,
-                  name: docData.name,
-                  type: MetadataType.PROJECT,
-                  is_visible_to_client: true,
-                  document_type_id: 'custom_field',
-                },
-                trx,
-              );
-            }
+          if (!document) {
+            document = await this.documentsRepository.create(
+              {
+                company_id,
+                project_id,
+                name: `Project ${doc.fieldName}`,
+                type: MetadataType.FORM_FIELD,
+                document_type_id: doc.fieldId,
+              },
+              trx,
+            );
+          }
 
-            for (const fileUrl of docData.files) {
-              await this.attachmentsRepository.create(
-                {
-                  document_id: document.id,
-                  media_url: fileUrl,
-                },
-                trx,
-              );
-            }
+          for (const url of doc.urls) {
+            await this.attachmentsRepository.create(
+              {
+                document_id: document.id,
+                media_url: url,
+                field_id: doc.fieldId,
+              },
+              trx,
+            );
           }
         }
       });
@@ -430,200 +444,130 @@ export class ProjectService {
       console.error(`${this.traceId} Error updating project:`, error);
       return {
         status: false,
-        message: 'An error occurred while updating project',
-        statusCode: StatusCodes.BAD_REQUEST,
+        message: 'Failed to update project',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       };
     }
   }
 
-  private async processCustomFields(
-    providedFields: Record<string, any>,
-    typeFields: Array<{
-      name: string;
-      field_key: string;
-      field_type: FieldTypeEnum;
-      options?: any;
-      is_required?: boolean;
-    }>,
-    companyId: string,
-    projectTypeId: string,
-  ): Promise<{ valid: boolean; message?: string; fields: Record<string, any>; documentData?: Array<{ name: string; files: string[] }> }> {
-    const resultFields: Record<string, any> = {};
-    const documentData: Array<{ name: string; files: string[] }> = [];
+  private validateFormFields(payload: Record<string, any>, formFields: Array<ProjectFormFieldModelType>): string[] {
+    const errors: string[] = [];
 
-    for (const field of typeFields) {
-      const value = providedFields[field.field_key];
+    formFields.forEach((field) => {
+      const value = payload[field.slug];
 
       if (field.is_required && (value === undefined || value === null || value === '')) {
+        errors.push(`${field.slug} is required`);
+        return;
+      }
+
+      if (value === undefined || value === null) return;
+
+      switch (field.type) {
+        case 'select':
+          if (field.options && !field.options.includes(value)) {
+            errors.push(`Invalid value for ${field.name}. Must be one of: ${field.options.join(', ')}`);
+          }
+          break;
+        case 'date':
+          if (isNaN(new Date(value).getTime())) {
+            errors.push(`Invalid date format for ${field.name}`);
+          }
+          break;
+        case 'number':
+          if (isNaN(Number(value))) {
+            errors.push(`${field.slug} must be a number`);
+          }
+          break;
+        case 'document':
+          if (field.is_required && (!Array.isArray(value) || value.length === 0)) {
+            errors.push(`At least one document is required for ${field.name}`);
+          }
+          break;
+      }
+    });
+
+    return errors;
+  }
+
+  private async processDocumentUploads(
+    payload: Record<string, any>,
+    documentFields: Array<{
+      id: string;
+      name: string;
+      is_multiple?: boolean;
+      max_files?: number;
+    }>,
+    companyId: string,
+  ): Promise<{
+    success: boolean;
+    errorResponse?: ServiceType;
+    data: Array<{
+      fieldId: string;
+      fieldName: string;
+      urls: string[];
+    }>;
+  }> {
+    const results: Array<{
+      fieldId: string;
+      fieldName: string;
+      urls: string[];
+    }> = [];
+
+    for (const field of documentFields) {
+      const files = payload[field.name];
+      if (!files) continue;
+
+      const filesArray = Array.isArray(files) ? files : [files];
+
+      if (field.max_files && filesArray.length > field.max_files) {
         return {
-          valid: false,
-          message: `Missing required field: ${field.name}`,
-          fields: {},
+          success: false,
+          errorResponse: {
+            status: false,
+            message: `Maximum ${field.max_files} files allowed for ${field.name}`,
+            statusCode: StatusCodes.BAD_REQUEST,
+          },
+          data: [],
         };
       }
 
-      if (value === undefined || value === null) continue;
-
-      if (field.field_type === FieldTypeEnum.FILE) {
-        const uploadResults = await this.processFileField(value, companyId, projectTypeId, field.field_key);
-
-        if (!uploadResults.valid) {
-          return {
-            valid: false,
-            message: uploadResults.message,
-            fields: {},
-          };
-        }
-
-        resultFields[field.field_key] = uploadResults.fileUrls;
-        if (uploadResults.fileUrls.length > 0) {
-          documentData.push({
-            name: `${field.name} for ${projectTypeId}`,
-            files: uploadResults.fileUrls,
-          });
-        }
-      } else {
-        const validation = this.validateFieldValue(value, field);
-        if (!validation.valid) {
-          return {
-            valid: false,
-            message: validation.message,
-            fields: {},
-          };
-        }
-        resultFields[field.field_key] = value;
-      }
-    }
-
-    return {
-      valid: true,
-      fields: resultFields,
-      documentData,
-    };
-  }
-
-  private async processFileField(files: string[] | string, companyId: string, projectTypeId: string, fieldKey: string): Promise<{ valid: boolean; message?: string; fileUrls: string[] }> {
-    const fileUrls: string[] = [];
-    const filesArray = Array.isArray(files) ? files : [files];
-
-    for (const file of filesArray) {
-      if (typeof file === 'string' && file.startsWith('http')) {
-        fileUrls.push(file);
-        continue;
-      }
-
-      if (this.isBase64(file)) {
+      const urls: string[] = [];
+      for (const file of filesArray) {
         try {
-          const uploadResult = await this.handleBase64Upload(file, `${companyId}/${projectTypeId}/${fieldKey}`);
-          if (uploadResult.url) {
-            fileUrls.push(uploadResult.url);
+          const uploadPath = `${companyId}/${field.id}`;
+          if (file.includes('http')) {
+            urls.push(file);
+          } else {
+            const result = await this.cloudinary.upload(DocumentsDirectory.FORM_FIELD, file, uploadPath);
+            if (result.data) {
+              urls.push(result.data);
+            }
           }
         } catch (error) {
           return {
-            valid: false,
-            message: `Error uploading file for ${fieldKey}: ${error.message}`,
-            fileUrls: [],
+            success: false,
+            errorResponse: {
+              status: false,
+              message: `Failed to upload document for ${field.name}: ${error.message}`,
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            },
+            data: [],
           };
         }
-      } else {
-        return {
-          valid: false,
-          message: `Invalid file format for ${fieldKey}`,
-          fileUrls: [],
-        };
       }
+
+      results.push({
+        fieldId: field.id,
+        fieldName: field.name,
+        urls,
+      });
     }
 
     return {
-      valid: true,
-      fileUrls,
+      success: true,
+      data: results,
     };
-  }
-
-  private async handleFileUploads(files: string[] | string, companyId: string, projectTypeId: string, fieldKey: string): Promise<{ valid: boolean; message?: string; fileUrls: string[] }> {
-    const fileUrls: string[] = [];
-    const filesArray = Array.isArray(files) ? files : [files];
-
-    for (const file of filesArray) {
-      if (typeof file === 'string' && file.startsWith('http')) {
-        fileUrls.push(file);
-        continue;
-      }
-
-      try {
-        const fileName = `${companyId}/${projectTypeId}/${fieldKey}/${uuidv4()}`;
-        const { data } = await this.cloudinary.upload(DocumentsDirectory.PROJECTS, file, fileName);
-
-        if (data) fileUrls.push(data);
-      } catch (error) {
-        return {
-          valid: false,
-          message: `Error uploading file for ${fieldKey}: ${error.message}`,
-          fileUrls: [],
-        };
-      }
-    }
-
-    return {
-      valid: true,
-      fileUrls,
-    };
-  }
-
-  private validateFieldValue(
-    value: any,
-    field: {
-      field_key: string;
-      field_type: FieldTypeEnum;
-      options?: any;
-    },
-  ): { valid: boolean; message?: string } {
-    switch (field.field_type) {
-      case FieldTypeEnum.NUMBER:
-        if (isNaN(Number(value))) {
-          return {
-            valid: false,
-            message: `Field ${field.field_key} must be a number`,
-          };
-        }
-        break;
-
-      case FieldTypeEnum.DATE:
-        if (isNaN(Date.parse(value))) {
-          return {
-            valid: false,
-            message: `Field ${field.field_key} must be a valid date`,
-          };
-        }
-        break;
-
-      case FieldTypeEnum.SELECT:
-        if (!field.options || !Array.isArray(field.options)) {
-          return {
-            valid: false,
-            message: `Field ${field.field_key} has invalid options configuration`,
-          };
-        }
-        if (!field.options.includes(value)) {
-          return {
-            valid: false,
-            message: `Field ${field.field_key} must be one of: ${field.options.join(', ')}`,
-          };
-        }
-        break;
-
-      case FieldTypeEnum.TEXT:
-      case FieldTypeEnum.TEXTAREA:
-        if (typeof value !== 'string') {
-          return {
-            valid: false,
-            message: `Field ${field.field_key} must be text`,
-          };
-        }
-        break;
-    }
-
-    return { valid: true };
   }
 
   private formatProjectWithTimeline(project: any): any {
@@ -633,12 +577,6 @@ export class ProjectService {
       ...project,
       timeline: this.calculateTimeline(project.start_date, project.end_date),
     };
-  }
-
-  private formatProjectsWithTimeline(projects: any[]): any[] {
-    if (!projects || !Array.isArray(projects)) return [];
-
-    return projects.map((project) => this.formatProjectWithTimeline(project));
   }
 
   private calculateTimeline(startDate: string, endDate: string): string {
@@ -675,26 +613,5 @@ export class ProjectService {
     }
 
     return '1 day';
-  }
-
-  private isBase64(value: any): boolean {
-    if (typeof value !== 'string') return false;
-    const base64Regex = /^data:([a-zA-Z]+\/[a-zA-Z0-9-+.]+);base64,[a-zA-Z0-9+/]+={0,2}$/;
-    return base64Regex.test(value);
-  }
-
-  private async handleBase64Upload(base64Data: string, filePathPrefix: string): Promise<{ url: string; type: string }> {
-    const mimeTypeMatch = base64Data.match(/^data:(.+?);base64,/);
-
-    const mimeType = mimeTypeMatch[1];
-    const extension = mimeType.split('/')[1] || 'bin';
-    const fileName = `${uuidv4()}.${extension}`;
-
-    const uploadResponse = await this.cloudinary.upload(filePathPrefix as any, base64Data, fileName);
-
-    return {
-      url: uploadResponse?.data,
-      type: mimeType,
-    };
   }
 }

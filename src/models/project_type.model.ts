@@ -4,7 +4,7 @@ import slugify from 'slugify';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
 import { Project } from './project.model';
-import { FieldTypeEnum } from '@/shared/enums';
+// import { FieldTypeEnum } from '@/shared/enums';
 
 export class ProjectType extends BaseModel {
   static tableName = 'project_types';
@@ -13,14 +13,14 @@ export class ProjectType extends BaseModel {
   name: string;
   slug: string;
   is_system: boolean;
-  custom_fields?: Array<{
-    name: string;
-    field_key: string;
-    field_type: FieldTypeEnum;
-    is_required: boolean;
-    order: number;
-    options?: any;
-  }>;
+  // custom_fields?: Array<{
+  //   name: string;
+  //   field_key: string;
+  //   field_type: FieldTypeEnum;
+  //   is_required: boolean;
+  //   order: number;
+  //   options?: any;
+  // }>;
 
   async $beforeInsert() {
     super.$beforeInsert();
@@ -49,21 +49,21 @@ export class ProjectType extends BaseModel {
       id: { type: 'string' },
       company_id: { type: 'string' },
       name: { type: 'string', minLength: 1, maxLength: 255 },
-      custom_fields: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', minLength: 1 },
-            field_key: { type: 'string', minLength: 1 },
-            field_type: { enum: Object.values(FieldTypeEnum) },
-            is_required: { type: 'boolean' },
-            order: { type: 'number' },
-            options: { type: ['object', 'array', 'null'] },
-          },
-          required: ['name', 'field_key', 'field_type', 'order'],
-        },
-      },
+      // custom_fields: {
+      //   type: 'array',
+      //   items: {
+      //     type: 'object',
+      //     properties: {
+      //       name: { type: 'string', minLength: 1 },
+      //       field_key: { type: 'string', minLength: 1 },
+      //       field_type: { enum: Object.values(FieldTypeEnum) },
+      //       is_required: { type: 'boolean' },
+      //       order: { type: 'number' },
+      //       options: { type: ['object', 'array', 'null'] },
+      //     },
+      //     required: ['name', 'field_key', 'field_type', 'order'],
+      //   },
+      // },
     },
   };
 
