@@ -11,7 +11,7 @@ export class CompanyController {
   public createCompany = async (req: Request, res: Response) => {
     //console.log(req);
     try {
-      const adminId = (req as any).user.id;
+      const adminId = req.params.id;
       const companyData = req.body;
 
       if (!adminId) {

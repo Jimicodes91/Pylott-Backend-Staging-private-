@@ -9,5 +9,5 @@ import { authenticateUser } from '@/shared/middlewares/guard.middleware';
 const companyController = container.resolve(CompanyController);
 
 export const companyRoutes = (prefix: string, server: Server) => {
-  server.post(`${prefix}/create`, authenticateUser, schemaValidator(createCompanyValidationRule), companyController.createCompany);
+  server.post(`${prefix}/create/:id`, authenticateUser, schemaValidator(createCompanyValidationRule), companyController.createCompany);
 };
