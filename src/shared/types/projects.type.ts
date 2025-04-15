@@ -18,15 +18,13 @@ export type CreateProjectType = {
 
 export type CreateMilestoneType = {
   name: string;
-  start_date: string;
-  end_date: string;
+  duration: number;
   project_type_id: string;
 };
 
 export type UpdateMilestoneType = {
   name?: string;
-  start_date?: string;
-  end_date?: string;
+  duration?: number;
   is_completed?: boolean;
 };
 

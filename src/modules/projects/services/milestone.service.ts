@@ -23,13 +23,9 @@ export class MilestoneService {
       const milestones = await this.milestonesRepository.getAllMilestones(company_id, project_type_id);
 
       const milestonesWithDuration = milestones.map((milestone) => {
-        const duration = this.getDurationString(milestone.start_date, milestone.end_date);
         return {
           ...milestone,
-          duration,
           completed_at: milestone?.completed_at ? dayjs(milestone.completed_at).format('DD MMM YYYY') : null,
-          start_date: dayjs(milestone.start_date).format('DD MMM YYYY'),
-          end_date: dayjs(milestone.end_date).format('DD MMM YYYY'),
           status: milestone?.completed_at ? ProjectStatus.COMPLETED : ProjectStatus.IN_PROGRESS,
         };
       });
@@ -70,10 +66,7 @@ export class MilestoneService {
 
       const milestoneWithDuration = {
         ...milestone,
-        duration: this.getDurationString(milestone.start_date, milestone.end_date),
         completed_at: milestone?.completed_at ? dayjs(milestone.completed_at).format('DD MMM YYYY') : null,
-        start_date: dayjs(milestone.start_date).format('DD MMM YYYY'),
-        end_date: dayjs(milestone.end_date).format('DD MMM YYYY'),
         status: milestone?.completed_at ? ProjectStatus.COMPLETED : ProjectStatus.IN_PROGRESS,
       };
 
@@ -126,8 +119,6 @@ export class MilestoneService {
         ...payload,
         company_id,
         is_system,
-        start_date: dayjs(payload.start_date).format(),
-        end_date: dayjs(payload.end_date).format(),
         completed_at: null,
       });
 
@@ -178,9 +169,8 @@ export class MilestoneService {
 
       const updateData: Partial<MilestonesModelType> = {};
 
-      if (payload.start_date && payload.end_date) {
-        updateData.start_date = dayjs(payload.start_date).format();
-        updateData.end_date = dayjs(payload.end_date).format();
+      if (payload.duration) {
+        updateData.duration = payload.duration;
       }
 
       if (payload.name) {

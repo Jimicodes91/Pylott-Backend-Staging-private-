@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import { injectable } from 'tsyringe';
 
 import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
@@ -202,24 +201,18 @@ export class TypeService {
   }
 
   private calculatePhaseProgress(milestones: MilestonesModelType[]): PhaseProgress {
-    const now = dayjs();
     let totalDays = 0;
     let completedDays = 0;
     let completedCount = 0;
 
     milestones.forEach((milestone) => {
-      const start = dayjs(milestone.start_date);
-      const end = dayjs(milestone.end_date);
-      const duration = end.diff(start, 'day') + 1;
+      const duration = milestone.duration;
 
       totalDays += duration;
 
       if (milestone.completed_at) {
         completedDays += duration;
         completedCount++;
-      } else if (now.isAfter(end)) {
-        // If milestone is overdue but not marked complete
-        completedDays += duration;
       }
     });
 

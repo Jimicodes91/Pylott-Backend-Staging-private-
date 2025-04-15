@@ -183,39 +183,41 @@ export const createMilestoneValidationRules = [
     .isLength({ min: 2, max: 100 })
     .withMessage('Name must be between 2-100 characters'),
 
-  body('start_date')
-    .notEmpty()
-    .withMessage('Start date is required')
-    .isISO8601()
-    .withMessage('Start date must be in ISO 8601 format (YYYY-MM-DD)')
-    .custom((value) => {
-      const date = parseISO(value);
-      if (!isValid(date)) throw new Error('Invalid start date');
-      if (isAfter(date, new Date(2030, 11, 31))) {
-        // Months are 0-indexed (11 = December)
-        throw new Error('Start date cannot be after December 31, 2030');
-      }
-      return true;
-    }),
+  body('duration').notEmpty().isInt({ min: 1 }).withMessage('Duration must be a positive integer'),
 
-  body('end_date')
-    .notEmpty()
-    .withMessage('End date is required')
-    .isISO8601()
-    .withMessage('End date must be in ISO 8601 format (YYYY-MM-DD)')
-    .custom((value, { req }) => {
-      const startDate = parseISO(req.body.start_date);
-      const endDate = parseISO(value);
+  // body('start_date')
+  //   .notEmpty()
+  //   .withMessage('Start date is required')
+  //   .isISO8601()
+  //   .withMessage('Start date must be in ISO 8601 format (YYYY-MM-DD)')
+  //   .custom((value) => {
+  //     const date = parseISO(value);
+  //     if (!isValid(date)) throw new Error('Invalid start date');
+  //     if (isAfter(date, new Date(2030, 11, 31))) {
+  //       // Months are 0-indexed (11 = December)
+  //       throw new Error('Start date cannot be after December 31, 2030');
+  //     }
+  //     return true;
+  //   }),
 
-      if (!isValid(endDate)) throw new Error('Invalid end date');
-      if (!isAfter(endDate, startDate)) {
-        throw new Error('End date must be after start date');
-      }
-      if (isAfter(endDate, new Date(2030, 11, 31))) {
-        throw new Error('End date cannot be after December 31, 2030');
-      }
-      return true;
-    }),
+  // body('end_date')
+  //   .notEmpty()
+  //   .withMessage('End date is required')
+  //   .isISO8601()
+  //   .withMessage('End date must be in ISO 8601 format (YYYY-MM-DD)')
+  //   .custom((value, { req }) => {
+  //     const startDate = parseISO(req.body.start_date);
+  //     const endDate = parseISO(value);
+
+  //     if (!isValid(endDate)) throw new Error('Invalid end date');
+  //     if (!isAfter(endDate, startDate)) {
+  //       throw new Error('End date must be after start date');
+  //     }
+  //     if (isAfter(endDate, new Date(2030, 11, 31))) {
+  //       throw new Error('End date cannot be after December 31, 2030');
+  //     }
+  //     return true;
+  //   }),
 
   body('project_type_id').notEmpty().withMessage('Project type ID is required').isUUID('4').withMessage('Project type ID must be a valid UUID v4'),
 ];
@@ -223,40 +225,42 @@ export const createMilestoneValidationRules = [
 export const updateMilestoneValidationRules = [
   body('name').optional().isString().withMessage('Name must be a string').trim().escape().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2-100 characters'),
 
-  body('start_date')
-    .optional()
-    .isISO8601()
-    .withMessage('Start date must be in ISO 8601 format')
-    .custom((value, { req }) => {
-      const date = parseISO(value);
-      if (!isValid(date)) throw new Error('Invalid start date');
+  body('duration').optional().isInt({ min: 1 }).withMessage('Duration must be a positive integer'),
 
-      // Validate against existing end_date if provided in same request
-      if (req.body.end_date) {
-        const endDate = parseISO(req.body.end_date);
-        if (isAfter(date, endDate)) {
-          throw new Error('Start date cannot be after end date');
-        }
-      }
-      return true;
-    }),
+  // body('start_date')
+  //   .optional()
+  //   .isISO8601()
+  //   .withMessage('Start date must be in ISO 8601 format')
+  //   .custom((value, { req }) => {
+  //     const date = parseISO(value);
+  //     if (!isValid(date)) throw new Error('Invalid start date');
 
-  body('end_date')
-    .optional()
-    .isISO8601()
-    .withMessage('End date must be in ISO 8601 format')
-    .custom((value, { req }) => {
-      const date = parseISO(value);
-      if (!isValid(date)) throw new Error('Invalid end date');
+  //     // Validate against existing end_date if provided in same request
+  //     if (req.body.end_date) {
+  //       const endDate = parseISO(req.body.end_date);
+  //       if (isAfter(date, endDate)) {
+  //         throw new Error('Start date cannot be after end date');
+  //       }
+  //     }
+  //     return true;
+  //   }),
 
-      if (req.body.start_date) {
-        const startDate = parseISO(req.body.start_date);
-        if (!isAfter(date, startDate)) {
-          throw new Error('End date must be after start date');
-        }
-      }
-      return true;
-    }),
+  // body('end_date')
+  //   .optional()
+  //   .isISO8601()
+  //   .withMessage('End date must be in ISO 8601 format')
+  //   .custom((value, { req }) => {
+  //     const date = parseISO(value);
+  //     if (!isValid(date)) throw new Error('Invalid end date');
+
+  //     if (req.body.start_date) {
+  //       const startDate = parseISO(req.body.start_date);
+  //       if (!isAfter(date, startDate)) {
+  //         throw new Error('End date must be after start date');
+  //       }
+  //     }
+  //     return true;
+  //   }),
 
   body('is_completed').optional().isBoolean().withMessage('Completion status must be true or false').toBoolean(),
 ];

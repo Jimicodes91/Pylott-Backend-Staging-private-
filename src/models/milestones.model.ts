@@ -9,8 +9,7 @@ export class Milestones extends BaseModel {
 
   project_type_id: string;
   company_id: string;
-  start_date: string;
-  end_date: string;
+  duration: number;
   completed_at: string;
   name: string;
   is_system: boolean;
