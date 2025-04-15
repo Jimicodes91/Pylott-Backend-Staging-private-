@@ -9,26 +9,38 @@ import { DocsController } from '../docs/docs.controller';
 import { EventController } from '../events/event.controller';
 import { ProjectController } from './projects.controller';
 import {
+  addCustomFieldValidationRules,
   addProjectMemberValidationRules,
   createCommentValidationRules,
   createMilestoneValidationRules,
   createNoteValidationRules,
   createProjectTypeValidationRules,
-  createProjectValidationRules,
+  // createProjectValidationRules,
   createTaskValidationRules,
   documentRequestValidationRules,
   toggleNotePinValidationRules,
+  updateFieldRequirementValidationRules,
   updateMilestoneValidationRules,
   updateProjectTypeValidationRules,
-  updateProjectValidationRules,
+  // updateProjectValidationRules,
   updateTaskValidationRules,
 } from '@/shared/validations/projects';
+import { ProjectFormController } from './project_form.controller';
 
 const documentController = container.resolve(DocsController);
 const eventsController = container.resolve(EventController);
 const projectController = container.resolve(ProjectController);
+const projectFormController = container.resolve(ProjectFormController);
 
 export const projectRoutes = (prefix: string, server: Server) => {
+  /**
+   * Project Forms
+   */
+  server.get(`${prefix}/forms`, authGuard, projectFormController.getProjectForm);
+  server.post(`${prefix}/forms/fields`, authGuard, schemaValidator(addCustomFieldValidationRules), projectFormController.addCustomField);
+  server.patch(`${prefix}/forms/fields/:field_id/requirement`, authGuard, schemaValidator(updateFieldRequirementValidationRules), projectFormController.updateFieldRequirement);
+  server.get(`${prefix}/forms/fields`, authGuard, projectFormController.getAllFormFields);
+
   /**
    * Events
    */
@@ -83,8 +95,10 @@ export const projectRoutes = (prefix: string, server: Server) => {
    */
   server.get(`${prefix}`, authGuard, projectController.getAllProjects);
   server.get(`${prefix}/:project_id`, authGuard, projectController.getProject);
-  server.post(`${prefix}`, authGuard, schemaValidator(createProjectValidationRules), projectController.createProject);
-  server.patch(`${prefix}/:project_id`, authGuard, schemaValidator(updateProjectValidationRules), projectController.updateProject);
+  // server.post(`${prefix}`, authGuard, schemaValidator(createProjectValidationRules), projectController.createProject);
+  server.post(`${prefix}`, authGuard, projectController.createProject);
+  server.patch(`${prefix}/:project_id`, authGuard, projectController.updateProject);
+  // server.patch(`${prefix}/:project_id`, authGuard, schemaValidator(updateProjectValidationRules), projectController.updateProject);
 
   /**
    * Project Members

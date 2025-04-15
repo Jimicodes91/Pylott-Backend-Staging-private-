@@ -14,15 +14,15 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
     return await this.model
       .query()
       .where(query)
-      .withGraphFetched({ documents: { attachments: true }, milestone: true })
+      .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
       .orderBy('created_at', 'desc');
   }
 
   async getProjectDetails(company_id: string, project_id: string) {
     return this.model
       .query()
-      .where({ id: project_id, company_id })
-      .withGraphFetched({ documents: { attachments: true }, milestone: true })
+      .where({ id: project_id, company_id, deleted_at: null })
+      .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
       .first();
   }
 }
