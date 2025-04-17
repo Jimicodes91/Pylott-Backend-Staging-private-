@@ -19,7 +19,7 @@ import { GoogleAuthData } from '@/shared/types/google.type';
 @injectable()
 export class AuthService {
   private googleClient: OAuth2Client;
-  private FRONTEND_URL = 'https://monumental-fenglisu-de57c2.netlify.app';
+  private FRONTEND_URL = 'https://pylot-omega.vercel.app';
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
@@ -126,12 +126,12 @@ export class AuthService {
   }
 
   private async sendVerificationEmail(email: string, token: string) {
-    const verificationLink = `https://monumental-fenglisu-de57c2.netlify.app/verify-account?token=${token}`;
+    const verificationLink = `${this.FRONTEND_URL}/verify-account?token=${token}`;
 
     await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
   }
   private async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `https://monumental-fenglisu-de57c2.netlify.app/reset-password?token=${token}`;
+    const resetLink = `${this.FRONTEND_URL}/reset-password?token=${token}`;
     await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
   }
 
@@ -424,7 +424,7 @@ export class AuthService {
       console.log(companyName);
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
-      const registrationLink = `https://monumental-fenglisu-de57c2.netlify.app/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
+      const registrationLink = `${this.forgotPassword}/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
 
       const mail = await this.sendEmailTemplate(
         email,
