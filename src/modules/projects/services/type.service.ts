@@ -18,6 +18,7 @@ export class TypeService {
 
   async getAllProjectTypes(company_id: string): Promise<ServiceType> {
     try {
+      console.log(`${this.traceId} Fetching all project types for company_id: ${company_id}`);
       const projectTypes = await this.projectTypeRepository.findMany({ company_id, deleted_at: null });
 
       const remappedData = await Promise.all(
