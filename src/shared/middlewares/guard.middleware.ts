@@ -28,7 +28,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
       userId: string;
     };
 
-    const user = await userRepo.getById(decoded.userId);
+    const user = await userRepo.findOne({ email: decoded.email, deleted_at: null });
 
     if (!user) {
       return next(new HttpError('User not found.', 404));
