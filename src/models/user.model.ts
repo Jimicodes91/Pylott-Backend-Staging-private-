@@ -3,6 +3,7 @@ import { ModelObject } from 'objection';
 import { UserRoles } from '@/shared/enums';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
+import { Company } from './company.model';
 
 export class User extends BaseModel {
   static tableName = 'users';
@@ -29,7 +30,18 @@ export class User extends BaseModel {
   login_count?: number;
   password_setup_token_expires?: number;
 
-  static relationMappings = (): ModelsRelationMapping => ({});
+  company: Company;
+
+  static relationMappings = (): ModelsRelationMapping => ({
+    company: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: Company,
+        join: {
+          from: 'users.company_id',
+          to: 'companies.id',
+        },
+      },
+});
 }
 
 export type UserModelType = ModelObject<User>;

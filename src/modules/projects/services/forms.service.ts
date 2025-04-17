@@ -40,20 +40,22 @@ export class ProjectFormService {
     }
   }
 
+
   private async initializeDefaultForm(company_id: string): Promise<ServiceType> {
     const defaultFields = [
       { name: 'Project name', type: 'text', is_required: true, is_custom: false, sort_order: 1 },
       { name: 'Pipeline', type: 'select', is_required: true, is_custom: false, sort_order: 2, options: [] },
-      { name: 'Description', type: 'text', is_required: true, is_custom: false, sort_order: 3 },
+      { name: 'Description', type: 'text', is_required: false, is_custom: false, sort_order: 3 },
       { name: 'Project Client', type: 'text', is_required: true, is_custom: false, sort_order: 4 },
-      { name: 'Project value', type: 'number', is_required: true, is_custom: false, sort_order: 5 },
-      { name: 'Nationality', type: 'text', is_required: false, is_custom: false, sort_order: 6 },
-      { name: 'Resident country', type: 'text', is_required: false, is_custom: false, sort_order: 7 },
-      { name: 'Post code', type: 'text', is_required: true, is_custom: false, sort_order: 8 },
-      { name: 'Phone number', type: 'text', is_required: false, is_custom: false, sort_order: 9 },
-      { name: 'Email address', type: 'text', is_required: false, is_custom: false, sort_order: 10 },
-      { name: 'Start date', type: 'date', is_required: true, is_custom: false, sort_order: 11 },
-      { name: 'End date', type: 'date', is_required: true, is_custom: false, sort_order: 11 },
+      { name: 'Client Organization', type: 'text', is_required: true, is_custom: false, sort_order: 5 },
+      { name: 'Project value', type: 'number', is_required: false, is_custom: false, sort_order: 6 },
+      { name: 'Nationality', type: 'text', is_required: false, is_custom: false, sort_order: 7 },
+      { name: 'Resident country', type: 'text', is_required: false, is_custom: false, sort_order: 8 },
+      { name: 'Post code', type: 'text', is_required: false, is_custom: false, sort_order: 9 },
+      { name: 'Phone number', type: 'text', is_required: false, is_custom: false, sort_order: 10 },
+      { name: 'Email address', type: 'text', is_required: false, is_custom: false, sort_order: 11 },
+      { name: 'Start date', type: 'date', is_required: true, is_custom: false, sort_order: 12 },
+      { name: 'End date', type: 'date', is_required: false, is_custom: false, sort_order: 13 },
     ];
 
     let form;

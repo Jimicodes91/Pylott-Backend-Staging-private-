@@ -8,7 +8,7 @@ export class UserService {
   constructor(@inject(UserRepository) private userRepository: UserRepository) {}
   public async getUser(id: string) {
     try {
-      const user = await this.userRepository.findUser(id);
+      const user = await this.userRepository.getUserDetails(id);
       if (!user) {
         throw new HttpError('User not found', 404);
       }
