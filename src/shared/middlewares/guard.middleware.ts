@@ -38,9 +38,9 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
     console.log(`[AuthGuard] ===> ${JSON.stringify({ user: req.user, decoded })}`);
 
-    const user = await userRepo.findOne({ id: decoded.userId });
+    const userx = await userRepo.findOne({ id: decoded.userId });
 
-    console.log(`[GUARD] ====> ${JSON.stringify(user)}`);
+    console.log(`[GUARD] ====> ${JSON.stringify(userx)}`);
 
     return next();
   } catch (error: any) {
