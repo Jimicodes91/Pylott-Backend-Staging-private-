@@ -38,6 +38,10 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
     console.log(`[AuthGuard] ===> ${JSON.stringify({ user: req.user, decoded })}`);
 
+    const user = await userRepo.findOne({ id: decoded.userId });
+
+    console.log(`[GUARD] ====> ${JSON.stringify(user)}`);
+
     return next();
   } catch (error: any) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
