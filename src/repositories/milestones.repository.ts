@@ -34,6 +34,7 @@ export class MilestonesRepository extends BaseRepository<MilestonesModelType, Mi
         project_type_id,
         deleted_at: null,
       })
+      .orderBy("created_at", "asc")
       .withGraphFetched({ projects: true });
   }
 }
