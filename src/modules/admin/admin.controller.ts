@@ -140,4 +140,14 @@ export class SysAdminController {
       return errorResponse(res, 'COMPANY_USERS_ERROR', error.message, error.statusCode || 500);
     }
   };
+  // In admin.controller.ts
+  public updateUserStatus = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const result: any = await this.sysAdminService.updateUserStatus(id);
+      return successResponse(res, 'User status updated successfully', result);
+    } catch (error: any) {
+      return errorResponse(res, 'USER_STATUS_UPDATE_ERROR', error.message, error.statusCode || 500);
+    }
+  };
 }

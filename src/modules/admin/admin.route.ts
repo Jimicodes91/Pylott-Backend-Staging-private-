@@ -27,4 +27,6 @@ export const sysAdminRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/sysadmins`, authenticateUser, sysAdminController.addSysAdmin);
 
   server.patch(`${prefix}/sysadmins/:id/deactivate`, authenticateUser, sysAdminController.deactivateSysAdmin);
+  // In admin.routes.ts
+  server.patch(`${prefix}/users/:id/status`, authenticateUser, sysAdminController.updateUserStatus);
 };

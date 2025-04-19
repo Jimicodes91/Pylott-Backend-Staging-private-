@@ -46,11 +46,15 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
   }
 
   async getUserDetails(id: string) {
-    return await this.model
-      .query()
-      .where({ id, deleted_at: null })
-      .withGraphFetched({ company: true })
-      .first();
+    return await this.model.query().where({ id, deleted_at: null }).withGraphFetched({ company: true }).first();
+  }
+
+  async toggleUserStatus(id: string) {
+    const user = await this.model.query().findById(id);
+    if (!user) {
+      return null;
+    }
+    return this.model.query().where({ id }).patch({ is_active: !user.is_active });
   }
 
   // In user.repository.ts

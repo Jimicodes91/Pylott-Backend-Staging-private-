@@ -161,4 +161,17 @@ export class SysAdminService {
 
     return await this.userRepository.getUsersByCompany(companyId);
   }
+
+  public async updateUserStatus(userid: string) {
+    if (!userid) {
+      throw new HttpError('User Id is required', 400);
+    }
+
+    const updatedUser = await this.userRepository.toggleUserStatus(userid);
+    if (!updatedUser) {
+      throw new HttpError('User not found', 404);
+    }
+
+    return updatedUser;
+  }
 }
