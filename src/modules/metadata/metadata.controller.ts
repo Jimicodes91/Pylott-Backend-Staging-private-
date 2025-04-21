@@ -43,13 +43,11 @@ export class MetadataController {
     return genericResponse({ res, data: result });
   }
 
-  private async handleMetadataCreation(req: Request, res: Response, createMethod: (user: any, project_id: string, payload: CreateMetadataType) => Promise<any>) {
+  private async handleMetadataCreation(req: Request, res: Response, createMethod: (user: any, payload: CreateMetadataType) => Promise<any>) {
     const payload = req.body as CreateMetadataType;
-    const { project_id } = req.params;
-    // @ts-ignore
     const user = req.user || {};
 
-    const result = await createMethod(user, project_id, payload);
+    const result = await createMethod(user, payload);
 
     return genericResponse({ res, data: result });
   }
