@@ -4,6 +4,7 @@ import slugify from 'slugify';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
 import { Project } from './project.model';
+import { Milestones } from './milestones.model';
 // import { FieldTypeEnum } from '@/shared/enums';
 
 export class ProjectType extends BaseModel {
@@ -21,6 +22,8 @@ export class ProjectType extends BaseModel {
   //   order: number;
   //   options?: any;
   // }>;
+
+  milestones: Milestones[];
 
   async $beforeInsert() {
     super.$beforeInsert();
@@ -74,6 +77,14 @@ export class ProjectType extends BaseModel {
       join: {
         from: 'project_types.id',
         to: 'projects.project_type_id',
+      },
+    },
+    milestones: {
+      relation: BaseModel.HasManyRelation,
+      modelClass: Milestones,
+      join: {
+        from: 'project_types.id',
+        to: 'milestones.project_type_id',
       },
     },
   });

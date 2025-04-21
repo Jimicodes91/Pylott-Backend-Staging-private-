@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
+import { ProjectTypeRepository } from '@/repositories';
 
 import { MilestonesModelType } from '@/models';
 import { FieldTypeEnum } from '@/shared/enums';
@@ -11,20 +11,15 @@ import { _ProjectType, PhaseProgress } from '@/shared/types/projects.type';
 export class TypeService {
   private traceId = '[TYPE SERVICE]';
 
-  constructor(
-    private readonly projectTypeRepository: ProjectTypeRepository,
-    private readonly milestoneRepository: MilestonesRepository,
-  ) {}
+  constructor(private readonly projectTypeRepository: ProjectTypeRepository) {}
 
   async getAllProjectTypes(company_id: string): Promise<ServiceType> {
     try {
-      const projectTypes = await this.projectTypeRepository.findMany({ company_id, deleted_at: null });
+      const projectTypes = await this.projectTypeRepository.getAllProjectTypes(company_id);
 
       const remappedData = await Promise.all(
         projectTypes.map(async (projectType) => {
-          const milestones = await this.milestoneRepository.getAllMilestones(company_id, projectType.id);
-
-          const progress = this.calculatePhaseProgress(milestones);
+          const progress = this.calculatePhaseProgress(projectType.milestones);
           return {
             ...projectType,
             progress_metrics: progress,
@@ -44,16 +39,11 @@ export class TypeService {
 
   async getProjectTypeDetails(company_id: string, project_type_id: string): Promise<ServiceType> {
     try {
-      const projectType = await this.projectTypeRepository.findOne({
-        company_id,
-        id: project_type_id,
-        deleted_at: null,
-      });
+      const projectType = await this.projectTypeRepository.getProjectType(company_id, project_type_id);
 
       if (!projectType) return { status: false, message: 'Pipeline not found' };
 
-      const milestones = await this.milestoneRepository.getAllMilestones(company_id, project_type_id);
-      const progress = this.calculatePhaseProgress(milestones);
+      const progress = this.calculatePhaseProgress(projectType.milestones);
 
       return {
         status: true,
