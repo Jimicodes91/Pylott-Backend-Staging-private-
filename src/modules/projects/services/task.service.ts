@@ -72,6 +72,7 @@ export class TaskService {
         const metadataQuery = {
           company_id,
           type: MetadataType.TASK,
+          deleted_at: null,
         };
 
         const eventType = await this.metadataRepository.findOne(metadataQuery);

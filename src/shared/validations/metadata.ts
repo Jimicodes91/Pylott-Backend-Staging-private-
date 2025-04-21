@@ -1,8 +1,6 @@
-import { body, param } from 'express-validator';
+import { body } from 'express-validator';
 
 export const createMetadataValidationRules = [
-  param('project_id').isUUID().withMessage('Project Id must be a valid UUID'),
-
   body('name').notEmpty().withMessage('Name is required').isString().withMessage('Name must be a string').isLength({ min: 2 }).withMessage('Name must be between 2 and 100 characters').trim(),
 
   body('description').optional().isString().withMessage('Description must be a string').trim(),

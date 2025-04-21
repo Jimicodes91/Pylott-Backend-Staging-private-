@@ -14,7 +14,14 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
   }
 
   async getAllProjectTypes(company_id: string) {
-    return await this.model.query().where({ company_id, deleted_at: null }).orderBy('created_at', 'desc').withGraphFetched({ milestones: true });
+    return await this.model
+      .query()
+      .where({ company_id, deleted_at: null })
+      .orderBy('created_at', 'desc')
+      .withGraphFetched({ milestones: true })
+      .modifyGraph('milestones', (builder) => {
+        builder.orderBy('order', 'asc');
+      });
   }
 
   async getProjectType(company_id: string, project_type_id: string) {

@@ -121,6 +121,7 @@ export type EnrichedComment = CommentsModelType & {
 export type _ProjectType = {
   company_id: string;
   name: string;
+  stages?: [CreateMilestoneType];
   // custom_fields: Array<{
   //   name: string;
   //   field_key: string;

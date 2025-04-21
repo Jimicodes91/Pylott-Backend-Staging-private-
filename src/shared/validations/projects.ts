@@ -16,6 +16,19 @@ export const createProjectTypeValidationRules = [
 
   body('is_system').optional().isBoolean().withMessage('is_system must be a boolean').toBoolean(),
 
+  body('stages').optional().isArray().withMessage('Stages must be an array'),
+
+  body('stages.*.name')
+    .notEmpty()
+    .withMessage('Milestone name is required')
+    .isString()
+    .withMessage('Milestone name must be a string')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Milestone name must be between 2 and 100 characters'),
+
+  body('stages.*.duration').notEmpty().withMessage('Duration is required').isInt({ min: 1 }).withMessage('Duration must be a positive integer').toInt(),
+
   // body('custom_fields')
   //   .optional()
   //   .isArray()

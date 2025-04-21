@@ -11,36 +11,36 @@ export class MetadataService {
 
   constructor(private readonly metadataRepository: MetadataRepository) {}
 
-  async createDocumentType(user: UserModelType, project_id: string, payload: CreateMetadataType) {
-    return this.createMetadata(user, project_id, payload, MetadataType.DOCUMENT, 'Document');
+  async createDocumentType(user: UserModelType, payload: CreateMetadataType) {
+    return this.createMetadata(user, payload, MetadataType.DOCUMENT, 'Document');
   }
 
-  async createTaskType(user: UserModelType, project_id: string, payload: CreateMetadataType) {
-    return this.createMetadata(user, project_id, payload, MetadataType.TASK, 'Task');
+  async createTaskType(user: UserModelType, payload: CreateMetadataType) {
+    return this.createMetadata(user, payload, MetadataType.TASK, 'Task');
   }
 
-  async createEventType(user: UserModelType, project_id: string, payload: CreateMetadataType) {
-    return this.createMetadata(user, project_id, payload, MetadataType.EVENT, 'Event');
+  async createEventType(user: UserModelType, payload: CreateMetadataType) {
+    return this.createMetadata(user, payload, MetadataType.EVENT, 'Event');
   }
 
-  async getDocumentTypes(user: UserModelType, project_id: string) {
-    return this.fetchMetadataByType(user, project_id, MetadataType.DOCUMENT, 'Document');
+  async getDocumentTypes(user: UserModelType) {
+    return this.fetchMetadataByType(user, MetadataType.DOCUMENT, 'Document');
   }
 
-  async getTaskTypes(user: UserModelType, project_id: string) {
-    return this.fetchMetadataByType(user, project_id, MetadataType.TASK, 'Task');
+  async getTaskTypes(user: UserModelType) {
+    return this.fetchMetadataByType(user, MetadataType.TASK, 'Task');
   }
 
-  async getEventTypes(user: UserModelType, project_id: string) {
-    return this.fetchMetadataByType(user, project_id, MetadataType.EVENT, 'Event');
+  async getEventTypes(user: UserModelType) {
+    return this.fetchMetadataByType(user, MetadataType.EVENT, 'Event');
   }
 
   /**
    * Generic method to fetch metadata by type
    */
-  private async fetchMetadataByType(user: UserModelType, project_id: string, type: MetadataType, typeName: string) {
+  private async fetchMetadataByType(user: UserModelType, type: MetadataType, typeName: string) {
     try {
-      const metadata = await this.metadataRepository.findByType(user.company_id, project_id, type);
+      const metadata = await this.metadataRepository.findByType(user.company_id, type);
 
       return {
         status: true,
@@ -48,7 +48,7 @@ export class MetadataService {
         data: metadata,
       };
     } catch (error: any) {
-      console.log(`${this.traceId} Error occurred fetching ${typeName.toLowerCase()} types ===> ${JSON.stringify({ project_id, err_msg: error?.message })}`);
+      console.log(`${this.traceId} Error occurred fetching ${typeName.toLowerCase()} types ===> ${JSON.stringify({ err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',
@@ -60,13 +60,12 @@ export class MetadataService {
   /**
    * Generic method to create metadata of any type
    */
-  private async createMetadata(user: UserModelType, project_id: string, payload: CreateMetadataType, type: MetadataType, typeName: string) {
+  private async createMetadata(user: UserModelType, payload: CreateMetadataType, type: MetadataType, typeName: string) {
     try {
       payload.name = payload.name.trim();
 
       const queryData = {
         company_id: user.company_id,
-        project_id,
         name: payload.name,
         type,
       };
@@ -89,7 +88,7 @@ export class MetadataService {
         message: `${typeName} type created successfully`,
       };
     } catch (error: any) {
-      console.log(`${this.traceId} Error occurred creating ${typeName.toLowerCase()} type ===> ${JSON.stringify({ project_id, payload, err_msg: error?.message })}`);
+      console.log(`${this.traceId} Error occurred creating ${typeName.toLowerCase()} type ===> ${JSON.stringify({ payload, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',

@@ -1,17 +1,21 @@
 import { injectable } from 'tsyringe';
 
-import { ProjectTypeRepository } from '@/repositories';
+import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
 
-import { MilestonesModelType } from '@/models';
+import { MilestonesModelType, ProjectTypeModelType } from '@/models';
 import { FieldTypeEnum } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { _ProjectType, PhaseProgress } from '@/shared/types/projects.type';
+import Objection from 'objection';
 
 @injectable()
 export class TypeService {
   private traceId = '[TYPE SERVICE]';
 
-  constructor(private readonly projectTypeRepository: ProjectTypeRepository) {}
+  constructor(
+    private readonly projectTypeRepository: ProjectTypeRepository,
+    private readonly milestonesRepository: MilestonesRepository,
+  ) {}
 
   async getAllProjectTypes(company_id: string): Promise<ServiceType> {
     try {
@@ -78,10 +82,31 @@ export class TypeService {
         };
       }
 
-      const createdType = await this.projectTypeRepository.create({
-        company_id,
-        name: payload.name,
-        is_system,
+      let createdType: ProjectTypeModelType;
+
+      await Objection.Model.transaction(async (trx) => {
+        const projectTypeCreateData = {
+          company_id,
+          name: payload.name,
+          is_system,
+        };
+
+        createdType = await this.projectTypeRepository.create(projectTypeCreateData, trx);
+
+        if (payload.stages && payload.stages.length > 0) {
+          payload.stages.forEach(async (stage) => {
+            const milestoneData = {
+              project_type_id: createdType.id,
+              company_id,
+              is_system,
+              completed_at: null,
+              name: stage.name,
+              duration: stage.duration,
+            };
+
+            await this.milestonesRepository.create(milestoneData, trx);
+          });
+        }
       });
 
       return {
