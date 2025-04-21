@@ -62,6 +62,7 @@ export class MetadataService {
    */
   private async createMetadata(user: UserModelType, payload: CreateMetadataType, type: MetadataType, typeName: string) {
     try {
+      console.log(`${this.traceId} Creating ${typeName.toLowerCase()} type ===> ${JSON.stringify({ payload })}`);
       payload.name = payload.name.trim();
 
       const queryData = {

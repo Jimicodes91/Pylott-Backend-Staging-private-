@@ -20,7 +20,7 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
       .orderBy('created_at', 'desc')
       .withGraphFetched({ milestones: true })
       .modifyGraph('milestones', (builder) => {
-        builder.orderBy('order', 'asc');
+        builder.orderBy('created_at', 'asc');
       });
   }
 
