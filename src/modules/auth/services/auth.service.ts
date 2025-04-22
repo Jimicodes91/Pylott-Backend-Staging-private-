@@ -424,7 +424,7 @@ export class AuthService {
       console.log(companyName);
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
-      const registrationLink = `${this.forgotPassword}/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
+      const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
 
       const mail = await this.sendEmailTemplate(
         email,
