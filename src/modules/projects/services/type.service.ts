@@ -2,11 +2,10 @@ import { injectable } from 'tsyringe';
 
 import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
 
-import { MilestonesModelType, ProjectTypeModelType } from '@/models';
+import { MilestonesModelType } from '@/models';
 import { FieldTypeEnum } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { _ProjectType, PhaseProgress } from '@/shared/types/projects.type';
-import Objection from 'objection';
 
 @injectable()
 export class TypeService {
@@ -82,32 +81,27 @@ export class TypeService {
         };
       }
 
-      let createdType: ProjectTypeModelType;
+      const projectTypeCreateData = {
+        company_id,
+        name: payload.name,
+        is_system,
+      };
+      const createdType = await this.projectTypeRepository.create(projectTypeCreateData);
 
-      await Objection.Model.transaction(async (trx) => {
-        const projectTypeCreateData = {
-          company_id,
-          name: payload.name,
-          is_system,
-        };
+      if (payload.stages && payload.stages.length > 0) {
+        payload.stages.forEach(async (stage) => {
+          const milestoneData = {
+            project_type_id: createdType.id,
+            company_id,
+            is_system,
+            completed_at: null,
+            name: stage.name,
+            duration: stage.duration,
+          };
 
-        createdType = await this.projectTypeRepository.create(projectTypeCreateData, trx);
-
-        if (payload.stages && payload.stages.length > 0) {
-          payload.stages.forEach(async (stage) => {
-            const milestoneData = {
-              project_type_id: createdType.id,
-              company_id,
-              is_system,
-              completed_at: null,
-              name: stage.name,
-              duration: stage.duration,
-            };
-
-            await this.milestonesRepository.create(milestoneData, trx);
-          });
-        }
-      });
+          await this.milestonesRepository.create(milestoneData);
+        });
+      }
 
       return {
         status: true,
