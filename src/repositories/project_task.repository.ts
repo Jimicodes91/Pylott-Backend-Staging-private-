@@ -17,11 +17,12 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
       .first();
   }
 
-  async getAllTasks(company_id: string, project_id: string) {
-    return await this.model
-      .query()
-      .where({ company_id, project_id, deleted_at: null })
-      .withGraphFetched({ document: { attachments: true }, assignee: true });
+  async getAllTasks(company_id: string, project_id: string = null) {
+    let qb = this.model.query().where({ company_id, deleted_at: null });
+
+    if (project_id) qb = qb.where({ project_id });
+
+    return await qb.withGraphFetched({ document: { attachments: true }, assignee: true });
   }
 
   async getTaskWhereName(project_id: string, name: string, task_id: string) {

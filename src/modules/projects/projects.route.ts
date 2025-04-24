@@ -111,7 +111,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
    * Tasks
    */
   server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), projectController.createTask);
-  server.get(`${prefix}/:project_id/tasks`, authGuard, projectController.getAllTasks);
+  server.get(`${prefix}/tasks`, authGuard, projectController.getAllTasks);
   server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.getTaskById);
   server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), projectController.updateTask);
   server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.deleteTask);

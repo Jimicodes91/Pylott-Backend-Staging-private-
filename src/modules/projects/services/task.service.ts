@@ -307,7 +307,7 @@ export class TaskService {
     }
   }
 
-  async getAllTask(company_id: string, project_id: string): Promise<ServiceType> {
+  async getAllTask(company_id: string, project_id: string | null): Promise<ServiceType> {
     try {
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id);
 
