@@ -21,6 +21,10 @@ export class MetadataController {
     return this.handleMetadataCreation(req, res, this.metadataService.createEventType.bind(this.metadataService));
   };
 
+  createNoteType = async (req: Request, res: Response) => {
+    return this.handleMetadataCreation(req, res, this.metadataService.createNoteType.bind(this.metadataService));
+  };
+
   getDocumentTypes = async (req: Request, res: Response) => {
     return this.handleMetadataFetch(req, res, this.metadataService.getDocumentTypes.bind(this.metadataService));
   };
@@ -31,6 +35,10 @@ export class MetadataController {
 
   getEventTypes = async (req: Request, res: Response) => {
     return this.handleMetadataFetch(req, res, this.metadataService.getEventTypes.bind(this.metadataService));
+  };
+
+  getNoteTypes = async (req: Request, res: Response) => {
+    return this.handleMetadataFetch(req, res, this.metadataService.getNoteTypes.bind(this.metadataService));
   };
 
   private async handleMetadataFetch(req: Request, res: Response, fetchMethod: (user: any, project_id: string) => Promise<any>) {

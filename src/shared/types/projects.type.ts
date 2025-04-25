@@ -14,6 +14,7 @@ export type CreateProjectType = {
   end_date: string;
   milestone_id?: string;
   status?: ProjectStatus;
+  milestones?: Array<CreateMilestoneType>;
 };
 
 export type CreateMilestoneType = {

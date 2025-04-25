@@ -16,9 +16,13 @@ export const metadataRoutes = (prefix: string, server: Server) => {
 
   server.get(`${prefix}/type/events`, authGuard, metadataController.getEventTypes);
 
+  server.get(`${prefix}/type/notes`, authGuard, metadataController.getNoteTypes);
+
   server.post(`${prefix}/type/documents`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createDocumentType);
 
   server.post(`${prefix}/type/tasks`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createTaskType);
 
   server.post(`${prefix}/type/events`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createEventType);
+
+  server.post(`${prefix}/type/notes`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createNoteType);
 };

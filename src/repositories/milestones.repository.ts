@@ -13,6 +13,10 @@ export class MilestonesRepository extends BaseRepository<MilestonesModelType, Mi
     return await this.model.query().where('company_id', company_id).where('project_type_id', project_type_id).where('name', name).whereNull('deleted_at').whereNot('id', id).first();
   }
 
+  async getFirstCreatedMilestone(company_id: string, project_type_id: string) {
+    return await this.model.query().where({ deleted_at: null, project_type_id, company_id }).orderBy('created_at', 'ASC').first();
+  }
+
   async getMilestone(company_id: string, milestone_id: string, project_type_id: string) {
     return await this.model
       .query()

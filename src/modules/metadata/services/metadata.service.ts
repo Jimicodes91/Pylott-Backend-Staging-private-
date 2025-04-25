@@ -23,6 +23,10 @@ export class MetadataService {
     return this.createMetadata(user, payload, MetadataType.EVENT, 'Event');
   }
 
+  async createNoteType(user: UserModelType, payload: CreateMetadataType) {
+    return this.createMetadata(user, payload, MetadataType.NOTE, 'Note');
+  }
+
   async getDocumentTypes(user: UserModelType) {
     return this.fetchMetadataByType(user, MetadataType.DOCUMENT, 'Document');
   }
@@ -33,6 +37,10 @@ export class MetadataService {
 
   async getEventTypes(user: UserModelType) {
     return this.fetchMetadataByType(user, MetadataType.EVENT, 'Event');
+  }
+
+  async getNoteTypes(user: UserModelType) {
+    return this.fetchMetadataByType(user, MetadataType.NOTE, 'Note');
   }
 
   /**

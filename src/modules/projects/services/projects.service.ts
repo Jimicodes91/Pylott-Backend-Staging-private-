@@ -175,13 +175,16 @@ export class ProjectService {
             statusCode: StatusCodes.NOT_FOUND,
           };
         }
-        if (milestone.project_type_id !== payload.project_type_id) {
+        if (milestone.project_type_id !== payload['pipeline']) {
           return {
             status: false,
             message: 'Milestone does not belong to selected project type',
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
+      } else if (payload['pipeline'] && !payload.milestone_id) {
+        const milestone = await this.milestonesRepository.getFirstCreatedMilestone(company_id, payload['pipeline']);
+        payload.milestone_id = milestone.id ?? null;
       }
 
       const form = await this.projectFormRepository.getCompanyForm(company_id);
@@ -262,6 +265,29 @@ export class ProjectService {
           },
           trx,
         );
+
+        if (payload.milestones && payload.milestones.length) {
+          for (const milestoneRecord of payload.milestones) {
+            const existingMilestone = await this.milestonesRepository.findOne({
+              company_id,
+              project_type_id: milestoneRecord.project_type_id,
+              name: milestoneRecord.name,
+              deleted_at: null,
+            });
+
+            if (!existingMilestone) {
+              await this.milestonesRepository.create(
+                {
+                  ...milestoneRecord,
+                  company_id,
+                  is_system: false,
+                  completed_at: null,
+                },
+                trx,
+              );
+            }
+          }
+        }
       });
 
       return {

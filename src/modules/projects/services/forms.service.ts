@@ -40,7 +40,6 @@ export class ProjectFormService {
     }
   }
 
-
   private async initializeDefaultForm(company_id: string): Promise<ServiceType> {
     const defaultFields = [
       { name: 'Project name', type: 'text', is_required: true, is_custom: false, sort_order: 1 },
