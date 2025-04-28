@@ -12,6 +12,8 @@ import { projectSettingRoutes } from '@/modules/project_settings/project_setting
 import { projectRoutes } from '@/modules/projects/projects.route';
 import { metadataRoutes } from '@/modules/metadata/metadata.route';
 import { billingRoutes } from '@/modules/billing/billing.route';
+import { clientRoutes } from '@/modules/clients/client.route';
+import { contactRoutes } from '@/modules/contact/contact.route';
 
 export default (server: Server) => {
   server.get('/', (_: Request, response: Response) => successResponse(response, 'Welcome to Pylott 🚀'));
@@ -26,4 +28,6 @@ export default (server: Server) => {
   metadataRoutes(`${RoutePrefix.V1}/metadata`, server);
   auditTrailRoutes(`${RoutePrefix.V1}/audit-trail`, server);
   billingRoutes(`${RoutePrefix.V1}/billing`, server);
+  clientRoutes(`${RoutePrefix.V1}/client`, server);
+  contactRoutes(`${RoutePrefix.V1}/contacts`, server);
 };

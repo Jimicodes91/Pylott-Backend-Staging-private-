@@ -421,7 +421,7 @@ export class AuthService {
 
       const company = await this.companyRepository.getCompanyNameById(admin.company_id);
       const companyName = company.name;
-      console.log(companyName);
+      //console.log(companyName);
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
       const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
