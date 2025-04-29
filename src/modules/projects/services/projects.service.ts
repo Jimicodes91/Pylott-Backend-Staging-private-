@@ -494,7 +494,7 @@ export class ProjectService {
           }
           break;
         case 'date':
-          if (isNaN(new Date(value).getTime())) {
+          if (isNaN(new Date(value).getTime()) && field.is_required) {
             errors.push(`Invalid date format for ${field.name}`);
           }
           break;
