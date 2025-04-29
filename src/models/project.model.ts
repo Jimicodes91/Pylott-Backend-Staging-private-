@@ -31,6 +31,7 @@ export class Project extends BaseModel {
 
   documents: Array<Documents>;
   project_type: ProjectType;
+  milestone: Milestones;
 
   static relationMappings = (): ModelsRelationMapping => ({
     client: {

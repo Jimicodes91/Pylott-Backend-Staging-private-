@@ -21,7 +21,7 @@ import {
 } from '@/repositories';
 
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
-import { ProjectFormFieldModelType, UserModelType } from '@/models';
+import { MilestonesModelType, ProjectFormFieldModelType, ProjectModelType, UserModelType } from '@/models';
 import { CreateProjectType } from '@/shared/types/projects.type';
 import { DocumentsDirectory, MetadataType, ProjectStatus } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
@@ -66,7 +66,7 @@ export class ProjectService {
 
       const formattedProjects = projects.map((project) => ({
         ...project,
-        timeline: this.calculateTimeline(project.start_date, project.end_date),
+        timeline: this.calculateTimeline(project.milestone.duration),
         documents:
           project.documents?.map((doc) => ({
             id: doc.id,
@@ -133,6 +133,7 @@ export class ProjectService {
   async createProject(user: UserModelType, payload: CreateProjectType): Promise<ServiceType> {
     try {
       const company_id = user.company_id;
+      let milestone: MilestonesModelType;
 
       if (payload['pipeline']) {
         const projectType = await this.projectTypeRepository.findOne({
@@ -164,7 +165,7 @@ export class ProjectService {
       }
 
       if (payload.milestone_id) {
-        const milestone = await this.milestonesRepository.findOne({
+        milestone = await this.milestonesRepository.findOne({
           id: payload.milestone_id,
           company_id,
         });
@@ -183,7 +184,7 @@ export class ProjectService {
           };
         }
       } else if (payload['pipeline'] && !payload.milestone_id) {
-        const milestone = await this.milestonesRepository.getFirstCreatedMilestone(company_id, payload['pipeline']);
+        milestone = await this.milestonesRepository.getFirstCreatedMilestone(company_id, payload['pipeline']);
         payload.milestone_id = milestone.id ?? null;
       }
 
@@ -225,7 +226,7 @@ export class ProjectService {
             milestone_id: payload.milestone_id || null,
             start_date: payload['start_date'],
             end_date: payload['end_date']?.length ? payload['end_date'] : null,
-            status: ProjectStatus.NOT_STARTED,
+            status: ProjectStatus.IN_PROGRESS,
             form_data: payload,
             jurisdiction: payload?.jurisdiction,
             visa_required: payload?.visa_required,
@@ -293,7 +294,7 @@ export class ProjectService {
       return {
         status: true,
         message: 'Project created successfully',
-        data: this.formatProjectWithTimeline(project),
+        data: this.formatProjectWithTimeline(project, milestone?.duration),
         statusCode: StatusCodes.CREATED,
       };
     } catch (error) {
@@ -594,29 +595,26 @@ export class ProjectService {
     };
   }
 
-  private formatProjectWithTimeline(project: any): any {
-    if (!project) return null;
+  private formatProjectWithTimeline(project: ProjectModelType, override_value: number | null = null): any {
+    if (!project && !override_value) return null;
 
     return {
       ...project,
-      timeline: this.calculateTimeline(project.start_date, project.end_date),
+      timeline: override_value ?? this.calculateTimeline(project.milestone.duration),
     };
   }
 
-  private calculateTimeline(startDate: string, endDate: string): string {
-    const start = dayjs(startDate);
-    const end = dayjs(endDate);
+  private calculateTimeline(durationInDays: number): string {
+    durationInDays = Number(durationInDays);
 
-    if (!start.isValid() || !end.isValid()) {
-      return 'Invalid date range';
+    if (durationInDays <= 0) {
+      return '1 day';
     }
 
-    const diff = end.diff(start);
-    const duration = dayjs.duration(diff);
-
-    const years = duration.years();
-    const months = duration.months();
-    const days = duration.days();
+    const years = Math.floor(durationInDays / 365);
+    const remainingDaysAfterYears = durationInDays % 365;
+    const months = Math.floor(remainingDaysAfterYears / 30);
+    const days = remainingDaysAfterYears % 30;
 
     if (years > 0) {
       if (months > 0) {
@@ -632,10 +630,6 @@ export class ProjectService {
       return `${months} ${months === 1 ? 'month' : 'months'}`;
     }
 
-    if (days > 0) {
-      return `${days} ${days === 1 ? 'day' : 'days'}`;
-    }
-
-    return '1 day';
+    return `${days} ${days === 1 ? 'day' : 'days'}`;
   }
 }

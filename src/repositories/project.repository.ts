@@ -15,6 +15,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
       .query()
       .where(query)
       .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
+      .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
       .orderBy('created_at', 'desc');
   }
 
@@ -23,6 +24,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
       .query()
       .where({ id: project_id, company_id, deleted_at: null })
       .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
+      .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
       .first();
   }
 }
