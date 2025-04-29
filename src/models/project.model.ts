@@ -21,7 +21,7 @@ export class Project extends BaseModel {
   status: string;
   name: string;
   start_date: string;
-  end_date: string;
+  end_date?: string;
   completed_at: string;
   created_by: string;
   jurisdiction?: string;

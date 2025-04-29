@@ -224,7 +224,7 @@ export class ProjectService {
             project_type_id: payload['pipeline'] || null,
             milestone_id: payload.milestone_id || null,
             start_date: payload['start_date'],
-            end_date: payload['end_date'],
+            end_date: payload['end_date']?.length ? payload['end_date'] : null,
             status: ProjectStatus.NOT_STARTED,
             form_data: payload,
             jurisdiction: payload?.jurisdiction,
