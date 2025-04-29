@@ -12,6 +12,9 @@ export class Contact extends BaseModel {
   address: string;
   active_projects: string;
   total_projects: string;
+  no_of_projects: string;
+  closed_projects: string;
+  assigne: string;
 }
 
 export type ContactModelType = ModelObject<Contact>;

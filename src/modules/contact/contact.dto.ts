@@ -6,6 +6,10 @@ export interface AddContactDto {
   address?: string;
   active_projects?: string;
   total_projects?: string;
+
+  no_of_projects?: string;
+  closed_projects?: string;
+  assigne?: string;
 }
 
 // Add this to your shared types if not already present
