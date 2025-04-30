@@ -19,4 +19,13 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
       throw new Error('Failed to fetch contacts');
     }
   }
+
+  public async updateAssignee(contactId: string, assigne: string[]) {
+    try {
+      await this.model.query().findById(contactId).patch({ assigne });
+    } catch (error) {
+      console.error('Error updating assignee:', error);
+      throw new Error('Failed to update assignee');
+    }
+  }
 }
