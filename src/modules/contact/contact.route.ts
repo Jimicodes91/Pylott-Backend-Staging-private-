@@ -11,4 +11,8 @@ export const contactRoutes = (prefix: string, server: Server) => {
 
   // Get all contacts (paginated)
   server.get(`${prefix}`, contactController.getAllContacts);
+
+  server.get(`${prefix}/:id`, contactController.getContact);
+
+  server.put(`${prefix}/:id`, contactController.updateContact);
 };
