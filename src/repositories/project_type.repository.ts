@@ -25,6 +25,13 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
   }
 
   async getProjectType(company_id: string, project_type_id: string) {
-    return await this.model.query().where({ company_id, id: project_type_id, deleted_at: null }).withGraphFetched({ milestones: true }).first();
+    return await this.model
+      .query()
+      .where({ company_id, id: project_type_id, deleted_at: null })
+      .withGraphFetched({ milestones: true })
+      .modifyGraph('milestones', (builder) => {
+        builder.orderBy('created_at', 'asc');
+      })
+      .first();
   }
 }
