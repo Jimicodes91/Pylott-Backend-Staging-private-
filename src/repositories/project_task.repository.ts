@@ -13,8 +13,12 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
     return await this.model
       .query()
       .where({ company_id, project_id, id: task_id, deleted_at: null })
-      .withGraphFetched({ document: { attachments: true }, assignee: true })
+      .withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true })
       .first();
+  }
+
+  async getTaskById(company_id: string, project_id: string, task_id: string) {
+    return await this.model.query().where({ company_id, project_id, id: task_id, deleted_at: null }).withGraphFetched({ assignees: true }).first();
   }
 
   async getAllTasks(company_id: string, project_id: string = null) {
@@ -22,7 +26,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
 
     if (project_id) qb = qb.where({ project_id });
 
-    return await qb.withGraphFetched({ document: { attachments: true }, assignee: true });
+    return await qb.withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true });
   }
 
   async getTaskWhereName(project_id: string, name: string, task_id: string) {

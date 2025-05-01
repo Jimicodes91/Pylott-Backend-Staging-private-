@@ -91,16 +91,6 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, schemaValidator(updateMilestoneValidationRules), projectController.updateMilestone);
 
   /**
-   * Projects
-   */
-  server.get(`${prefix}`, authGuard, projectController.getAllProjects);
-  server.get(`${prefix}/:project_id`, authGuard, projectController.getProject);
-  // server.post(`${prefix}`, authGuard, schemaValidator(createProjectValidationRules), projectController.createProject);
-  server.post(`${prefix}`, authGuard, projectController.createProject);
-  server.patch(`${prefix}/:project_id`, authGuard, projectController.updateProject);
-  // server.patch(`${prefix}/:project_id`, authGuard, schemaValidator(updateProjectValidationRules), projectController.updateProject);
-
-  /**
    * Project Members
    */
   server.get(`${prefix}/:project_id/members`, authGuard, projectController.getProjectMembers);
@@ -131,4 +121,14 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, schemaValidator(createCommentValidationRules), projectController.createComment);
   server.get(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, projectController.getNoteComments);
   server.delete(`${prefix}/:project_id/notes/:note_id/comments/:comment_id`, authGuard, projectController.deleteComment);
+
+  /**
+   * Projects
+   */
+  server.get(`${prefix}`, authGuard, projectController.getAllProjects);
+  server.get(`${prefix}/:project_id`, authGuard, projectController.getProject);
+  // server.post(`${prefix}`, authGuard, schemaValidator(createProjectValidationRules), projectController.createProject);
+  server.post(`${prefix}`, authGuard, projectController.createProject);
+  server.patch(`${prefix}/:project_id`, authGuard, projectController.updateProject);
+  // server.patch(`${prefix}/:project_id`, authGuard, schemaValidator(updateProjectValidationRules), projectController.updateProject);
 };

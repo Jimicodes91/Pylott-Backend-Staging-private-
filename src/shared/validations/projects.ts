@@ -444,7 +444,21 @@ export const createTaskValidationRules = [
       return true;
     }),
 
-  body('assignee_id').trim().optional().notEmpty().withMessage('Assignee ID is required').isString().withMessage('Assignee ID must be a string'),
+  body('assignees')
+    .optional()
+    .isArray()
+    .withMessage('Assignees must be an array')
+    .custom((value) => {
+      if (value.some((item: any) => typeof item !== 'string')) {
+        throw new Error('All assignee IDs must be strings');
+      }
+      return true;
+    }),
+
+  body('task_type_id').trim().isString().withMessage('Task type ID must be a string'),
+
+  body('project_type_id').notEmpty().isString().withMessage('Project type ID must be a string'),
+
   body('attachments')
     .optional()
     .isArray()
@@ -498,7 +512,20 @@ export const updateTaskValidationRules = [
       return true;
     }),
 
-  body('assignee_id').optional().trim().notEmpty().withMessage('Assignee ID cannot be empty').isString().withMessage('Assignee ID must be a string'),
+  body('assignees')
+    .optional()
+    .isArray()
+    .withMessage('Assignees must be an array')
+    .custom((value) => {
+      if (value.some((item: any) => typeof item !== 'string')) {
+        throw new Error('All assignee IDs must be strings');
+      }
+      return true;
+    }),
+
+  body('task_type_id').trim().optional().isString().withMessage('Task type ID must be a string'),
+
+  body('project_type_id').optional().notEmpty().isString().withMessage('Project type ID must be a string'),
 
   body('attachments')
     .optional()

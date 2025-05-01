@@ -45,9 +45,11 @@ export type CreateTask = {
   status?: string;
   start_date: string;
   end_date: string;
-  assignee_id: string;
+  assignees: [string];
   attachments?: [string];
   is_visible_to_client: boolean;
+  task_type_id: string;
+  project_type_id: string;
 };
 
 export type AuditTrailPayload = {

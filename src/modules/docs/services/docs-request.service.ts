@@ -5,7 +5,7 @@ import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
 
 import { DocumentRequestsRepository } from '@/repositories/document_request.repository';
-import { MetadataRepository, ProjectRepository, ProjectTaskRepository, ProjectMembersRepository, UserRepository } from '@/repositories';
+import { MetadataRepository, ProjectRepository, ProjectTaskRepository, ProjectMembersRepository, UserRepository, ProjectTaskAssigneesRepository } from '@/repositories';
 
 import { UserModelType } from '@/models';
 import { DocumentRequestType } from '@/shared/types/projects.type';
@@ -24,6 +24,7 @@ export class DocRequestService {
   constructor(
     private readonly documentRequestRepository: DocumentRequestsRepository,
     private readonly taskRepository: ProjectTaskRepository,
+    private readonly projectTaskAssigneesRepository: ProjectTaskAssigneesRepository,
     private readonly userRepository: UserRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     private readonly projectRepository: ProjectRepository,
@@ -57,10 +58,9 @@ export class DocRequestService {
       const taskId = uuidv4();
 
       await Objection.Model.transaction(async (trx) => {
-        await this.taskRepository.create(
+        const task = await this.taskRepository.create(
           {
             id: taskId,
-            assignee_id: payload.assignee_id,
             author_id: user.id,
             company_id,
             description: payload?.description,
@@ -70,6 +70,16 @@ export class DocRequestService {
             status: ProjectTaskStatus.PENDING,
             start_date: dayjs().format(),
             end_date: dayjs(payload.end_date).format(),
+          },
+          trx,
+        );
+
+        await this.projectTaskAssigneesRepository.create(
+          {
+            assignee_id: payload.assignee_id,
+            task_id: task.id,
+            company_id,
+            project_id,
           },
           trx,
         );
