@@ -172,7 +172,7 @@ export class TaskService {
           user_id: user.id,
           company_id,
           description: 'Task added',
-          entity_description: user.name.replace(/^./, (c) => c.toUpperCase()),
+          entity_description: user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id,
           entity_id: task_id,
         },
         project_id,
