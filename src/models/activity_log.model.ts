@@ -2,6 +2,7 @@ import { ModelObject } from 'objection';
 
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
+import { User } from './user.model';
 
 export class ActivityLogs extends BaseModel {
   static tableName = 'activity_logs';
@@ -13,7 +14,19 @@ export class ActivityLogs extends BaseModel {
   entity: string;
   description: string;
 
-  static relationMappings = (): ModelsRelationMapping => ({});
+  author: User;
+
+  static relationMappings = (): ModelsRelationMapping => ({
+    author: {
+      relation: BaseModel.BelongsToOneRelation,
+      modelClass: User,
+      filter: (query) => query.select('id', 'name', 'email'),
+      join: {
+        from: 'activity_logs.user_id',
+        to: 'users.id',
+      },
+    },
+  });
 }
 
 export type ActivityLogsModelType = ModelObject<ActivityLogs>;

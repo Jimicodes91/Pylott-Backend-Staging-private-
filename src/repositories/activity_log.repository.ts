@@ -27,7 +27,7 @@ export class ActivityLogRepository extends BaseRepository<ActivityLogsModelType,
       query.where('name', action);
     }
 
-    const logs = await query.orderBy('created_at', 'desc').offset(offset).limit(limit);
+    const logs = await query.orderBy('created_at', 'desc').offset(offset).limit(limit).withGraphFetched({ author: true });
     const totalCount = await query.clone().clearOrder().resultSize();
 
     return {
