@@ -1,14 +1,18 @@
 import { ModelObject } from 'objection';
 import BaseModel from './base.model';
 
+interface Assignee {
+  id: string;
+  name: string;
+}
+
 export class Contact extends BaseModel {
   static tableName = 'contacts';
 
-  // Add JSON schema definition
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['name', 'email', 'phone'], // Add required fields here
+      required: ['name', 'email', 'phone'],
       properties: {
         id: { type: 'string' },
         name: { type: 'string' },
@@ -23,15 +27,26 @@ export class Contact extends BaseModel {
         assigne: {
           type: 'array',
           items: { type: 'string' },
-          default: [], // Schema-level default (handled by Objection, not DB)
+          default: [],
+        },
+        assigned_to: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+            },
+            required: ['id', 'name'],
+          },
+          default: [],
         },
       },
     };
   }
 
-  // Specify which fields should be treated as JSON
   static get jsonAttributes() {
-    return ['assigne'];
+    return ['assigne', 'assigned_to'];
   }
 
   // Model properties
@@ -44,7 +59,8 @@ export class Contact extends BaseModel {
   total_projects: string;
   no_of_projects: string;
   closed_projects: string;
-  assigne: string[];
+  assigne: string[]; // Keep for backward compatibility
+  assigned_to: Assignee[]; // New field
 }
 
 export type ContactModelType = ModelObject<Contact>;
