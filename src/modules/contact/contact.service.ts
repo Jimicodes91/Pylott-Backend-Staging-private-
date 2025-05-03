@@ -38,11 +38,21 @@ export class ContactService {
       throw new HttpError(error.message || 'Failed to add to contact', 500);
     }
   }
-  public async getAllContacts() {
+  // public async getAllContacts() {
+  //   try {
+  //     return await this.contactRepository.getAllContacts();
+  //   } catch (error: any) {
+  //     throw new HttpError(error.message || 'Failed to fetch contacts', 500);
+  //   }
+  // }
+  public async getAllContacts(page: number = 1, pageSize: number = 10) {
     try {
-      return await this.contactRepository.getAllContacts();
+      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+      return await this.contactRepository.getAllContacts(page, pageSize);
     } catch (error: any) {
-      throw new HttpError(error.message || 'Failed to fetch contacts', 500);
+      throw new HttpError(error.message || 'Failed to fetch contacts', error.statusCode || 500);
     }
   }
   public async updateContact(input: UpdateContactDto) {

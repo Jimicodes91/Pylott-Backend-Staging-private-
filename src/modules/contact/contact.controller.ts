@@ -18,8 +18,15 @@ export class ContactController {
 
   public getAllContacts = async (req: Request, res: Response) => {
     try {
-      const contacts = await this.contactService.getAllContacts();
-      return successResponse(res, 'Contacts retrieved successfully', contacts);
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 10;
+
+      const result = await this.contactService.getAllContacts(page, pageSize);
+
+      return successResponse(res, 'Contacts retrieved successfully', {
+        contacts: result.data,
+        pagination: result.pagination,
+      });
     } catch (error: any) {
       return errorResponse(res, 'GET_CONTACTS_ERROR', error.message, error.statusCode || 500);
     }

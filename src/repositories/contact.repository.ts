@@ -9,9 +9,9 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
   constructor() {
     super(Contact);
   }
+
   // public async getAllContacts() {
   //   try {
-  //     // TEMPORARY: Remove all filters to debug
   //     const contacts = await this.model.query();
 
   //     return contacts;
@@ -20,11 +20,24 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
   //     throw new Error('Failed to fetch contacts');
   //   }
   // }
-  public async getAllContacts() {
+  public async getAllContacts(page: number = 1, pageSize: number = 10) {
     try {
-      const contacts = await this.model.query();
+      const results = await this.model
+        .query()
+        .page(page - 1, pageSize) // Objection.js uses 0-based page index
+        .orderBy('created_at');
 
-      return contacts;
+      return {
+        data: results.results,
+        pagination: {
+          total: results.total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(results.total / pageSize),
+          hasNextPage: page * pageSize < results.total,
+          hasPreviousPage: page > 1,
+        },
+      };
     } catch (error) {
       console.error('Error fetching contacts:', error);
       throw new Error('Failed to fetch contacts');
