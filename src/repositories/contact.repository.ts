@@ -56,4 +56,34 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
   public async getContactById(id: string, trx?: Objection.Transaction) {
     return await this.model.query(trx).where({ id }).first().skipUndefined();
   }
+
+  // In contact.repository.ts
+  public async searchContacts(query: string, page: number = 1, pageSize: number = 10) {
+    try {
+      const searchTerm = `%${query.toLowerCase()}%`;
+
+      const results = await this.model
+        .query()
+        .whereRaw('LOWER(name) LIKE ?', [searchTerm])
+        .orWhereRaw('LOWER(email) LIKE ?', [searchTerm])
+        .orWhereRaw('LOWER(organization) LIKE ?', [searchTerm])
+        .page(page - 1, pageSize)
+        .orderBy('created_at');
+
+      return {
+        data: results.results,
+        pagination: {
+          total: results.total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(results.total / pageSize),
+          hasNextPage: page * pageSize < results.total,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error('Error searching contacts:', error);
+      throw new Error('Failed to search contacts');
+    }
+  }
 }

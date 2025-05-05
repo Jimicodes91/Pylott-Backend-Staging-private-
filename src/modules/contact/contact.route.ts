@@ -15,4 +15,6 @@ export const contactRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/:id`, contactController.getContact);
 
   server.put(`${prefix}/:id`, contactController.updateContact);
+
+  server.post(`${prefix}/search`, contactController.searchContacts);
 };

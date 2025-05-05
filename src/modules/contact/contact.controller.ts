@@ -51,4 +51,24 @@ export class ContactController {
       return errorResponse(res, 'GET_CONTACT_ERROR', error.message, error.statusCode || 500);
     }
   };
+
+  // In contact.controller.ts
+  public searchContacts = async (req: Request, res: Response) => {
+    try {
+      const { query, page = 1, pageSize = 10 } = req.body;
+
+      if (!query) {
+        return errorResponse(res, 'SEARCH_CONTACTS_ERROR');
+      }
+
+      const result = await this.contactService.searchContacts(query, page, pageSize);
+
+      return successResponse(res, 'Contacts retrieved successfully', {
+        contacts: result.data,
+        pagination: result.pagination,
+      });
+    } catch (error: any) {
+      return errorResponse(res, 'SEARCH_CONTACTS_ERROR', error.message, error.statusCode || 500);
+    }
+  };
 }

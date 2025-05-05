@@ -80,4 +80,17 @@ export class ContactService {
       throw new HttpError(error.message || 'Failed to fetch contact', error.statusCode || 500);
     }
   }
+
+  // In contact.service.ts (keep the same method)
+  public async searchContacts(query: string, page: number = 1, pageSize: number = 10) {
+    try {
+      if (!query) throw new HttpError('Search query is required', 400);
+      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+      return await this.contactRepository.searchContacts(query, page, pageSize);
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to search contacts', error.statusCode || 500);
+    }
+  }
 }
