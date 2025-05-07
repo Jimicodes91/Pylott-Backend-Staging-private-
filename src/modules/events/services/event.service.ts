@@ -56,8 +56,8 @@ export class EventService {
 
       if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
 
-      payload.start_datetime = dayjs(payload.start_datetime).format(dateTimeFormat);
-      payload.end_datetime = dayjs(payload.end_datetime).format(dateTimeFormat);
+      payload.start_datetime = dayjs(payload.start_datetime).format("YYYY-MM-DD HH:mm:ss");
+      payload.end_datetime = dayjs(payload.end_datetime).format("YYYY-MM-DD HH:mm:ss");
 
       const gcalData: CreateCalenderEvent = {
         summary: payload.name,
