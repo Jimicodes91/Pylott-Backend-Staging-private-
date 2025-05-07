@@ -17,7 +17,7 @@ import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
 import { CreateCalenderEvent } from '@/shared/types/events.type';
 import sendEmail from '@/shared/utils/nodemailer';
 import { eventCreatedEmail } from '@/shared/utils/email';
-import { dateTimeFormat } from '@/shared/constants/date.constants';
+// import { dateTimeFormat } from '@/shared/constants/date.constants';
 
 @injectable()
 export class EventService {
