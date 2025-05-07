@@ -17,6 +17,7 @@ import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
 import { CreateCalenderEvent } from '@/shared/types/events.type';
 import sendEmail from '@/shared/utils/nodemailer';
 import { eventCreatedEmail } from '@/shared/utils/email';
+import { dateTimeFormat } from '@/shared/constants/date.constants';
 
 @injectable()
 export class EventService {
@@ -55,8 +56,8 @@ export class EventService {
 
       if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
 
-      payload.start_datetime = dayjs(payload.start_datetime).format();
-      payload.end_datetime = dayjs(payload.end_datetime).format();
+      payload.start_datetime = dayjs(payload.start_datetime).format(dateTimeFormat);
+      payload.end_datetime = dayjs(payload.end_datetime).format(dateTimeFormat);
 
       const gcalData: CreateCalenderEvent = {
         summary: payload.name,
