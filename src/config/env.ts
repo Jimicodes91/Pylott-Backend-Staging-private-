@@ -64,15 +64,7 @@ export const storage = {
   },
 };
 
-let FRONTEND_URL: string;
-
-if (process.env.NODE_ENV === 'development') {
-  FRONTEND_URL = 'https://silly-choux-da3934.netlify.app';
-} else {
-  FRONTEND_URL = process.env.FRONTEND_URL;
-}
-
-export { FRONTEND_URL };
+export const FRONTEND_URL = process.env.FRONTEND_URL || 'https://pylot-tkrh.vercel.app';
 
 export const TOKEN_EXPIRATION_MS = Date.now() + 30000000;
 export const PASSWORD_RESET_TOKEN_LENGTH = 15;

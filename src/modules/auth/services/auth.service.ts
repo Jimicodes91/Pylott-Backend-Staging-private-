@@ -11,7 +11,7 @@ import { strongPassword } from '@/shared/utils/any';
 import { UserRoles } from '@/shared/enums';
 import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, FRONTEND_URL, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
 import { GoogleAuthData } from '@/shared/types/google.type';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,7 +19,7 @@ import { GoogleAuthData } from '@/shared/types/google.type';
 @injectable()
 export class AuthService {
   private googleClient: OAuth2Client;
-  private FRONTEND_URL = 'https://pylot-tkrh.vercel.app';
+  private FRONTEND_URL = FRONTEND_URL;
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
