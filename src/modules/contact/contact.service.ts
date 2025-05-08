@@ -2,23 +2,11 @@ import { inject, injectable } from 'tsyringe';
 
 import { ContactRespository } from '@/repositories/contact.repository';
 import HttpError from '@/shared/utils/errorHandler';
-import { AddContactDto, UpdateContactDto } from './contact.dto';
+import { AddContactDto, ContactFilterOptions, UpdateContactDto } from './contact.dto';
 
 @injectable()
 export class ContactService {
   constructor(@inject(ContactRespository) private contactRepository: ContactRespository) {}
-
-  // public async addToContact(input: AddContactDto) {
-  //   if (!input.name || !input.email || !input.phone || !input.assigne) {
-  //     throw new HttpError('Name, email, phone, and assignee are required', 400);
-  //   }
-  //   try {
-  //     const contact = await this.contactRepository.create(input);
-  //     return contact;
-  //   } catch (error: any) {
-  //     throw new HttpError(error.message || 'Failed to add to contact', 500);
-  //   }
-  // }
 
   public async addToContact(input: AddContactDto) {
     if (!input.name || !input.email || !input.phone) {
@@ -38,23 +26,18 @@ export class ContactService {
       throw new HttpError(error.message || 'Failed to add to contact', 500);
     }
   }
-  // public async getAllContacts() {
+
+  // public async getAllContacts(page: number = 1, pageSize: number = 10) {
   //   try {
-  //     return await this.contactRepository.getAllContacts();
+  //     if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+  //     if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+  //     return await this.contactRepository.getAllContacts(page, pageSize);
   //   } catch (error: any) {
-  //     throw new HttpError(error.message || 'Failed to fetch contacts', 500);
+  //     throw new HttpError(error.message || 'Failed to fetch contacts', error.statusCode || 500);
   //   }
   // }
-  public async getAllContacts(page: number = 1, pageSize: number = 10) {
-    try {
-      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
-      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
 
-      return await this.contactRepository.getAllContacts(page, pageSize);
-    } catch (error: any) {
-      throw new HttpError(error.message || 'Failed to fetch contacts', error.statusCode || 500);
-    }
-  }
   public async updateContact(input: UpdateContactDto) {
     try {
       if (!input.id) {
@@ -81,14 +64,42 @@ export class ContactService {
     }
   }
 
-  // In contact.service.ts (keep the same method)
-  public async searchContacts(query: string, page: number = 1, pageSize: number = 10) {
+  public async getContactsByCompany(companyId: string, page: number = 1, pageSize: number = 10) {
+    try {
+      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+      return await this.contactRepository.getContactsByCompany(companyId, page, pageSize);
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch company contacts', error.statusCode || 500);
+    }
+  }
+
+  public async getAllContacts(filter: ContactFilterOptions = {}) {
+    try {
+      const { companyId, page = 1, pageSize = 10 } = filter;
+
+      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+      // If companyId is provided, filter by company
+      if (companyId) {
+        return await this.contactRepository.getContactsByCompany(companyId, page, pageSize);
+      }
+
+      // Otherwise get all contacts (for super admins)
+      return await this.contactRepository.getAllContacts(page, pageSize);
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch contacts', error.statusCode || 500);
+    }
+  }
+  public async searchContacts(query: string, companyId?: string, page: number = 1, pageSize: number = 10) {
     try {
       if (!query) throw new HttpError('Search query is required', 400);
       if (page < 1) throw new HttpError('Page must be greater than 0', 400);
       if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
 
-      return await this.contactRepository.searchContacts(query, page, pageSize);
+      return await this.contactRepository.searchContacts(query, companyId, page, pageSize);
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to search contacts', error.statusCode || 500);
     }

@@ -20,8 +20,13 @@ export class ContactController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = parseInt(req.query.pageSize as string) || 10;
+      const companyId = (req.query.companyId as string) || undefined;
 
-      const result = await this.contactService.getAllContacts(page, pageSize);
+      const result = await this.contactService.getAllContacts({
+        companyId,
+        page,
+        pageSize,
+      });
 
       return successResponse(res, 'Contacts retrieved successfully', {
         contacts: result.data,
@@ -52,16 +57,32 @@ export class ContactController {
     }
   };
 
-  // In contact.controller.ts
+  public getContactsByCompany = async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 10;
+      const companyId = req.params.companyId;
+
+      const result = await this.contactService.getContactsByCompany(companyId, page, pageSize);
+
+      return successResponse(res, 'Company contacts retrieved successfully', {
+        contacts: result.data,
+        pagination: result.pagination,
+      });
+    } catch (error: any) {
+      return errorResponse(res, 'GET_COMPANY_CONTACTS_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+
   public searchContacts = async (req: Request, res: Response) => {
     try {
-      const { query, page = 1, pageSize = 10 } = req.body;
+      const { q: query, companyId, page = 1, pageSize = 10 } = req.query;
 
       if (!query) {
         return errorResponse(res, 'SEARCH_CONTACTS_ERROR');
       }
 
-      const result = await this.contactService.searchContacts(query, page, pageSize);
+      const result = await this.contactService.searchContacts(query.toString(), companyId?.toString(), parseInt(page.toString()), parseInt(pageSize.toString()));
 
       return successResponse(res, 'Contacts retrieved successfully', {
         contacts: result.data,

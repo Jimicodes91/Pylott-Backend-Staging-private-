@@ -10,6 +10,7 @@ export interface AddContactDto {
   organization?: string;
   address?: string;
   active_projects?: string;
+  company_id?: string;
   total_projects?: string;
   no_of_projects?: string;
   closed_projects?: string;
@@ -25,4 +26,11 @@ export interface PaginationOptions {
 
 export interface UpdateContactDto extends Partial<AddContactDto> {
   id: string;
+}
+
+export interface ContactFilterOptions {
+  companyId?: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
 }
