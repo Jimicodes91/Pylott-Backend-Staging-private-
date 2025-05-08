@@ -19,7 +19,7 @@ import { GoogleAuthData } from '@/shared/types/google.type';
 @injectable()
 export class AuthService {
   private googleClient: OAuth2Client;
-  private FRONTEND_URL = 'https://pylot-omega.vercel.app';
+  private FRONTEND_URL = 'https://pylot-tkrh.vercel.app';
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
