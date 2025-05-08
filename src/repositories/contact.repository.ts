@@ -57,18 +57,16 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
     return await this.model.query(trx).where({ id }).first().skipUndefined();
   }
 
-  // In contact.repository.ts
-  public async searchContacts(query: string, page: number = 1, pageSize: number = 10) {
+  public async searchContacts(query: string, companyId?: string, page: number = 1, pageSize: number = 10) {
     try {
       const searchTerm = `%${query.toLowerCase()}%`;
+      let queryBuilder = this.model.query().whereRaw('LOWER(name) LIKE ?', [searchTerm]).orWhereRaw('LOWER(email) LIKE ?', [searchTerm]);
 
-      const results = await this.model
-        .query()
-        .whereRaw('LOWER(name) LIKE ?', [searchTerm])
-        .orWhereRaw('LOWER(email) LIKE ?', [searchTerm])
-        .orWhereRaw('LOWER(organization) LIKE ?', [searchTerm])
-        .page(page - 1, pageSize)
-        .orderBy('created_at');
+      if (companyId) {
+        queryBuilder = queryBuilder.where('company_id', companyId);
+      }
+
+      const results = await queryBuilder.page(page - 1, pageSize).orderBy('created_at');
 
       return {
         data: results.results,
@@ -84,6 +82,31 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
     } catch (error) {
       console.error('Error searching contacts:', error);
       throw new Error('Failed to search contacts');
+    }
+  }
+
+  public async getContactsByCompany(companyId: string, page: number = 1, pageSize: number = 10) {
+    try {
+      const results = await this.model
+        .query()
+        .where('company_id', companyId)
+        .page(page - 1, pageSize)
+        .orderBy('created_at');
+
+      return {
+        data: results.results,
+        pagination: {
+          total: results.total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(results.total / pageSize),
+          hasNextPage: page * pageSize < results.total,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching company contacts:', error);
+      throw new Error('Failed to fetch company contacts');
     }
   }
 }

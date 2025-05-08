@@ -19,6 +19,7 @@ export class Contact extends BaseModel {
         email: { type: 'string' },
         phone: { type: 'string' },
         organization: { type: 'string' },
+        company_id: { type: 'string' },
         address: { type: 'string' },
         active_projects: { type: 'string' },
         total_projects: { type: 'string' },
@@ -56,6 +57,7 @@ export class Contact extends BaseModel {
   organization: string;
   address: string;
   active_projects: string;
+  company_id: string;
   total_projects: string;
   no_of_projects: string;
   closed_projects: string;
