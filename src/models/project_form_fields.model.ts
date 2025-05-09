@@ -19,6 +19,7 @@ export class ProjectFormField extends BaseModel {
   default_value?: string;
   sort_order: number;
   slug: string;
+  api_locator?: string;
 
   async $beforeInsert() {
     super.$beforeInsert();
@@ -28,7 +29,8 @@ export class ProjectFormField extends BaseModel {
   async $beforeUpdate() {
     super.$beforeUpdate();
     if (this.name && this.name !== this.constructor.name) {
-      this.slug = this.generateSlug(this.name);
+      if (this.name.toLowerCase() === "journey") this.slug = "pipeline"
+      else this.slug = this.generateSlug(this.name);
     }
   }
 

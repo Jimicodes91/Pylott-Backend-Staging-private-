@@ -168,8 +168,8 @@ export class EventService {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
 
-      const formattedStartTime = dayjs(record.start_datetime).format('ha').toLowerCase();
-      const formattedEndTime = dayjs(record.end_datetime).format('ha').toLowerCase();
+      const formattedStartTime = dayjs(record.start_datetime).format('MMM DD YY, ha').toLowerCase();
+      const formattedEndTime = dayjs(record.end_datetime).format('MMM DD YY, ha').toLowerCase();
       const formattedDate = dayjs(record.start_datetime).format('MMM DD, YYYY');
 
       // const gcalEvent = await this.googleCalender.getEvent(record.provider_identifier);
