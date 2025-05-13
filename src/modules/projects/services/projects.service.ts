@@ -116,7 +116,7 @@ export class ProjectService {
             slug: f.slug,
           };
 
-          if (f.slug === 'project_client' && project.form_data?.[f.slug]) {
+          if (f.slug === 'project_client' && project.form_data?.[f.slug] && project.form_data?.[f.slug].length) {
             const clients = await this.clientRepository.getClientsWhereIn(project.form_data?.[f.slug]);
 
             const mappedClients = clients?.map((client) => {
