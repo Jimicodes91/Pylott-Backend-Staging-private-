@@ -66,7 +66,7 @@ export class ProjectService {
 
       const formattedProjects = projects.map((project) => ({
         ...project,
-        timeline: this.calculateTimeline(project.milestone.duration),
+        timeline: this.calculateTimeline(project?.milestone?.duration ?? 0),
         documents:
           project.documents?.map((doc) => ({
             id: doc.id,
@@ -330,7 +330,7 @@ export class ProjectService {
       return {
         status: true,
         message: 'Project created successfully',
-        data: this.formatProjectWithTimeline(project, milestone?.duration),
+        data: this.formatProjectWithTimeline(project, milestone?.duration ?? 0),
         statusCode: StatusCodes.CREATED,
       };
     } catch (error) {
@@ -655,7 +655,7 @@ export class ProjectService {
 
     return {
       ...project,
-      timeline: override_value ?? this.calculateTimeline(project.milestone.duration),
+      timeline: override_value ?? this.calculateTimeline(project?.milestone?.duration ?? 0),
     };
   }
 
