@@ -422,6 +422,25 @@ export class ProjectService {
         }
       }
 
+      if (payload['project_client']) {
+        const updateClientsPayload = Array.from(new Set(payload['project_client']));
+        for (const client of updateClientsPayload as Array<string>) {
+          const clientRecord = await this.clientRepository.findOne({
+            id: client,
+            company_id,
+            deleted_at: null,
+          });
+          if (!clientRecord) {
+            return {
+              status: false,
+              message: 'Client not found',
+              statusCode: StatusCodes.NOT_FOUND,
+            };
+          }
+        }
+        payload['project_client'] = updateClientsPayload;
+      }
+
       const form = await this.projectFormRepository.getCompanyForm(company_id);
       if (!form) {
         return {
