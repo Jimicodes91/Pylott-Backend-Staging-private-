@@ -11,7 +11,6 @@ dayjs.extend(relativeTime);
 import {
   ProjectRepository,
   MilestonesRepository,
-  ClientRepository,
   ProjectTypeRepository,
   ProjectSettingsRepository,
   DocumentsRepository,
@@ -25,6 +24,7 @@ import { MilestonesModelType, ProjectFormFieldModelType, ProjectModelType, UserM
 import { CreateProjectType } from '@/shared/types/projects.type';
 import { DocumentsDirectory, MetadataType, ProjectStatus } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
+import { ContactRespository } from '@/repositories/contact.repository';
 
 @injectable()
 export class ProjectService {
@@ -33,7 +33,7 @@ export class ProjectService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly milestonesRepository: MilestonesRepository,
-    private readonly clientRepository: ClientRepository,
+    private readonly contactRepository: ContactRespository,
     private readonly projectTypeRepository: ProjectTypeRepository,
     private readonly projectSettingsRepository: ProjectSettingsRepository,
     private readonly documentsRepository: DocumentsRepository,
@@ -117,12 +117,9 @@ export class ProjectService {
           };
 
           if (f.slug === 'project_client' && project.form_data?.[f.slug] && Array.isArray(project.form_data?.[f.slug])) {
-            const clients = await this.clientRepository.getClientsWhereIn(project.form_data?.[f.slug]);
+            const clients = await this.contactRepository.getClientsWhereIn(project.form_data?.[f.slug]);
 
-            const mappedClients = clients?.map((client) => {
-              const { user, ...others } = client;
-              return { ...others, name: user?.name };
-            });
+            const mappedClients = clients;
 
             payload.value = mappedClients;
           }
@@ -171,7 +168,7 @@ export class ProjectService {
       }
 
       if (payload.client_id) {
-        const client = await this.clientRepository.findOne({
+        const client = await this.contactRepository.findOne({
           id: payload.client_id,
           company_id,
           deleted_at: null,
@@ -212,7 +209,7 @@ export class ProjectService {
 
       if (payload['project_client']) {
         for (const client of payload['project_client']) {
-          const clientRecord = await this.clientRepository.findOne({
+          const clientRecord = await this.contactRepository.findOne({
             id: client,
             company_id,
             deleted_at: null,
@@ -387,7 +384,7 @@ export class ProjectService {
       }
 
       if (payload.client_id && payload.client_id !== project.client_id) {
-        const client = await this.clientRepository.findOne({
+        const client = await this.contactRepository.findOne({
           id: payload.client_id,
           company_id,
         });
@@ -425,7 +422,7 @@ export class ProjectService {
       if (payload['project_client']) {
         const updateClientsPayload = Array.from(new Set(payload['project_client']));
         for (const client of updateClientsPayload as Array<string>) {
-          const clientRecord = await this.clientRepository.findOne({
+          const clientRecord = await this.contactRepository.findOne({
             id: client,
             company_id,
             deleted_at: null,

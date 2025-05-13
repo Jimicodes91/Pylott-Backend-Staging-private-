@@ -109,4 +109,8 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
       throw new Error('Failed to fetch company contacts');
     }
   }
+
+  public async getClientsWhereIn(ids: [string]) {
+    return this.model.query().whereIn('id', ids).whereNull('deleted_at');
+  }
 }
