@@ -116,6 +116,8 @@ export class AuthService {
           <a style="font-size: 16px; color: #ffffff; background-color: #2563eb; 
              padding: 10px 15px; text-decoration: none; border-radius: 5px;" 
              href="${actionLink}">${actionText}</a>
+             <p>You can also click the link below:</p>
+             <a style="font-size: 16px; color: #2563eb; text-decoration: none;"><br/>${actionLink}</a>
           <p>If you didn't request this, please ignore this email.</p>
           <p>This link will expire in 24 hours.</p>
           <p>If you have any questions, feel free to reach out to us.</p>
