@@ -11,6 +11,12 @@ export const app = {
   email: process.env.APP_EMAIL || 'oolat31@gmail.com',
 };
 
+// Process 1,000 Jobs every 2 seconds
+export const queueConfig = {
+  max: 1000,
+  duration: 2,
+};
+
 export const database = {
   knex: {
     client: process.env.DB_CLIENT || 'mysql2',
@@ -33,6 +39,12 @@ export const database = {
     },
     debug: false,
   },
+};
+
+export const redis = {
+  host: process.env.REDIS_HOST || 'localhost',
+  port: Number(process.env.REDIS_PORT) || 6379,
+  password: process.env.REDIS_PASSWORD || '',
 };
 
 export const mail = {

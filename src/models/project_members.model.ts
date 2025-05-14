@@ -14,9 +14,11 @@ export class ProjectMembers extends BaseModel {
   is_visible_to_client: boolean;
   added_by: string;
 
+  user: User;
+
   static relationMappings = (): ModelsRelationMapping => ({
-    users: {
-      relation: BaseModel.HasManyRelation,
+    user: {
+      relation: BaseModel.BelongsToOneRelation,
       modelClass: User,
       filter: (query) => query.select('id', 'name', 'role', 'email'),
       join: {

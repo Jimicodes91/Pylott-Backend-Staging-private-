@@ -267,6 +267,8 @@ export class ProjectService {
             jurisdiction: payload?.jurisdiction,
             visa_required: payload?.visa_required,
             package: payload?.package,
+            milestone_start_date: payload['start_date'],
+            milestone_status: ProjectStatus.ON_TRACK,
           },
           trx,
         );
@@ -417,6 +419,8 @@ export class ProjectService {
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
+        payload['milestone_start_date'] = new Date().toISOString();
+        payload['milestone_status'] = ProjectStatus.ON_TRACK;
       }
 
       if (payload['project_client']) {
@@ -469,6 +473,10 @@ export class ProjectService {
       if (payload.status) {
         if (payload.status === ProjectStatus.COMPLETED && project.status !== ProjectStatus.COMPLETED) {
           completedAt = new Date().toISOString();
+          const lastMilestone = await this.milestonesRepository.getLastCreatedMilestone(company_id, project.project_type_id);
+          if (lastMilestone) {
+            payload['milestone_id'] = lastMilestone.id;
+          }
         } else if (payload.status !== ProjectStatus.COMPLETED && project.status === ProjectStatus.COMPLETED) {
           completedAt = null;
         }

@@ -27,4 +27,13 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
       .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
       .first();
   }
+
+  async getProjectAndMembers(project_id: string) {
+    return this.model
+      .query()
+      .where({ id: project_id, deleted_at: null })
+      .withGraphFetched({ members: { user: true } })
+      .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
+      .first();
+  }
 }

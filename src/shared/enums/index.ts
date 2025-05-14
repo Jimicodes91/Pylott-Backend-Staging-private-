@@ -26,6 +26,9 @@ export enum ProjectStatus {
   IN_PROGRESS = 'in_progress',
   BLOCKED = 'blocked',
   COMPLETED = 'completed',
+  DUE = 'due',
+  ON_TRACK = 'on_track',
+  LATE = 'late',
 }
 
 export enum ProjectTaskStatus {
@@ -85,4 +88,8 @@ export enum FieldTypeEnum {
   CHECKBOX = 'checkbox',
   RADIO = 'radio',
   FILE = 'file',
+}
+
+export enum QueueNames {
+  MILESTONE_TRACKING = 'milestone-tracking',
 }

@@ -9,6 +9,7 @@ import { ProjectType } from './project_type.model';
 import { ProjectTask } from './project_task.model';
 import { ProjectNotes } from './project_notes.model';
 import { Documents } from './documents.model';
+import { ProjectMembers } from './project_members.model';
 
 export class Project extends BaseModel {
   static tableName = 'projects';
@@ -17,6 +18,8 @@ export class Project extends BaseModel {
   company_id: string;
   consultant_id?: string;
   milestone_id?: string;
+  milestone_start_date?: string;
+  milestone_status?: string;
   project_type_id: string;
   status: string;
   name: string;
@@ -32,6 +35,7 @@ export class Project extends BaseModel {
   documents: Array<Documents>;
   project_type: ProjectType;
   milestone: Milestones;
+  members: Array<ProjectMembers>;
 
   static relationMappings = (): ModelsRelationMapping => ({
     client: {
@@ -88,6 +92,14 @@ export class Project extends BaseModel {
       join: {
         from: 'projects.id',
         to: 'events.project_id',
+      },
+    },
+    members: {
+      relation: BaseModel.HasManyRelation,
+      modelClass: ProjectMembers,
+      join: {
+        from: 'projects.id',
+        to: 'project_members.project_id',
       },
     },
     documents: {

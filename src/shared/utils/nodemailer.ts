@@ -12,7 +12,7 @@ const config = {
   },
 };
 
-const sendEmail = async (to: string, subject: string, html: string) => {
+const sendEmail = async (to: string | Array<string>, subject: string, html: string) => {
   const transporter = nodemailer.createTransport(config);
   try {
     const info = await transporter.sendMail({
