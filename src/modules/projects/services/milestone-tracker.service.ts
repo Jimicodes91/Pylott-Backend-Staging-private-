@@ -38,8 +38,8 @@ export class MilestoneTrackerService {
       'global-milestone-check',
       { scope: 'GLOBAL' },
       {
-        repeat: { cron: '*/1 * * * *', tz: 'UTC' },
-        // repeat: { cron: '0 9 * * *', tz: 'UTC' },
+        // repeat: { cron: '*/1 * * * *', tz: 'UTC' },
+        repeat: { cron: '0 0 * * *', tz: 'UTC' }, // 12Am UTC
         jobId: 'global-daily-check',
         removeOnComplete: true,
         priority: 1,
@@ -128,14 +128,14 @@ export class MilestoneTrackerService {
 
     const durationDays = Number(currentMilestone.duration);
 
-    console.log(`${this.traceId} Checking current milestone for project ${project.id} with duration ===> ${JSON.stringify({ durationDays, project, currentMilestone })}`);
+    // console.log(`${this.traceId} Checking current milestone for project ${project.id} with duration ===> ${JSON.stringify({ durationDays, project, currentMilestone })}`);
 
     if (isNaN(durationDays) || durationDays <= 0) return;
 
     const endDate = dayjs(project.milestone_start_date).add(durationDays, 'day');
     const isOverdue = dayjs().isAfter(endDate);
 
-    console.log(`${this.traceId} Current milestone overdue status for project ${project.id} ===> ${JSON.stringify({ durationDays, project, currentMilestone, isOverdue })}`);
+    // console.log(`${this.traceId} Current milestone overdue status for project ${project.id} ===> ${JSON.stringify({ durationDays, project, currentMilestone, isOverdue })}`);
 
     if (isOverdue) {
       const isFinal = allMilestones[allMilestones.length - 1].id === currentMilestone.id;
@@ -182,7 +182,6 @@ export class MilestoneTrackerService {
         },
       );
 
-      // Calculate overdue duration
       const durationDays = Number(currentMilestone.duration);
       const endDate = dayjs(project.milestone_start_date).add(durationDays, 'day');
       const overDueDuration = dayjs.duration(dayjs().diff(endDate)).humanize();
