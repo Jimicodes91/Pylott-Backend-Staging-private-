@@ -428,7 +428,7 @@ export class AuthService {
       const invitationToken = crypto.randomBytes(32).toString('hex');
       const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
 
-      const mail = await this.sendEmailTemplate(
+      await this.sendEmailTemplate(
         email,
         `Welcome to Pylott`,
 
@@ -438,7 +438,6 @@ export class AuthService {
         registrationLink,
         'Complete Registration',
       );
-      console.log(mail);
 
       return { message: 'Invitation sent successfully' };
     } catch (error: any) {
@@ -467,6 +466,7 @@ export class AuthService {
       const roleColumnMap = {
         [UserRoles.CLIENT]: 'client_users',
         [UserRoles.CONSULTANT]: 'consultant_users',
+        [UserRoles.ADMIN]: 'admin',
       };
 
       // Verify the column exists before trying to update
@@ -499,6 +499,8 @@ export class AuthService {
             user_id: newUser.id,
             company_id: companyId,
           });
+        } else if (role === UserRoles.ADMIN) {
+          await this.companyRepository.update({ id: companyId }, { admin_id: newUser.id });
         }
       } catch (roleError) {
         console.error('Failed to create role-specific record:', roleError);

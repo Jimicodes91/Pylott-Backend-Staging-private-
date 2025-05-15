@@ -16,4 +16,11 @@ export class ClientRepository extends BaseRepository<ClientModelType, Client> {
   public async getClientsWhereIn(clientIds: [string]) {
     return this.model.query().whereIn('id', clientIds).whereNull('deleted_at').withGraphFetched('[user]');
   }
+
+  public async getTopClients() {
+    return this.model.query().whereNull('deleted_at').withGraphFetched('[user, projects]').orderBy('projects.length', 'desc').limit(10);
+  }
+  public async getClientById(userId: string) {
+    return this.model.query().where('user_id', userId).whereNull('deleted_at').withGraphFetched('[user]');
+  }
 }

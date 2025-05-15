@@ -32,4 +32,32 @@ export class ClientService {
       throw new HttpError(error.message || 'Failed to fetch client details', 500);
     }
   }
+
+  //get top clients based on the number of projects with the same company_id
+  public async getTopClients(companyId: string) {
+    try {
+      const clients = await this.clientRepository.getTopClients();
+      const topClients = clients.filter((client) => client.company_id === companyId);
+
+      return topClients.map((client) => ({
+        name: client.user?.name,
+        serial_number: client.serial_number,
+        plan: client.plan,
+        projects: client.projects.length,
+      }));
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch top clients', 500);
+    }
+  }
+
+  public async getClientById(clientId: string) {
+    try {
+      const client = await this.clientRepository.getClientById(clientId);
+      if (!client) throw new HttpError('Client not found', 404);
+
+      return client;
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch client', 500);
+    }
+  }
 }
