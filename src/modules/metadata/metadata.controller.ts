@@ -26,19 +26,19 @@ export class MetadataController {
   };
 
   updateDocumentType = async (req: Request, res: Response) => {
-    return this.handleMetadataUpdate(req, res, this.metadataService.createDocumentType.bind(this.metadataService));
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateDocumentType.bind(this.metadataService));
   };
 
   updateTaskType = async (req: Request, res: Response) => {
-    return this.handleMetadataUpdate(req, res, this.metadataService.createTaskType.bind(this.metadataService));
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateTaskType.bind(this.metadataService));
   };
 
   updateEventType = async (req: Request, res: Response) => {
-    return this.handleMetadataUpdate(req, res, this.metadataService.createEventType.bind(this.metadataService));
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateEventType.bind(this.metadataService));
   };
 
   updateNoteType = async (req: Request, res: Response) => {
-    return this.handleMetadataUpdate(req, res, this.metadataService.createNoteType.bind(this.metadataService));
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateNoteType.bind(this.metadataService));
   };
 
   getDocumentTypes = async (req: Request, res: Response) => {
