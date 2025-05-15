@@ -8,4 +8,6 @@ const clientController = container.resolve(ClientController);
 
 export const clientRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/:id/details`, authenticateUser, clientController.getClientDetails);
+  server.get(`${prefix}/top/:companyId`, authenticateUser, clientController.getTopClients);
+  server.get(`${prefix}/:id`, authenticateUser, clientController.getClientById);
 };
