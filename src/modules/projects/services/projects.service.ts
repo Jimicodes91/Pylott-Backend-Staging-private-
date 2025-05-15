@@ -267,8 +267,8 @@ export class ProjectService {
             jurisdiction: payload?.jurisdiction,
             visa_required: payload?.visa_required,
             package: payload?.package,
-            milestone_start_date: payload['start_date'],
-            milestone_status: ProjectStatus.ON_TRACK,
+            milestone_start_date: payload.milestone_id ? payload['start_date'] : null,
+            milestone_status: payload.milestone_id ? ProjectStatus.ON_TRACK : null,
           },
           trx,
         );
