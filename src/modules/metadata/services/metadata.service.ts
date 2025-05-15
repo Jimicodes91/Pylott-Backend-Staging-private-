@@ -27,6 +27,22 @@ export class MetadataService {
     return this.createMetadata(user, payload, MetadataType.NOTE, 'Note');
   }
 
+  async updateDocumentType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
+    return this.updateMetadata(user, payload, MetadataType.DOCUMENT, metadata_id);
+  }
+
+  async updateTaskType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
+    return this.updateMetadata(user, payload, MetadataType.TASK, metadata_id);
+  }
+
+  async updateEventType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
+    return this.updateMetadata(user, payload, MetadataType.EVENT, metadata_id);
+  }
+
+  async updateNoteType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
+    return this.updateMetadata(user, payload, MetadataType.NOTE, metadata_id);
+  }
+
   async getDocumentTypes(user: UserModelType) {
     return this.fetchMetadataByType(user, MetadataType.DOCUMENT, 'Document');
   }
@@ -98,6 +114,48 @@ export class MetadataService {
       };
     } catch (error: any) {
       console.log(`${this.traceId} Error occurred creating ${typeName.toLowerCase()} type ===> ${JSON.stringify({ payload, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  private async updateMetadata(user: UserModelType, payload: Partial<CreateMetadataType>, type: MetadataType, metadata_id: string) {
+    try {
+      payload.name = payload.name.trim();
+
+      const metadata = await this.metadataRepository.findOne({ id: metadata_id, company_id: user.company_id, type });
+
+      if (!metadata) {
+        return {
+          status: false,
+          message: 'Metadata not found',
+        };
+      }
+
+      const isNameTaken = await this.metadataRepository.findNameWhereNotId(metadata_id, payload.name, type);
+
+      if (isNameTaken)
+        return {
+          status: false,
+          message: 'Name already exists',
+        };
+
+      await this.metadataRepository.update(
+        { id: metadata_id },
+        {
+          name: payload.name,
+          description: payload?.description ?? '',
+        },
+      );
+
+      return {
+        status: true,
+        message: 'Successful',
+      };
+    } catch (error: any) {
+      console.log(`${this.traceId} Error occurred in updateMetadata type ===> ${JSON.stringify({ payload, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',

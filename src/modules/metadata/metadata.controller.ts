@@ -25,6 +25,22 @@ export class MetadataController {
     return this.handleMetadataCreation(req, res, this.metadataService.createNoteType.bind(this.metadataService));
   };
 
+  updateDocumentType = async (req: Request, res: Response) => {
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateDocumentType.bind(this.metadataService));
+  };
+
+  updateTaskType = async (req: Request, res: Response) => {
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateTaskType.bind(this.metadataService));
+  };
+
+  updateEventType = async (req: Request, res: Response) => {
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateEventType.bind(this.metadataService));
+  };
+
+  updateNoteType = async (req: Request, res: Response) => {
+    return this.handleMetadataUpdate(req, res, this.metadataService.updateNoteType.bind(this.metadataService));
+  };
+
   getDocumentTypes = async (req: Request, res: Response) => {
     return this.handleMetadataFetch(req, res, this.metadataService.getDocumentTypes.bind(this.metadataService));
   };
@@ -56,6 +72,16 @@ export class MetadataController {
     const user = req.user || {};
 
     const result = await createMethod(user, payload);
+
+    return genericResponse({ res, data: result });
+  }
+
+  private async handleMetadataUpdate(req: Request, res: Response, updateMethod: (user: any, payload: Partial<CreateMetadataType>, metadata_id: string) => Promise<any>) {
+    const payload = req.body as CreateMetadataType;
+    const { metadata_id } = req.params;
+    const user = req.user || {};
+
+    const result = await updateMethod(user, payload, metadata_id);
 
     return genericResponse({ res, data: result });
   }
