@@ -419,7 +419,7 @@ export class ProjectService {
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
-        payload['milestone_start_date'] = new Date().toISOString();
+        payload['milestone_start_date'] = dayjs().format('YYYY-MM-DD HH:mm:ss');
         payload['milestone_status'] = ProjectStatus.ON_TRACK;
       }
 
