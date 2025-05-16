@@ -151,9 +151,9 @@ export class ProjectService {
       const company_id = user.company_id;
       let milestone: MilestonesModelType;
 
-      if (payload['pipeline']) {
+      if (payload['journey']) {
         const projectType = await this.projectTypeRepository.findOne({
-          id: payload['pipeline'],
+          id: payload['journey'],
           company_id,
           deleted_at: null,
         });
@@ -195,15 +195,15 @@ export class ProjectService {
             statusCode: StatusCodes.NOT_FOUND,
           };
         }
-        if (milestone.project_type_id !== payload['pipeline']) {
+        if (milestone.project_type_id !== payload['journey']) {
           return {
             status: false,
             message: 'Milestone does not belong to selected project type',
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
-      } else if (payload['pipeline'] && !payload.milestone_id) {
-        milestone = await this.milestonesRepository.getFirstCreatedMilestone(company_id, payload['pipeline']);
+      } else if (payload['journey'] && !payload.milestone_id) {
+        milestone = await this.milestonesRepository.getFirstCreatedMilestone(company_id, payload['journey']);
         payload.milestone_id = milestone?.id ?? null;
       }
 
@@ -258,7 +258,7 @@ export class ProjectService {
             name: payload['project_name'] || null,
             client_id: payload.client_id || null,
             consultant_id: payload.consultant_id || null,
-            project_type_id: payload['pipeline'] || null,
+            project_type_id: payload['journey'] || null,
             milestone_id: payload.milestone_id || null,
             start_date: payload['start_date'],
             end_date: payload['end_date']?.length ? payload['end_date'] : null,
