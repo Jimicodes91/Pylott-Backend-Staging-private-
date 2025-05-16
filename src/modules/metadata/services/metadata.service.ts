@@ -28,19 +28,19 @@ export class MetadataService {
   }
 
   async updateDocumentType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
-    return this.updateMetadata(user, payload, MetadataType.DOCUMENT, metadata_id);
+    return this.updateMetadata(user, payload, MetadataType.DOCUMENT, metadata_id, `Document`);
   }
 
   async updateTaskType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
-    return this.updateMetadata(user, payload, MetadataType.TASK, metadata_id);
+    return this.updateMetadata(user, payload, MetadataType.TASK, metadata_id, `Task`);
   }
 
   async updateEventType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
-    return this.updateMetadata(user, payload, MetadataType.EVENT, metadata_id);
+    return this.updateMetadata(user, payload, MetadataType.EVENT, metadata_id, `Event`);
   }
 
   async updateNoteType(user: UserModelType, payload: CreateMetadataType, metadata_id: string) {
-    return this.updateMetadata(user, payload, MetadataType.NOTE, metadata_id);
+    return this.updateMetadata(user, payload, MetadataType.NOTE, metadata_id, `Note`);
   }
 
   async getDocumentTypes(user: UserModelType) {
@@ -121,7 +121,7 @@ export class MetadataService {
     }
   }
 
-  private async updateMetadata(user: UserModelType, payload: Partial<CreateMetadataType>, type: MetadataType, metadata_id: string) {
+  private async updateMetadata(user: UserModelType, payload: Partial<CreateMetadataType>, type: MetadataType, metadata_id: string, typeName: string) {
     try {
       payload.name = payload.name.trim();
 
@@ -152,10 +152,10 @@ export class MetadataService {
 
       return {
         status: true,
-        message: 'Successful',
+        message: `${typeName} type updated successfully`,
       };
     } catch (error: any) {
-      console.log(`${this.traceId} Error occurred in updateMetadata type ===> ${JSON.stringify({ payload, err_msg: error?.message })}`);
+      console.log(`${this.traceId} Error occurred in updateMetadata type ${typeName} ===> ${JSON.stringify({ payload, err_msg: error?.message })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',
