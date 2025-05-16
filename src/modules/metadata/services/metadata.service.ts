@@ -134,13 +134,13 @@ export class MetadataService {
         };
       }
 
-      const isNameTaken = await this.metadataRepository.findNameWhereNotId(metadata_id, payload.name, type);
+      // const isNameTaken = await this.metadataRepository.findNameWhereNotId(metadata_id, payload.name, type);
 
-      if (isNameTaken)
-        return {
-          status: false,
-          message: 'Name already exists',
-        };
+      // if (isNameTaken)
+      //   return {
+      //     status: false,
+      //     message: 'Name already exists',
+      //   };
 
       await this.metadataRepository.update(
         { id: metadata_id },
