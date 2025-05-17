@@ -56,8 +56,8 @@ class PylottQueue {
 
     this.queues[queueName].bull.process(jobName, async (job) => {
       try {
-        const result = await handler(job);
-        console.log(`${this.traceId} handler result for job ${jobName} ===> ${JSON.stringify(result)}`);
+        await handler(job);
+        // console.log(`${this.traceId} handler result for job ${jobName} ===> ${JSON.stringify(result)}`);
       } catch (error) {
         console.error(`${this.traceId} handler error for job ${jobName} ===> ${error.message}`, error.stack);
         throw error;
