@@ -24,7 +24,7 @@ class PylottQueue {
     }
 
     const queue = new Bull(queueName, {
-      redis,
+      redis: redis.url,
       limiter: queueConfig,
       defaultJobOptions: {
         removeOnComplete: true,

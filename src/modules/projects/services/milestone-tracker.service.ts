@@ -38,7 +38,7 @@ export class MilestoneTrackerService {
       'global-milestone-check',
       { scope: 'GLOBAL' },
       {
-        // repeat: { cron: '*/1 * * * *', tz: 'UTC' },
+        // repeat: { cron: '*/1 * * * *', tz: 'UTC' }, // every second - Just for local testing
         repeat: { cron: '0 0 * * *', tz: 'UTC' }, // 12Am UTC
         jobId: 'global-daily-check',
         removeOnComplete: true,
