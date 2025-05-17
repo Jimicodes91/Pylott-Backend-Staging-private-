@@ -11,6 +11,7 @@ import { NotesService } from './services/notes.service';
 import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
 import { TypeService } from './services/type.service';
+import { MetricsService } from './services/metrics.service';
 
 @injectable()
 export class ProjectController {
@@ -21,6 +22,7 @@ export class ProjectController {
     private readonly milestoneService: MilestoneService,
     private readonly typeService: TypeService,
     private readonly memberService: MemberService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   getAllProjectTypes = async (req: AuthenticatedRequest, res: Response) => {
@@ -251,6 +253,13 @@ export class ProjectController {
     const { project_id, note_id, comment_id } = req.params;
 
     const { statusCode = null, ...others } = await this.noteService.deleteComment(user, project_id, note_id, comment_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  projectMetrics = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+
+    const { statusCode = null, ...others } = await this.metricsService.getDashboardMetrics(user.company_id);
     genericResponse({ res, data: others, statusCode });
   };
 }

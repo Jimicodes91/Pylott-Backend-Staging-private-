@@ -2,6 +2,8 @@ import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
 import { ProjectTask, ProjectTaskModelType } from '@/models';
+import { TaskStatusCounts } from '@/shared/interface/model';
+import { ProjectTaskStatus } from '@/shared/enums';
 
 @injectable()
 export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, ProjectTask> {
@@ -31,5 +33,39 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
 
   async getTaskWhereName(project_id: string, name: string, task_id: string) {
     return await this.model.query().where({ project_id, name, deleted_at: null }).where('id', '<>', task_id).first();
+  }
+
+  async getTaskStatusCounts(companyId: string, projectId?: string): Promise<TaskStatusCounts> {
+    const query = this.model.query().where('company_id', companyId).whereNull('deleted_at');
+
+    if (projectId) {
+      query.where('project_id', projectId);
+    }
+
+    const result = await query
+      .select([
+        this.model.raw('COUNT(id) as total'),
+        this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed']),
+        this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as in_progress', ['in_progress']),
+        this.model.raw(
+          `
+            SUM(CASE WHEN 
+                status != ? AND 
+                end_date IS NOT NULL AND 
+                end_date < NOW() 
+                THEN 1 ELSE 0 END) as overdue
+        `,
+          [ProjectTaskStatus.COMPLETED],
+        ),
+      ])
+      .first()
+      .castTo<TaskStatusCounts>();
+
+    return {
+      total: Number(result?.total) || 0,
+      completed: Number(result?.completed) || 0,
+      in_progress: Number(result?.in_progress) || 0,
+      overdue: Number(result?.overdue) || 0,
+    };
   }
 }

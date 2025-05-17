@@ -122,6 +122,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, projectController.getNoteComments);
   server.delete(`${prefix}/:project_id/notes/:note_id/comments/:comment_id`, authGuard, projectController.deleteComment);
 
+  server.get(`${prefix}/metrics`, authGuard, projectController.projectMetrics);
   /**
    * Projects
    */
