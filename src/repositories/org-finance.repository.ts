@@ -79,4 +79,18 @@ export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, Or
       throw new Error('Failed to fetch org_finance records');
     }
   }
+
+  public async updateOrgFinance(id: string, updateData: Partial<OrgFinanceDTO>) {
+    return await this.model.query().patchAndFetchById(id, updateData);
+  }
+  public async markAsPaid(id: string, amountPaid: string, paymentProofUrl?: string) {
+    return await this.model.query().patchAndFetchById(id, {
+      has_paid: true,
+      payment_status: 'paid',
+      amount_paid: amountPaid,
+      outstanding_balance: '0', // Assuming full payment
+      payment_proof_url: paymentProofUrl,
+      payment_date: new Date(),
+    });
+  }
 }

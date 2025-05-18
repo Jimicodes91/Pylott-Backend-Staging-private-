@@ -15,6 +15,10 @@ export const sysAdminRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/companies/:id`, authenticateUser, sysAdminController.getCompanyDetails);
   server.get(`${prefix}/all-admin`, authenticateUser, sysAdminController.getAllAdmins);
 
+  server.get(`${prefix}/count`, sysAdminController.getTotalCompanies);
+
+  server.get(`${prefix}/count-sub`, sysAdminController.getTotalSubscriptions);
+
   // In admin.routes.ts
   server.get(`${prefix}/companies/:companyId/users`, authenticateUser, sysAdminController.getCompanyUsers);
 

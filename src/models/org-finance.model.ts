@@ -13,6 +13,10 @@ export class OrgFinance extends BaseModel {
   payment_status: string;
   organization_id: string;
 
+  has_paid: boolean;
+  payment_proof_url: string;
+  payment_date: Date;
+
   static relationMappings = () => ({});
 }
 

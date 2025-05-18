@@ -3,10 +3,15 @@ import { inject, injectable } from 'tsyringe';
 import { OrgFinanceRepository } from '@/repositories/org-finance.repository';
 import HttpError from '@/shared/utils/errorHandler';
 import { OrgFinanceDTO } from './org-finance.dto';
+import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
+import { DocumentsDirectory } from '@/shared/enums';
 
 @injectable()
 export class OrgFinanceService {
-  constructor(@inject(OrgFinanceRepository) private orgFinanceRepository: OrgFinanceRepository) {}
+  constructor(
+    @inject(OrgFinanceRepository) private orgFinanceRepository: OrgFinanceRepository,
+    @inject(Cloudinary) private cloudinary: Cloudinary,
+  ) {}
 
   public async getAllOrgFinance(page: number = 1, pageSize: number = 10, companyId: string) {
     try {
@@ -45,6 +50,45 @@ export class OrgFinanceService {
       return await this.orgFinanceRepository.searchOrgFinance(query, companyId, page, pageSize);
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to search org_finance records', error.statusCode || 500);
+    }
+  }
+
+  public async updateOrgFinance(id: string, updateData: Partial<OrgFinanceDTO>) {
+    try {
+      const updatedOrgFinance = await this.orgFinanceRepository.updateOrgFinance(id, updateData);
+      if (!updatedOrgFinance) {
+        throw new HttpError('OrgFinance not found', 404);
+      }
+      return updatedOrgFinance;
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to update org_finance record', error.statusCode || 500);
+    }
+  }
+  public async markAsPaid(id: string, amountPaid: string, paymentProofFile?: any) {
+    try {
+      let paymentProofUrl: string | undefined;
+
+      // Upload payment proof if provided
+      if (paymentProofFile) {
+        const base64Data = paymentProofFile.buffer.toString('base64');
+        const uploadResult = await this.cloudinary.upload(DocumentsDirectory.PAYMENT_PROOF, `data:${paymentProofFile.mimetype};base64,${base64Data}`, `${id}-${Date.now()}`);
+
+        if (!uploadResult.status || !uploadResult.data) {
+          throw new HttpError('Failed to upload payment proof', 500);
+        }
+        paymentProofUrl = uploadResult.data;
+      }
+
+      // Update the finance record
+      const updatedOrgFinance = await this.orgFinanceRepository.markAsPaid(id, amountPaid, paymentProofUrl);
+
+      if (!updatedOrgFinance) {
+        throw new HttpError('OrgFinance not found', 404);
+      }
+
+      return updatedOrgFinance;
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to mark org_finance as paid', error.statusCode || 500);
     }
   }
 }
