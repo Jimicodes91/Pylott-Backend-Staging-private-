@@ -195,7 +195,7 @@ export class AuthService {
       const { password: _, ...userResponse } = newUser;
       return userResponse;
     } catch (error) {
-      throw new HttpError(error.message || 'SIGNUP_ADMIN_ERROR', 500);
+      throw new HttpError(error.message || 'Error: Something went wrong, failed to complete action', 500);
     }
   }
 
@@ -227,7 +227,7 @@ export class AuthService {
       const { password: _, ...userResponse } = newUser;
       return userResponse;
     } catch (error) {
-      throw new HttpError(error.message || 'SIGNUP_COMPANY_ADMIN_ERROR', 500);
+      throw new HttpError(error.message || 'Error: something went wrong, failed to complete action', 500);
     }
   }
 
@@ -288,7 +288,7 @@ export class AuthService {
         token: accessToken,
       };
     } catch (error) {
-      throw new HttpError(error.message || 'SIGNIN_ERROR', 500);
+      throw new HttpError(error.message || 'Error, Something went wrong, failed to login user', 500);
     }
   }
 
@@ -333,7 +333,7 @@ export class AuthService {
       const { password: _, ...userData } = user;
       return { user: userData, token: bearerToken };
     } catch (error) {
-      throw new HttpError(error.message || 'VERIFY_TOKEN_ERROR', 500);
+      throw new HttpError(error.message || 'Token verification error', 500);
     }
   }
 
@@ -360,7 +360,7 @@ export class AuthService {
       await this.sendVerificationEmail(email, verificationToken);
       return { message: 'Verification email sent successfully' };
     } catch (error) {
-      throw new HttpError(error.message || 'RESEND_EMAIL_ERROR', 500);
+      throw new HttpError(error.message || 'Error failure in sending Verification message', 500);
     }
   }
 
@@ -445,7 +445,7 @@ export class AuthService {
     }
   }
 
-  public async completeRegistration(email: string, password: string, companyId: string, role: UserRoles) {
+  public async completeRegistration(email: string, password: string, name: string, companyId: string, role: UserRoles) {
     try {
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
@@ -455,6 +455,7 @@ export class AuthService {
       const hashedPassword = await this.hashPassword(password);
 
       const newUser = await this.userRepository.create({
+        name,
         email,
         password: hashedPassword,
         company_id: companyId,
