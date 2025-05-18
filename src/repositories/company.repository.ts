@@ -33,4 +33,19 @@ export class CompanyRepository extends BaseRepository<CompanyModelType, Company>
   public async updateCompanyStatus(companyId: string, subscription_status: SubscriptionStatus) {
     return this.model.query().where({ id: companyId }).update({ subscription_status });
   }
+  public async getTotalCompanies(filters?: { status?: string; subscription_status?: SubscriptionStatus }): Promise<number> {
+    let query = this.model.query().whereNull('deleted_at');
+
+    if (filters?.status) {
+      query = query.where('status', filters.status);
+    }
+
+    if (filters?.subscription_status) {
+      query = query.where('subscription_status', filters.subscription_status);
+    }
+
+    const result = await query.count(); // returns array
+    const count = Number(result[0]['count(*)']); // correct key
+    return count || 0;
+  }
 }

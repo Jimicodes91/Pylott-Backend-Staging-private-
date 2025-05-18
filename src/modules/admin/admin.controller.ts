@@ -150,4 +150,27 @@ export class SysAdminController {
       return errorResponse(res, 'USER_STATUS_UPDATE_ERROR', error.message, error.statusCode || 500);
     }
   };
+
+  public getTotalCompanies = async (req: Request, res: Response) => {
+    try {
+      const filters = {
+        status: req.query.status as string,
+        subscription_status: req.query.subscription_status as SubscriptionStatus,
+      };
+
+      const total = await this.sysAdminService.getTotalCompanies(filters);
+
+      return successResponse(res, 'Total companies retrieved successfully', { total });
+    } catch (error: any) {
+      return errorResponse(res, 'GET_TOTAL_COMPANIES_ERROR', error.message, error.statusCode || 500);
+    }
+  };
+  public getTotalSubscriptions = async (req: Request, res: Response) => {
+    try {
+      const total = await this.sysAdminService.getTotalSubscriptions();
+      return successResponse(res, 'Total subscriptions fetched', { total });
+    } catch (error: any) {
+      return errorResponse(res, 'GET_TOTAL_SUBSCRIPTION_ERROR', error.message, error.statusCode || 500);
+    }
+  };
 }

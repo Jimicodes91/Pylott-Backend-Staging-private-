@@ -7,12 +7,14 @@ import { UserRoles } from '@/shared/enums';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { SubscriptionStatus } from '@/shared/utils/subscription.type';
+import { SubscriptionRepository } from '@/repositories/subscription.repository';
 
 @injectable()
 export class SysAdminService {
   constructor(
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(UserRepository) private userRepository: UserRepository,
+    @inject(SubscriptionRepository) private subscriptionRepository: SubscriptionRepository,
   ) {}
 
   public async getTotalOrganizations(): Promise<number> {
@@ -173,5 +175,13 @@ export class SysAdminService {
     }
 
     return updatedUser;
+  }
+
+  public async getTotalCompanies(filters?: { status?: string; subscription_status?: SubscriptionStatus }): Promise<number> {
+    return this.companyRepository.getTotalCompanies(filters);
+  }
+
+  public async getTotalSubscriptions(filters?: { status?: SubscriptionStatus }): Promise<number> {
+    return this.subscriptionRepository.getTotalSubscriptions(filters);
   }
 }

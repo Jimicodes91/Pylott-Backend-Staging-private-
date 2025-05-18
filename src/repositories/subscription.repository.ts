@@ -44,4 +44,15 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionModelType
   public async updateSubscriptionStatus(subscriptionId: string, status: SubscriptionStatus) {
     return this.update({ id: subscriptionId }, { status });
   }
+  public async getTotalSubscriptions(filters?: { status?: SubscriptionStatus }): Promise<number> {
+    let query = this.model.query().whereNull('deleted_at'); // if you have soft deletes
+
+    if (filters?.status) {
+      query = query.where('status', filters.status);
+    }
+
+    const result = await query.count();
+    const count = Number(result[0]['count(*)']); // or use Object.values(result[0])[0]
+    return count || 0;
+  }
 }
