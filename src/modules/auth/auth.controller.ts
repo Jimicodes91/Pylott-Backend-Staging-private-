@@ -112,12 +112,12 @@ export class AuthController {
 
   public completeRegistration = async (req: Request, res: Response) => {
     try {
-      const { email, password, companyId, role } = req.body;
-      if (!email || !password || !companyId || !role) {
-        return errorResponse(res, 'Email, password, and company ID are required');
+      const { email, password, companyId, name, role } = req.body;
+      if (!email || !password || !companyId || !role || !name) {
+        return errorResponse(res, 'Email, name, role, password, and company ID are required');
       }
 
-      const result = await this.authService.completeRegistration(email, password, companyId, role);
+      const result = await this.authService.completeRegistration(email, name, password, companyId, role);
 
       return successResponse(res, 'Registration completed successfully', result);
     } catch (error: any) {
