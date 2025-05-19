@@ -8,6 +8,13 @@ import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { SubscriptionStatus } from '@/shared/utils/subscription.type';
 import { SubscriptionRepository } from '@/repositories/subscription.repository';
+import { CompanyFilterOptions } from '@/shared/interface/company';
+
+export interface UserFilterOptions {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}
 
 @injectable()
 export class SysAdminService {
@@ -22,11 +29,17 @@ export class SysAdminService {
     return count.count;
   }
 
-  // Get total number of users
-  public async getTotalUsers(): Promise<number> {
-    const count: any = await this.userRepository.getAllUsers();
-    console.log(count);
-    return count;
+  public async getTotalUsers(filter: UserFilterOptions = {}): Promise<any> {
+    try {
+      const { page = 1, pageSize = 10, search } = filter;
+
+      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+      return await this.userRepository.getAllUsers(page, pageSize, search);
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch users', error.statusCode || 500);
+    }
   }
 
   // public async getAllCompanyUsers(){
@@ -68,8 +81,12 @@ export class SysAdminService {
     };
   }
 
-  public async getAllCompanies(filters: { status?: string; subscription_status?: SubscriptionStatus }, sortBy: string = 'created_at', order: 'asc' | 'desc' = 'desc') {
-    return await this.companyRepository.getAllCompanies(filters, sortBy, order);
+  public async getAllCompanies(filters: CompanyFilterOptions = {}) {
+    try {
+      return await this.companyRepository.getAllCompanies(filters);
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch companies', error.statusCode || 500);
+    }
   }
 
   public async getCompanyDetails(companyId: string) {

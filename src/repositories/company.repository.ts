@@ -3,6 +3,7 @@ import { injectable } from 'tsyringe';
 import { Company, CompanyModelType } from '@/models';
 import BaseRepository from './base.repository';
 import { SubscriptionStatus } from '@/shared/utils/subscription.type';
+import { CompanyFilterOptions } from '@/shared/interface/company';
 
 @injectable()
 export class CompanyRepository extends BaseRepository<CompanyModelType, Company> {
@@ -11,18 +12,54 @@ export class CompanyRepository extends BaseRepository<CompanyModelType, Company>
   }
 
   // Fetch all companies with sorting and filtering
-  public async getAllCompanies(filters: { status?: string; subscription_status?: SubscriptionStatus }, sortBy: string = 'created_at', order: 'asc' | 'desc' = 'desc') {
-    let query = this.model.query().whereNull('deleted_at');
+  public async getAllCompanies(filters: CompanyFilterOptions = {}, sortBy: string = 'created_at', order: 'asc' | 'desc' = 'desc') {
+    try {
+      let query = this.model.query().whereNull('deleted_at');
 
-    if (filters.status) {
-      query = query.where('status', filters.status);
+      // Apply filters
+      if (filters.status) {
+        query = query.where('status', filters.status);
+      }
+
+      if (filters.subscription_status) {
+        query = query.where('subscription_status', filters.subscription_status);
+      }
+
+      // Apply search
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        query = query.where((builder) => {
+          builder
+            .whereRaw('LOWER(name) LIKE ?', [`%${searchTerm}%`])
+            .orWhereRaw('LOWER(industry_type) LIKE ?', [`%${searchTerm}%`])
+            .orWhereRaw('LOWER(city) LIKE ?', [`%${searchTerm}%`]);
+        });
+      }
+
+      // Set default pagination if not provided
+      const page = filters.page || 1;
+      const pageSize = filters.pageSize || 10;
+
+      if (page < 1) throw new Error('Page must be greater than 0');
+      if (pageSize < 1 || pageSize > 100) throw new Error('Page size must be between 1 and 100');
+
+      const results = await query.orderBy(filters.sortBy || sortBy, filters.order || order).page(page - 1, pageSize);
+
+      return {
+        data: results.results,
+        pagination: {
+          total: results.total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(results.total / pageSize),
+          hasNextPage: page * pageSize < results.total,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      throw new Error('Failed to fetch companies');
     }
-
-    if (filters.subscription_status) {
-      query = query.where('subscription_status', filters.subscription_status);
-    }
-
-    return query.orderBy(sortBy, order);
   }
 
   public async getCompanyNameById(companyId: string) {
