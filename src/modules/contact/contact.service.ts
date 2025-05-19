@@ -64,35 +64,34 @@ export class ContactService {
     }
   }
 
-  public async getContactsByCompany(companyId: string, page: number = 1, pageSize: number = 10) {
+  // In ContactService class
+
+  public async getAllContacts(filter: ContactFilterOptions = {}) {
     try {
+      const { page = 1, pageSize = 10 } = filter;
+
       if (page < 1) throw new HttpError('Page must be greater than 0', 400);
       if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
 
-      return await this.contactRepository.getContactsByCompany(companyId, page, pageSize);
+      return await this.contactRepository.getAllContacts(filter);
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch contacts', error.statusCode || 500);
+    }
+  }
+
+  public async getContactsByCompany(companyId: string, filter: ContactFilterOptions = {}) {
+    try {
+      const { page = 1, pageSize = 10 } = filter;
+
+      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+      return await this.contactRepository.getContactsByCompany(companyId, filter);
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to fetch company contacts', error.statusCode || 500);
     }
   }
 
-  public async getAllContacts(filter: ContactFilterOptions = {}) {
-    try {
-      const { companyId, page = 1, pageSize = 10 } = filter;
-
-      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
-      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
-
-      // If companyId is provided, filter by company
-      if (companyId) {
-        return await this.contactRepository.getContactsByCompany(companyId, page, pageSize);
-      }
-
-      // Otherwise get all contacts (for super admins)
-      return await this.contactRepository.getAllContacts(page, pageSize);
-    } catch (error: any) {
-      throw new HttpError(error.message || 'Failed to fetch contacts', error.statusCode || 500);
-    }
-  }
   public async searchContacts(query: string, companyId?: string, page: number = 1, pageSize: number = 10) {
     try {
       if (!query) throw new HttpError('Search query is required', 400);

@@ -3,6 +3,7 @@ import { injectable } from 'tsyringe';
 import { Contact, ContactModelType } from '@/models/contact.model';
 import BaseRepository from './base.repository';
 import Objection from 'objection';
+import { ContactFilterOptions } from '@/modules/contact/contact.dto';
 
 @injectable()
 export class ContactRespository extends BaseRepository<ContactModelType, Contact> {
@@ -20,29 +21,6 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
   //     throw new Error('Failed to fetch contacts');
   //   }
   // }
-  public async getAllContacts(page: number = 1, pageSize: number = 10) {
-    try {
-      const results = await this.model
-        .query()
-        .page(page - 1, pageSize) // Objection.js uses 0-based page index
-        .orderBy('created_at');
-
-      return {
-        data: results.results,
-        pagination: {
-          total: results.total,
-          page,
-          pageSize,
-          totalPages: Math.ceil(results.total / pageSize),
-          hasNextPage: page * pageSize < results.total,
-          hasPreviousPage: page > 1,
-        },
-      };
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-      throw new Error('Failed to fetch contacts');
-    }
-  }
 
   public async updateAssignee(contactId: string, assigne: string[]) {
     try {
@@ -85,13 +63,61 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
     }
   }
 
-  public async getContactsByCompany(companyId: string, page: number = 1, pageSize: number = 10) {
+  // In ContactRespository class
+
+  public async getAllContacts(filter: ContactFilterOptions = {}) {
     try {
-      const results = await this.model
-        .query()
-        .where('company_id', companyId)
-        .page(page - 1, pageSize)
-        .orderBy('created_at');
+      const { companyId, page = 1, pageSize = 10, search } = filter;
+
+      let query = this.model.query().whereNull('deleted_at');
+
+      // Filter by company if provided
+      if (companyId) {
+        query = query.where('company_id', companyId);
+      }
+
+      // Apply search if provided
+      if (search) {
+        const searchTerm = `%${search.toLowerCase()}%`;
+        query = query.where((builder) => {
+          builder.whereRaw('LOWER(name) LIKE ?', [searchTerm]).orWhereRaw('LOWER(email) LIKE ?', [searchTerm]).orWhereRaw('LOWER(phone) LIKE ?', [searchTerm]);
+        });
+      }
+
+      const results = await query.page(page - 1, pageSize).orderBy('created_at', 'desc');
+
+      return {
+        data: results.results,
+        pagination: {
+          total: results.total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(results.total / pageSize),
+          hasNextPage: page * pageSize < results.total,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+      throw new Error('Failed to fetch contacts');
+    }
+  }
+
+  public async getContactsByCompany(companyId: string, filter: ContactFilterOptions = {}) {
+    try {
+      const { page = 1, pageSize = 10, search } = filter;
+
+      let query = this.model.query().where('company_id', companyId).whereNull('deleted_at');
+
+      // Apply search if provided
+      if (search) {
+        const searchTerm = `%${search.toLowerCase()}%`;
+        query = query.where((builder) => {
+          builder.whereRaw('LOWER(name) LIKE ?', [searchTerm]).orWhereRaw('LOWER(email) LIKE ?', [searchTerm]).orWhereRaw('LOWER(phone) LIKE ?', [searchTerm]);
+        });
+      }
+
+      const results = await query.page(page - 1, pageSize).orderBy('created_at', 'desc');
 
       return {
         data: results.results,
