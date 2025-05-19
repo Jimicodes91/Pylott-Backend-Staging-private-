@@ -9,7 +9,7 @@ const sysAdminController = container.resolve(SysAdminController);
 export const sysAdminRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/dashboard`, authenticateUser, sysAdminController.getDashboardSummary);
   server.get(`${prefix}/companies`, authenticateUser, sysAdminController.getAllCompanies);
-  server.get(`${prefix}/all`, authenticateUser, sysAdminController.getAllUsers);
+  server.get(`${prefix}/all`, sysAdminController.getAllUsers);
   server.get(`${prefix}/active`, authenticateUser, sysAdminController.getActiveUsers);
 
   server.get(`${prefix}/companies/:id`, authenticateUser, sysAdminController.getCompanyDetails);

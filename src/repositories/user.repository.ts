@@ -38,8 +38,35 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
     const result = await this.count({ is_active: true });
     return result.count;
   }
-  public async getAllUsers() {
-    return this.findMany({});
+  public async getAllUsers(page: number = 1, pageSize: number = 10, search?: string) {
+    try {
+      const query = this.model.query().whereNull('deleted_at');
+
+      // Add search filter if provided
+      if (search) {
+        const searchTerm = search.toLowerCase();
+        query.where((builder) => {
+          builder.whereRaw('LOWER(email) LIKE ?', [`%${searchTerm}%`]).orWhereRaw('LOWER(name) LIKE ?', [`%${searchTerm}%`]);
+        });
+      }
+
+      const results = await query.page(page - 1, pageSize).orderBy('created_at', 'desc');
+
+      return {
+        data: results.results,
+        pagination: {
+          total: results.total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(results.total / pageSize),
+          hasNextPage: page * pageSize < results.total,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw new Error('Failed to fetch users');
+    }
   }
   public async getAllAdmins() {
     return this.findMany({ role: UserRoles.SUPER_ADMIN });
