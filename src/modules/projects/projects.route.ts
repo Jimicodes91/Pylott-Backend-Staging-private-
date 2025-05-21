@@ -127,6 +127,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
    * Projects
    */
   server.get(`${prefix}`, authGuard, projectController.getAllProjects);
+  server.get(`${prefix}/query`, authGuard, projectController.searchProjects);
   server.get(`${prefix}/:project_id`, authGuard, projectController.getProject);
   // server.post(`${prefix}`, authGuard, schemaValidator(createProjectValidationRules), projectController.createProject);
   server.post(`${prefix}`, authGuard, projectController.createProject);

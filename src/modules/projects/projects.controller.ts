@@ -12,6 +12,7 @@ import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
 import { TypeService } from './services/type.service';
 import { MetricsService } from './services/metrics.service';
+import { ObjectLiteral } from '@/shared/types/general.type';
 
 @injectable()
 export class ProjectController {
@@ -95,6 +96,14 @@ export class ProjectController {
     };
 
     const { statusCode = null, ...others } = await this.projectService.getAllProjects(company_id, filters);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  searchProjects = async (req: AuthenticatedRequest, res: Response) => {
+    const company_id = req.user.company_id;
+    const { search } = req.query as ObjectLiteral;
+
+    const { statusCode = null, ...others } = await this.projectService.searchProject(company_id, search as string);
     return genericResponse({ res, data: others, statusCode });
   };
 

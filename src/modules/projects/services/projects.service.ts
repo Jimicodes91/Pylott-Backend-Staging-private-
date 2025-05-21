@@ -91,6 +91,21 @@ export class ProjectService {
     }
   }
 
+  async searchProject(company_id: string, search: string): Promise<ServiceType> {
+    try {
+      const projects = await this.projectRepository.searchProjectsByName(company_id, search);
+
+      return { status: true, message: 'Searched projects', data: projects };
+    } catch (error) {
+      console.error(`${this.traceId} Error searching project ===> ${search}`, error);
+      return {
+        status: false,
+        message: 'Failed to fetch projects',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      };
+    }
+  }
+
   async getProject(company_id: string, project_id: string): Promise<ServiceType> {
     try {
       const project = await this.projectRepository.getProjectDetails(company_id, project_id);

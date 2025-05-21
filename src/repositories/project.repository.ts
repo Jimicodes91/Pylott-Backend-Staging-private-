@@ -20,6 +20,17 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
       .orderBy('created_at', 'desc');
   }
 
+  async searchProjectsByName(company_id: string, searchTerm: string, limit: number = 10) {
+    return await this.model
+      .query()
+      .where({ company_id, deleted_at: null })
+      .andWhere('name', 'like', `%${searchTerm}%`)
+      .limit(limit)
+      .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
+      .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
+      .orderBy('created_at', 'desc');
+  }
+
   async getProjectDetails(company_id: string, project_id: string) {
     return this.model
       .query()
