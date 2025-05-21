@@ -11,10 +11,12 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
     super(Project);
   }
 
-  async getProjectsAndAssociatedEntities(query: ObjectLiteral) {
-    return await this.model
-      .query()
-      .where(query)
+  async getProjectsAndAssociatedEntities(query: ObjectLiteral, search?: string) {
+    let qb = this.model.query().where(query);
+
+    if (search && search.length) qb = qb.andWhere('name', 'like', `%${search}%`);
+
+    return await qb
       .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
       .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
       .orderBy('created_at', 'desc');

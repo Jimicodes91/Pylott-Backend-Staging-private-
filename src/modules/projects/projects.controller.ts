@@ -86,13 +86,14 @@ export class ProjectController {
 
   getAllProjects = async (req: AuthenticatedRequest, res: Response) => {
     const company_id = req.user.company_id;
-    const { status, client_id, consultant_id, project_type_id } = req.query;
+    const { status, client_id, consultant_id, project_type_id, search } = req.query;
 
     const filters = {
       status: status as string,
       client_id: client_id as string,
       consultant_id: consultant_id as string,
       project_type_id: project_type_id as string,
+      search: search as string,
     };
 
     const { statusCode = null, ...others } = await this.projectService.getAllProjects(company_id, filters);

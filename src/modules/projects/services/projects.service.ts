@@ -51,6 +51,7 @@ export class ProjectService {
       consultant_id?: string;
       project_type_id?: string;
       milestone_id?: string;
+      search?: string;
     } = {},
   ): Promise<ServiceType> {
     try {
@@ -62,7 +63,7 @@ export class ProjectService {
       if (filters.project_type_id) query.project_type_id = filters.project_type_id;
       if (filters.milestone_id) query.milestone_id = filters.milestone_id;
 
-      const projects = await this.projectRepository.getProjectsAndAssociatedEntities(query);
+      const projects = await this.projectRepository.getProjectsAndAssociatedEntities(query, filters.search);
 
       const formattedProjects = projects.map((project) => ({
         ...project,
