@@ -17,14 +17,16 @@ import {
   DocumentAttachmentsRepository,
   ProjectFormsRepository,
   ProjectFormFieldRepository,
+  UserRepository,
 } from '@/repositories';
 
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { MilestonesModelType, ProjectFormFieldModelType, ProjectModelType, UserModelType } from '@/models';
 import { CreateProjectType } from '@/shared/types/projects.type';
-import { DocumentsDirectory, MetadataType, ProjectStatus } from '@/shared/enums';
+import { DocumentsDirectory, MetadataType, ProjectStatus, UserRoles } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { ContactRespository } from '@/repositories/contact.repository';
+import { AuthService } from '@/modules/auth/services/auth.service';
 
 @injectable()
 export class ProjectService {
@@ -34,12 +36,14 @@ export class ProjectService {
     private readonly projectRepository: ProjectRepository,
     private readonly milestonesRepository: MilestonesRepository,
     private readonly contactRepository: ContactRespository,
+    private readonly userRepository: UserRepository,
     private readonly projectTypeRepository: ProjectTypeRepository,
     private readonly projectSettingsRepository: ProjectSettingsRepository,
     private readonly documentsRepository: DocumentsRepository,
     private readonly attachmentsRepository: DocumentAttachmentsRepository,
     private readonly projectFormRepository: ProjectFormsRepository,
     private readonly projectFormFieldRepository: ProjectFormFieldRepository,
+    private readonly authSvc: AuthService,
     private readonly cloudinary: Cloudinary,
   ) {}
 
@@ -223,6 +227,8 @@ export class ProjectService {
         payload.milestone_id = milestone?.id ?? null;
       }
 
+      const nonExistentClients = [];
+
       if (payload['project_client']) {
         for (const client of payload['project_client']) {
           const clientRecord = await this.contactRepository.findOne({
@@ -237,6 +243,9 @@ export class ProjectService {
               statusCode: StatusCodes.NOT_FOUND,
             };
           }
+
+          const clientUserType = await this.userRepository.findOne({ deleted_at: null, email: clientRecord.email });
+          if (!clientUserType) nonExistentClients.push(clientRecord.email);
         }
       }
 
@@ -344,6 +353,15 @@ export class ProjectService {
           }
         }
       });
+
+      for (const payload of nonExistentClients) {
+        try {
+          await this.authSvc.sendInvitation(user.id, payload.email, UserRoles.CLIENT);
+        } catch (error: any) {
+          // Fail safe
+          console.error(`${this.traceId} Error inviting project client to pylott:`, error);
+        }
+      }
 
       return {
         status: true,
