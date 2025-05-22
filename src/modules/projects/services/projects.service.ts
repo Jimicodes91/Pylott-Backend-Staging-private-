@@ -136,7 +136,7 @@ export class ProjectService {
 						slug: f.slug,
 					};
 
-					console.log(`Projects client debugger ===>`, f.slug === 'project_client', project.form_data[f.slug]);
+					console.log(`Projects client debugger 1===>`, f.slug === 'project_client', project.form_data[f.slug]);
 
 					if (f.slug === 'project_client' && project.form_data?.[f.slug] && Array.isArray(project.form_data?.[f.slug])) {
 						const clients = await this.contactRepository.getClientsWhereIn(project.form_data?.[f.slug]);
@@ -144,7 +144,11 @@ export class ProjectService {
 						const mappedClients = clients;
 
 						payload.value = mappedClients;
+            console.log(`Projects client debugger 2===>`, f.slug === 'project_client', project.form_data[f.slug], payload.value);
+            
 					}
+
+          console.log(`Projects client debugger 3===>`, f.slug === 'project_client', project.form_data[f.slug], payload);
 
 					return payload;
 				}),
