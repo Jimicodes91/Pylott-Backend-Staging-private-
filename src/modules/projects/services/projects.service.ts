@@ -144,11 +144,11 @@ export class ProjectService {
 						const mappedClients = clients;
 
 						payload.value = mappedClients;
-            console.log(`Projects client debugger 2===>`, f.slug === 'project_client', project.form_data[f.slug], payload.value);
+            console.log(`Projects client debugger 2===>`, f.slug === 'project_client', project.form_data[f.slug], JSON.stringify(payload.value));
             
 					}
 
-          console.log(`Projects client debugger 3===>`, f.slug === 'project_client', project.form_data[f.slug], payload);
+          console.log(`Projects client debugger 3===>`, f.slug === 'project_client', project.form_data[f.slug], JSON.stringify(payload));
 
 					return payload;
 				}),
