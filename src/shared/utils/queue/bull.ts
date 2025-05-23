@@ -24,7 +24,12 @@ class PylottQueue {
     }
 
     const queue = new Bull(queueName, {
-      redis: redis.url,
+      redis: {
+        port: Number(redis.port),
+        host: redis.host,
+        password: redis.password,
+        tls: {},
+      },
       limiter: queueConfig,
       defaultJobOptions: {
         removeOnComplete: true,
