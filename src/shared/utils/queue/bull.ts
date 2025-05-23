@@ -23,8 +23,6 @@ class PylottQueue {
       return this.queues[queueName].bull;
     }
 
-    console.log(redis)
-
     const queue = new Bull(queueName, {
       redis: {
         port: Number(redis.port),
