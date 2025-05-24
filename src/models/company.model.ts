@@ -1,8 +1,8 @@
-import { ModelObject } from 'objection';
+import { Model, ModelObject } from 'objection';
 
 import BaseModel from './base.model';
-import { ModelsRelationMapping } from '@/shared/types/models.type';
 import { BillingCycle, PaymentMethod, SubscriptionPlan, SubscriptionStatus } from '@/shared/utils/subscription.type';
+import { User } from './user.model';
 
 export class Company extends BaseModel {
   static tableName = 'companies';
@@ -27,7 +27,19 @@ export class Company extends BaseModel {
   grace_period_end_date?: Date;
   billing_email?: string;
 
-  static relationMappings = (): ModelsRelationMapping => ({});
+  //static relationMappings = (): ModelsRelationMapping => ({});
+  static get relationMappings() {
+    return {
+      users: {
+        relation: Model.HasManyRelation,
+        modelClass: User,
+        join: {
+          from: 'companies.id',
+          to: 'users.company_id',
+        },
+      },
+    };
+  }
 }
 
 export type CompanyModelType = ModelObject<Company>;

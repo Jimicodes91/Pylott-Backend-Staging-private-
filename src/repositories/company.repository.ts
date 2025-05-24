@@ -35,6 +35,15 @@ export class CompanyRepository extends BaseRepository<CompanyModelType, Company>
             .orWhereRaw('LOWER(city) LIKE ?', [`%${searchTerm}%`]);
         });
       }
+      query = query.select(
+        'companies.*',
+        this.model
+          .relatedQuery('users')
+          .count()
+          .where('is_active', '1') // Active users
+          .whereNull('deleted_at')
+          .as('active_users_count'),
+      );
 
       // Set default pagination if not provided
       const page = filters.page || 1;
