@@ -88,4 +88,15 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
   public async getUsersByCompany(companyId: string) {
     return await this.model.query().where('company_id', companyId).whereNull('deleted_at').orderBy('created_at', 'desc');
   }
+  public async getActiveUserCountByCompanyId(companyId: string): Promise<number> {
+    try {
+      const result = await this.model.query().where('company_id', companyId).where('is_active', true).whereNull('deleted_at').count();
+
+      const count = Number(result[0]['count(*)']);
+      return count || 0;
+    } catch (error) {
+      console.error('Error getting active user count:', error);
+      throw new Error('Failed to get active user count');
+    }
+  }
 }
