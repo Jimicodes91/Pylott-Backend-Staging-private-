@@ -23,7 +23,24 @@ export class CompanyController {
       return successResponse(res, 'Company created successfully', company);
     } catch (error: any) {
       console.log(error);
-      return errorResponse(res, 'CREATE_COMPANY_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, 'Error creating company', error.message, error.statusCode || 500);
+    }
+  };
+
+  public getCompanySubscription = async (req: Request, res: Response) => {
+    try {
+      const companyId = req.params.companyId;
+
+      if (!companyId) {
+        return errorResponse(res, 'Company ID is required');
+      }
+
+      const subscriptionData = await this.companyService.getCompanySubscription(companyId);
+
+      return successResponse(res, 'Company subscription retrieved successfully', subscriptionData);
+    } catch (error: any) {
+      console.error('GET_COMPANY_SUBSCRIPTION_ERROR:', error);
+      return errorResponse(res, 'Error: unable to complete action', error.message, error.statusCode || 500);
     }
   };
 }

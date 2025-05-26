@@ -15,6 +15,7 @@ import { billingRoutes } from '@/modules/billing/billing.route';
 import { clientRoutes } from '@/modules/clients/client.route';
 import { contactRoutes } from '@/modules/contact/contact.route';
 import { orgFinanceRoutes } from '@/modules/organization-finance/org-finance.route';
+import { subscriptionRoutes } from '@/modules/subscription/subscription.route';
 
 export default (server: Server) => {
   server.get('/', (_: Request, response: Response) => successResponse(response, 'Welcome to Pylott 🚀'));
@@ -32,4 +33,5 @@ export default (server: Server) => {
   clientRoutes(`${RoutePrefix.V1}/client`, server);
   contactRoutes(`${RoutePrefix.V1}/contacts`, server);
   orgFinanceRoutes(`${RoutePrefix.V1}/org-finance`, server);
+  subscriptionRoutes(`${RoutePrefix.V1}/subscription`, server);
 };

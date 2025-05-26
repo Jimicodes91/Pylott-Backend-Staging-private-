@@ -10,4 +10,6 @@ const companyController = container.resolve(CompanyController);
 
 export const companyRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/create/:id`, authenticateUser, schemaValidator(createCompanyValidationRule), companyController.createCompany);
+
+  server.get(`${prefix}/company/:companyId/subscription`, companyController.getCompanySubscription);
 };

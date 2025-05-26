@@ -36,4 +36,25 @@ export class SubscriptionPlanRepository extends BaseRepository<SubscriptionPlanM
   async deletePlan(name: SubscriptionPlan): Promise<void> {
     await this.model.query().where('name', name).delete();
   }
+
+  // Get all active plans
+  public async getAllActivePlans() {
+    try {
+      return await this.model.query().where('is_active', true).orderBy('price', 'asc');
+    } catch (error) {
+      console.error('Error fetching active plans:', error);
+      throw new Error('Failed to fetch subscription plans');
+    }
+  }
+
+  // Validate plan exists and is active
+  public async validatePlan(planName: SubscriptionPlan): Promise<boolean> {
+    try {
+      const plan = await this.getPlanByName(planName);
+      return !!plan;
+    } catch (error) {
+      console.error('Error validating plan:', error);
+      return false;
+    }
+  }
 }
