@@ -356,8 +356,8 @@ export class ProjectService {
 
       for (const payload of nonExistentClients) {
         try {
-          console.log(`${this.traceId} Inviting project client to pylott: ===> ${JSON.stringify({ email: payload.email, user_id: user.id })}`);
-          await this.authSvc.sendInvitation(user.id, payload.email, UserRoles.CLIENT);
+          console.log(`${this.traceId} Inviting project client to pylott: ===> ${JSON.stringify({ email: payload, user_id: user.id })}`);
+          await this.authSvc.sendInvitation(user.id, payload, UserRoles.CLIENT);
         } catch (error: any) {
           // Fail safe
           console.error(`${this.traceId} Error inviting project client to pylott:`, error);
