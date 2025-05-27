@@ -3,6 +3,7 @@ import { injectable } from 'tsyringe';
 
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { CompanyService } from './services/company.service';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class CompanyController {
@@ -23,7 +24,7 @@ export class CompanyController {
       return successResponse(res, 'Company created successfully', company);
     } catch (error: any) {
       console.log(error);
-      return errorResponse(res, 'Error creating company', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -40,7 +41,7 @@ export class CompanyController {
       return successResponse(res, 'Company subscription retrieved successfully', subscriptionData);
     } catch (error: any) {
       console.error('GET_COMPANY_SUBSCRIPTION_ERROR:', error);
-      return errorResponse(res, 'Error: unable to complete action', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }

@@ -2,6 +2,7 @@ import { Response, Request } from 'express';
 import { injectable } from 'tsyringe';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { SubscriptionService } from './subscription.service';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class SubscriptionController {
@@ -21,7 +22,7 @@ export class SubscriptionController {
       return successResponse(res, 'Company subscribed successfully', subscription, 201);
     } catch (error: any) {
       console.error('SUBSCRIBE_COMPANY_ERROR:', error);
-      return errorResponse(res, 'Error subscribing company', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -38,7 +39,7 @@ export class SubscriptionController {
       return successResponse(res, 'Company subscription retrieved successfully', subscriptionData);
     } catch (error: any) {
       console.error('GET_COMPANY_SUBSCRIPTION_ERROR:', error);
-      return errorResponse(res, 'Error getting company subscription', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -55,7 +56,7 @@ export class SubscriptionController {
       return successResponse(res, 'Company subscription canceled successfully', canceledSubscription);
     } catch (error: any) {
       console.error('CANCEL_COMPANY_SUBSCRIPTION_ERROR:', error);
-      return errorResponse(res, 'An error occured while performing this operation', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }

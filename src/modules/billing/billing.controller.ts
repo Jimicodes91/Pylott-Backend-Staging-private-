@@ -5,6 +5,7 @@ import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import HttpError from '@/shared/utils/errorHandler';
 import { BillingService } from './billing.service';
 import { SubscriptionPlan, CreateSubscriptionPlanInput, UpdateSubscriptionPlanInput } from '@/shared/utils/subscription.type';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class BillingController {
@@ -18,7 +19,7 @@ export class BillingController {
       const overview = await this.billingService.getCompanyBillingOverview(companyId);
       return successResponse(res, 'Billing overview retrieved', overview);
     } catch (error: any) {
-      return errorResponse(res, 'BILLING_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -34,7 +35,7 @@ export class BillingController {
       const result = await this.billingService.changeSubscriptionPlan(companyId, plan);
       return successResponse(res, 'Plan upgraded successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'UPGRADE_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -46,7 +47,7 @@ export class BillingController {
       const result = await this.billingService.cancelSubscription(companyId);
       return successResponse(res, result.message, result);
     } catch (error: any) {
-      return errorResponse(res, 'CANCEL_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
   // Add these methods to your existing BillingController class
@@ -67,7 +68,7 @@ export class BillingController {
 
       return successResponse(res, 'Payment method added', paymentMethod);
     } catch (error: any) {
-      return errorResponse(res, 'ADD_PAYMENT_METHOD_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -79,7 +80,7 @@ export class BillingController {
       const methods = await this.billingService.getPaymentMethods(companyId);
       return successResponse(res, 'Payment methods retrieved', methods);
     } catch (error: any) {
-      return errorResponse(res, 'GET_PAYMENT_METHODS_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -95,7 +96,7 @@ export class BillingController {
       const result = await this.billingService.setDefaultPaymentMethod(companyId, paymentMethodId);
       return successResponse(res, 'Default payment method updated', result);
     } catch (error: any) {
-      return errorResponse(res, 'SET_DEFAULT_PAYMENT_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -107,7 +108,7 @@ export class BillingController {
       const invoices = await this.billingService.getInvoices(companyId);
       return successResponse(res, 'Invoices retrieved', invoices);
     } catch (error: any) {
-      return errorResponse(res, 'GET_INVOICES_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -118,7 +119,7 @@ export class BillingController {
       const plans = await this.billingService.getSubscriptionPlans();
       return successResponse(res, 'Subscription plans retrieved', plans);
     } catch (error: any) {
-      return errorResponse(res, 'GET_PLANS_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -128,7 +129,7 @@ export class BillingController {
       const plan = await this.billingService.getPlanDetails(planName as SubscriptionPlan);
       return successResponse(res, 'Subscription plan retrieved', plan);
     } catch (error: any) {
-      return errorResponse(res, 'GET_PLAN_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -138,7 +139,7 @@ export class BillingController {
       const plan = await this.billingService.createSubscriptionPlan(data);
       return successResponse(res, 'Subscription plan created', plan, 201);
     } catch (error: any) {
-      return errorResponse(res, 'CREATE_PLAN_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -149,7 +150,7 @@ export class BillingController {
       const plan = await this.billingService.updateSubscriptionPlan(planName as SubscriptionPlan, data);
       return successResponse(res, 'Subscription plan updated', plan);
     } catch (error: any) {
-      return errorResponse(res, 'UPDATE_PLAN_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -159,7 +160,7 @@ export class BillingController {
       await this.billingService.deleteSubscriptionPlan(planName as SubscriptionPlan);
       return successResponse(res, 'Subscription plan deleted');
     } catch (error: any) {
-      return errorResponse(res, 'DELETE_PLAN_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 

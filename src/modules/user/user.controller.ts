@@ -2,6 +2,7 @@ import { injectable } from 'tsyringe';
 import { Request, Response } from 'express';
 import { UserService } from './services/user.service';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class UserController {
@@ -17,7 +18,7 @@ export class UserController {
       const user = await this.userService.getUser(userId);
       return successResponse(res, 'User fetched successfully', user);
     } catch (error: any) {
-      return errorResponse(res, 'GET_USER_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -33,7 +34,7 @@ export class UserController {
       const updatedUser = await this.userService.updateUserProfile(userId, updateData);
       return successResponse(res, 'Profile updated successfully', updatedUser);
     } catch (error: any) {
-      return errorResponse(res, 'UPDATE_PROFILE_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }

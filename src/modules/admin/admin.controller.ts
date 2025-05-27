@@ -5,6 +5,7 @@ import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { SysAdminService, UserFilterOptions } from './admin.service';
 import { SubscriptionStatus } from '@/shared/utils/subscription.type';
 import { CompanyFilterOptions } from '@/shared/interface/company';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class SysAdminController {
@@ -15,7 +16,7 @@ export class SysAdminController {
       const summary = await this.sysAdminService.getDashboardSummary();
       return successResponse(res, 'Dashboard summary fetched successfully', summary);
     } catch (error: any) {
-      return errorResponse(res, 'error getting data', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -32,7 +33,7 @@ export class SysAdminController {
       const allUsers = await this.sysAdminService.getTotalUsers(filter);
       return successResponse(res, 'Users fetched successfully', allUsers);
     } catch (error) {
-      return errorResponse(res, 'error getting data', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public getActiveUsers = async (req: Request, res: Response) => {
@@ -40,7 +41,7 @@ export class SysAdminController {
       const allUsers = await this.sysAdminService.getActiveUsers();
       return successResponse(res, 'users fetched successfully', allUsers);
     } catch (error) {
-      return errorResponse(res, 'DASHBOARD_SUMMARY_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public getAllCompanies = async (req: Request, res: Response) => {
@@ -60,7 +61,7 @@ export class SysAdminController {
       const companies = await this.sysAdminService.getAllCompanies(filters);
       return successResponse(res, 'Companies fetched successfully', companies);
     } catch (error: any) {
-      return errorResponse(res, 'Error fetching companies', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public getCompanyDetails = async (req: Request, res: Response) => {
@@ -69,7 +70,7 @@ export class SysAdminController {
       const company = await this.sysAdminService.getCompanyDetails(id);
       return successResponse(res, 'Company details fetched successfully', company);
     } catch (error: any) {
-      return errorResponse(res, 'Error: something went wrong while performing action', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public updateCompanyStatus = async (req: Request, res: Response) => {
@@ -79,7 +80,7 @@ export class SysAdminController {
       const updatedCompany = await this.sysAdminService.updateCompanyStatus(id, subscription_status);
       return successResponse(res, 'Company status updated successfully', updatedCompany.toString);
     } catch (error: any) {
-      return errorResponse(res, 'Error: unable to update company status', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public subscribeCompany = async (req: Request, res: Response) => {
@@ -89,7 +90,7 @@ export class SysAdminController {
       const subscribedCompany = await this.sysAdminService.subscribeCompany(id, new Date(expiryDate));
       return successResponse(res, 'Company subscribed successfully', subscribedCompany as any);
     } catch (error: any) {
-      return errorResponse(res, 'Error: unable to complete action', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   // Cancel subscription
@@ -99,7 +100,7 @@ export class SysAdminController {
       const updatedCompany = await this.sysAdminService.cancelSubscription(id);
       return successResponse(res, 'Subscription canceled successfully', updatedCompany as any);
     } catch (error: any) {
-      return errorResponse(res, 'Error: something went wrong', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   // Renew subscription
@@ -110,7 +111,7 @@ export class SysAdminController {
       const renewedCompany = await this.sysAdminService.renewSubscription(id, new Date(expiryDate));
       return successResponse(res, 'Subscription renewed successfully', renewedCompany as any);
     } catch (error: any) {
-      return errorResponse(res, 'Error: unable to renew subscription', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   // Add a new SysAdmin
@@ -122,7 +123,7 @@ export class SysAdminController {
 
       return successResponse(res, result.message, result);
     } catch (error: any) {
-      return errorResponse(res, 'Error: something went wrong, unable to complete action', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -133,7 +134,7 @@ export class SysAdminController {
       const deactivatedSysAdmin = await this.sysAdminService.deactivateSysAdmin(id);
       return successResponse(res, 'SysAdmin deactivated successfully', deactivatedSysAdmin as any);
     } catch (error: any) {
-      return errorResponse(res, 'Error: unable to complete action', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -142,7 +143,7 @@ export class SysAdminController {
       const result = await this.sysAdminService.getAllAdmins();
       return successResponse(res, 'System admins fetched', result);
     } catch (error: any) {
-      return errorResponse(res, 'Error unable to complete action', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -153,7 +154,7 @@ export class SysAdminController {
       const users = await this.sysAdminService.getCompanyUsers(companyId);
       return successResponse(res, 'Company users fetched successfully', users);
     } catch (error: any) {
-      return errorResponse(res, 'Error unable to fetch users', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   // In admin.controller.ts
@@ -163,7 +164,7 @@ export class SysAdminController {
       const result: any = await this.sysAdminService.updateUserStatus(id);
       return successResponse(res, 'User status updated successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'error unable to update status', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -178,7 +179,7 @@ export class SysAdminController {
 
       return successResponse(res, 'Total companies retrieved successfully', { total });
     } catch (error: any) {
-      return errorResponse(res, 'Error: unable to get total companies', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public getTotalSubscriptions = async (req: Request, res: Response) => {
@@ -186,7 +187,7 @@ export class SysAdminController {
       const total = await this.sysAdminService.getTotalSubscriptions();
       return successResponse(res, 'Total subscriptions fetched', { total });
     } catch (error: any) {
-      return errorResponse(res, 'Error: unable to fetch all subscriptions', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -195,7 +196,7 @@ export class SysAdminController {
       const sysAdmins = await this.sysAdminService.getAllSysAdmins();
       return successResponse(res, 'System admins fetched successfully', sysAdmins);
     } catch (error: any) {
-      return errorResponse(res, 'Error: unable to fetch system admins', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }

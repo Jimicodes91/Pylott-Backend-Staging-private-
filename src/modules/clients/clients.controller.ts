@@ -7,6 +7,7 @@ import { Response, Request } from 'express';
 import { injectable } from 'tsyringe';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { ClientService } from './client.service';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class ClientController {
@@ -20,7 +21,7 @@ export class ClientController {
       const details = await this.clientService.getClientDetails(clientId);
       return successResponse(res, 'Client details retrieved', details);
     } catch (error: any) {
-      return errorResponse(res, 'CLIENT_DETAILS_ERROR', error.message, 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public getTopClients = async (req: Request, res: Response) => {
@@ -31,7 +32,7 @@ export class ClientController {
       const clients = await this.clientService.getTopClients(companyId);
       return successResponse(res, 'Top clients retrieved', clients);
     } catch (error: any) {
-      return errorResponse(res, 'TOP_CLIENTS_ERROR', error.message, 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public getClientById = async (req: Request, res: Response) => {
@@ -42,7 +43,7 @@ export class ClientController {
       const client = await this.clientService.getClientById(clientId);
       return successResponse(res, 'Client retrieved', client);
     } catch (error: any) {
-      return errorResponse(res, 'CLIENT_DETAILS_ERROR', error.message, 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }
