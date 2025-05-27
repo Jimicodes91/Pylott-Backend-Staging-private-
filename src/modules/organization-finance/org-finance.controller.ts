@@ -3,6 +3,7 @@ import { injectable, inject } from 'tsyringe';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { OrgFinanceService } from './org-finance.service';
 import { JwtPayload } from 'jsonwebtoken';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class OrgFinanceController {
@@ -21,7 +22,7 @@ export class OrgFinanceController {
         pagination: result.pagination,
       });
     } catch (error: any) {
-      return errorResponse(res, 'GET_ORG_FINANCE_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -30,7 +31,7 @@ export class OrgFinanceController {
       const orgFinance = await this.orgFinanceService.getOrgFinanceById(req.params.id);
       return successResponse(res, 'Org Finance record retrieved successfully', orgFinance);
     } catch (error: any) {
-      return errorResponse(res, 'GET_ORG_FINANCE_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -39,7 +40,7 @@ export class OrgFinanceController {
       const orgFinance = await this.orgFinanceService.createOrgFinance(req.body);
       return successResponse(res, 'Org Finance record created successfully', orgFinance, 201);
     } catch (error: any) {
-      return errorResponse(res, 'CREATE_ORG_FINANCE_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public searchOrgFinance = async (req: Request, res: Response) => {
@@ -56,7 +57,7 @@ export class OrgFinanceController {
         pagination: result.pagination,
       });
     } catch (error: any) {
-      return errorResponse(res, 'SEARCH_ORG_FINANCE_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -65,7 +66,7 @@ export class OrgFinanceController {
       const updatedOrgFinance = await this.orgFinanceService.updateOrgFinance(req.params.id, req.body);
       return successResponse(res, 'Org Finance record updated successfully', updatedOrgFinance);
     } catch (error: any) {
-      return errorResponse(res, 'UPDATE_ORG_FINANCE_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -82,7 +83,7 @@ export class OrgFinanceController {
 
       return successResponse(res, 'Org Finance marked as paid successfully', updatedOrgFinance);
     } catch (error: any) {
-      return errorResponse(res, 'MARK_AS_PAID_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }

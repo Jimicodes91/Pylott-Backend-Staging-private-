@@ -4,6 +4,7 @@ import { Response, Request, NextFunction } from 'express';
 import { AuthService } from './services/auth.service';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import HttpError from '@/shared/utils/errorHandler';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class AuthController {
@@ -14,7 +15,7 @@ export class AuthController {
       const newUser = await this.authService.adminSignup(req.body);
       return successResponse(res, 'Admin created successfully', newUser);
     } catch (error: any) {
-      return errorResponse(res, 'SUPER_ADMIN_SIGNUP_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -23,7 +24,7 @@ export class AuthController {
       const newUser = await this.authService.companyAdminSignup(req.body);
       return successResponse(res, 'User created successfully ✅, check email to verify account', newUser);
     } catch (error: any) {
-      return errorResponse(res, 'ADMIN_SIGNUP_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public signIn = async (req: Request, res: Response) => {
@@ -31,7 +32,7 @@ export class AuthController {
       const loginData = await this.authService.signIn(req.body);
       return successResponse(res, 'User logged in successfully ✅', loginData);
     } catch (error: any) {
-      return errorResponse(res, 'LOGIN_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -45,7 +46,7 @@ export class AuthController {
       const result = await this.authService.verifyEmail(token);
       return successResponse(res, 'Email verified successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'VERIFY_EMAIL_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -59,7 +60,7 @@ export class AuthController {
       const result = await this.authService.resendVerificationEmail(email);
       return successResponse(res, 'Verification email sent successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'RESEND_VERIFICATION_EMAIL_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -73,7 +74,7 @@ export class AuthController {
       const result = await this.authService.forgotPassword(email);
       return successResponse(res, 'Password reset email sent successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'FORGOT_PASSWORD_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -87,7 +88,7 @@ export class AuthController {
       const result = await this.authService.resetPassword(token, newPassword);
       return successResponse(res, 'Password reset successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'RESET_PASSWORD_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -106,7 +107,7 @@ export class AuthController {
       const result = await this.authService.sendInvitation(adminId, email, role);
       return successResponse(res, 'Invitation sent successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'SEND_INVITE_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -122,7 +123,7 @@ export class AuthController {
       return successResponse(res, 'Registration completed successfully', result);
     } catch (error: any) {
       console.log(error);
-      return errorResponse(res, 'COMPLETE_REGISTRATION_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public addClient = async (req: Request, res: Response) => {
@@ -135,7 +136,7 @@ export class AuthController {
       const result = await this.authService.addClient(name, email, companyId);
       return successResponse(res, 'Client added successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'ADD_CLIENT_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -149,7 +150,7 @@ export class AuthController {
       const result = await this.authService.updatePassword(userId, currentPassword, newPassword);
       return successResponse(res, 'Password updated successfully', result);
     } catch (error: any) {
-      return errorResponse(res, 'UPDATE_PASSWORD_ERROR', error.message, error.statusCode);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 

@@ -3,6 +3,7 @@ import { injectable, inject } from 'tsyringe';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { ContactService } from './contact.service';
 import { ContactFilterOptions } from '@/shared/interface/contact';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class ContactController {
@@ -13,7 +14,7 @@ export class ContactController {
       const contact = await this.contactService.addToContact(req.body);
       return successResponse(res, 'Contact added successfully', contact, 201);
     } catch (error: any) {
-      return errorResponse(res, 'ADD_CONTACT_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   // In ContactController class
@@ -36,7 +37,7 @@ export class ContactController {
         pagination: result.pagination,
       });
     } catch (error: any) {
-      return errorResponse(res, 'GET_CONTACTS_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -57,7 +58,7 @@ export class ContactController {
         pagination: result.pagination,
       });
     } catch (error: any) {
-      return errorResponse(res, 'GET_COMPANY_CONTACTS_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
   public updateContact = async (req: Request, res: Response) => {
@@ -68,7 +69,7 @@ export class ContactController {
       });
       return successResponse(res, 'Contact updated successfully', contact);
     } catch (error: any) {
-      return errorResponse(res, 'UPDATE_CONTACT_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -77,7 +78,7 @@ export class ContactController {
       const contact = await this.contactService.getContactById(req.params.id);
       return successResponse(res, 'Contact retrieved successfully', contact);
     } catch (error: any) {
-      return errorResponse(res, 'GET_CONTACT_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 
@@ -96,7 +97,7 @@ export class ContactController {
         pagination: result.pagination,
       });
     } catch (error: any) {
-      return errorResponse(res, 'SEARCH_CONTACTS_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }

@@ -5,6 +5,7 @@ import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { UserRoles } from '@/shared/enums';
 import HttpError from '@/shared/utils/errorHandler';
 import { FirmAdminService } from './firm.service';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class FirmAdminController {
@@ -23,7 +24,7 @@ export class FirmAdminController {
 
       return successResponse(res, 'User added successfully. Temporary password sent via email.', user);
     } catch (error: any) {
-      return errorResponse(res, 'ADD_USER_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
 }

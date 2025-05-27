@@ -13,6 +13,7 @@ import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/inte
 import { generateToken } from '@/shared/utils/jwt';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, FRONTEND_URL, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
 import { GoogleAuthData } from '@/shared/types/google.type';
+import { StatusCodes } from 'http-status-codes';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
@@ -173,7 +174,11 @@ export class AuthService {
 
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
-        throw new HttpError('Email is already in use', 400);
+        return {
+          status: false,
+          message: 'Email is already registered',
+          statusCode: StatusCodes.CONFLICT,
+        };
       }
 
       await this.validatePasswordStrength(password);
