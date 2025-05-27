@@ -12,9 +12,21 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
   }
 
   async getProjectsAndAssociatedEntities(query: ObjectLiteral, search?: string) {
-    let qb = this.model.query().where(query);
+    const { client_id, ...otherQueries } = query;
+
+    let qb = this.model.query().where(otherQueries);
 
     if (search && search.length) qb = qb.andWhere('name', 'like', `%${search}%`);
+
+    if (client_id) {
+      qb = qb.andWhereRaw(`JSON_CONTAINS(form_data->'$.project_client', JSON_ARRAY(?))`, [client_id]);
+
+      // Alternative using JSON_SEARCH()
+      // qb = qb.andWhereRaw(
+      //   `JSON_SEARCH(form_data->'$.project_client', 'one', ?) IS NOT NULL`,
+      //   [client_id]
+      // );
+    }
 
     return await qb
       .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
