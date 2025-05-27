@@ -99,4 +99,9 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
       throw new Error('Failed to get active user count');
     }
   }
+
+  //get all sys admin users
+  public async getAllSysAdmins() {
+    return this.findMany({ role: UserRoles.SUPER_ADMIN, is_active: true });
+  }
 }

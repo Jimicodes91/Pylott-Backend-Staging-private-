@@ -15,7 +15,7 @@ export class SysAdminController {
       const summary = await this.sysAdminService.getDashboardSummary();
       return successResponse(res, 'Dashboard summary fetched successfully', summary);
     } catch (error: any) {
-      return errorResponse(res, 'DASHBOARD_SUMMARY_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, 'error getting data', error.message, error.statusCode || 500);
     }
   };
 
@@ -32,7 +32,7 @@ export class SysAdminController {
       const allUsers = await this.sysAdminService.getTotalUsers(filter);
       return successResponse(res, 'Users fetched successfully', allUsers);
     } catch (error) {
-      return errorResponse(res, 'DASHBOARD_SUMMARY_ERROR', error.message, error.statusCode || 500);
+      return errorResponse(res, 'error getting data', error.message, error.statusCode || 500);
     }
   };
   public getActiveUsers = async (req: Request, res: Response) => {
@@ -187,6 +187,15 @@ export class SysAdminController {
       return successResponse(res, 'Total subscriptions fetched', { total });
     } catch (error: any) {
       return errorResponse(res, 'Error: unable to fetch all subscriptions', error.message, error.statusCode || 500);
+    }
+  };
+
+  public getAllSysAdmins = async (req: Request, res: Response) => {
+    try {
+      const sysAdmins = await this.sysAdminService.getAllSysAdmins();
+      return successResponse(res, 'System admins fetched successfully', sysAdmins);
+    } catch (error: any) {
+      return errorResponse(res, 'Error: unable to fetch system admins', error.message, error.statusCode || 500);
     }
   };
 }
