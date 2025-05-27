@@ -7,7 +7,7 @@ import { SysAdminController } from './admin.controller';
 const sysAdminController = container.resolve(SysAdminController);
 
 export const sysAdminRoutes = (prefix: string, server: Server) => {
-  server.get(`${prefix}/dashboard`, authenticateUser, sysAdminController.getDashboardSummary);
+  server.get(`${prefix}/dashboard`, sysAdminController.getDashboardSummary);
   server.get(`${prefix}/companies`, sysAdminController.getAllCompanies);
   server.get(`${prefix}/all`, sysAdminController.getAllUsers);
   server.get(`${prefix}/active`, authenticateUser, sysAdminController.getActiveUsers);
@@ -18,6 +18,8 @@ export const sysAdminRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/count`, sysAdminController.getTotalCompanies);
 
   server.get(`${prefix}/count-sub`, sysAdminController.getTotalSubscriptions);
+
+  server.get(`${prefix}/all-sysadmins`, sysAdminController.getAllSysAdmins);
 
   // In admin.routes.ts
   server.get(`${prefix}/companies/:companyId/users`, authenticateUser, sysAdminController.getCompanyUsers);

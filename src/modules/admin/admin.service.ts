@@ -2,7 +2,7 @@ import { inject, injectable } from 'tsyringe';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-import { CompanyRepository, UserRepository } from '@/repositories';
+import { CompanyRepository, ProjectRepository, UserRepository } from '@/repositories';
 import { UserRoles } from '@/shared/enums';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
@@ -22,10 +22,16 @@ export class SysAdminService {
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(SubscriptionRepository) private subscriptionRepository: SubscriptionRepository,
+    @inject(ProjectRepository) private projectRepository: ProjectRepository,
   ) {}
 
   public async getTotalOrganizations(): Promise<number> {
     const count = await this.companyRepository.count({});
+    return count.count;
+  }
+
+  public async getTotalUserCount(): Promise<number> {
+    const count = await this.userRepository.count({ is_active: true });
     return count.count;
   }
 
@@ -42,6 +48,11 @@ export class SysAdminService {
     }
   }
 
+  public async getTotalProjects(): Promise<number> {
+    const count = await this.projectRepository.count({});
+    return count.count;
+  }
+
   // public async getAllCompanyUsers(){
   //   const users = await this.userRepository.
   // }
@@ -55,29 +66,34 @@ export class SysAdminService {
   }
 
   // Get total active subscriptions
+  // public async getTotalActiveSubscriptions(): Promise<number> {
+  //   const count = await this.companyRepository.count({ subscription_status: SubscriptionStatus.ACTIVE });
+  //   return count.count;
+  // }
+
   public async getTotalActiveSubscriptions(): Promise<number> {
-    const count = await this.companyRepository.count({ subscription_status: SubscriptionStatus.ACTIVE });
-    return count.count;
+    const count = await this.subscriptionRepository.getTotalSubscriptions({ status: SubscriptionStatus.ACTIVE });
+    return count;
   }
 
   // Get total expired subscriptions
-  public async getTotalExpiredSubscriptions(): Promise<number> {
-    const count = await this.companyRepository.count({ subscription_status: SubscriptionStatus.EXPIRED });
-    return count.count;
-  }
+  // public async getTotalExpiredSubscriptions(): Promise<number> {
+  //   const count = await this.companyRepository.count({ subscription_status: SubscriptionStatus.EXPIRED });
+  //   return count.count;
+  // }
 
   // Get dashboard summary
   public async getDashboardSummary() {
     const totalOrganizations = await this.getTotalOrganizations();
-    const totalUsers = await this.getTotalUsers();
+    const totalUsers = await this.getTotalUserCount();
     const totalActiveSubscriptions = await this.getTotalActiveSubscriptions();
-    const totalExpiredSubscriptions = await this.getTotalExpiredSubscriptions();
+    const totalProjects = await this.getTotalProjects();
 
     return {
       totalOrganizations,
       totalUsers,
       totalActiveSubscriptions,
-      totalExpiredSubscriptions,
+      totalProjects,
     };
   }
 
@@ -200,5 +216,9 @@ export class SysAdminService {
 
   public async getTotalSubscriptions(filters?: { status?: SubscriptionStatus }): Promise<number> {
     return this.subscriptionRepository.getTotalSubscriptions(filters);
+  }
+
+  public async getAllSysAdmins() {
+    return this.userRepository.getAllAdmins();
   }
 }
