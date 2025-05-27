@@ -12,7 +12,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
   }
 
   async getProjectsAndAssociatedEntities(query: ObjectLiteral, search?: string) {
-    const { client_id, ...otherQueries } = query;
+    const { client_id = null, ...otherQueries } = query;
 
     let qb = this.model.query().where(otherQueries);
 
