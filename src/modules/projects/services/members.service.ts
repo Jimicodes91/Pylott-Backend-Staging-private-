@@ -104,6 +104,7 @@ export class MemberService {
         company_id,
         is_visible_to_client: payload.is_visible_to_client || false,
         added_by: user.id,
+        member_type: payload?.member_type ?? null,
       });
 
       return {

@@ -1,7 +1,7 @@
 import { isAfter, isValid, parseISO } from 'date-fns';
 import { body } from 'express-validator';
 
-import { FieldTypeEnum, ProjectStatus } from '@/shared/enums';
+import { FieldTypeEnum, ProjectMemberTypeEnum, ProjectStatus } from '@/shared/enums';
 
 export const createProjectTypeValidationRules = [
   body('name')
@@ -543,6 +543,10 @@ export const updateTaskValidationRules = [
 
 export const addProjectMemberValidationRules = [
   body('user_id').notEmpty().withMessage('User ID is required').isString().withMessage('User ID must be a string').trim(),
+  body('member_type')
+    .optional()
+    .isIn(Object.values(ProjectMemberTypeEnum))
+    .withMessage(`Invalid field type. Valid types are: ${Object.values(ProjectMemberTypeEnum).join(', ')}`),
 
   body('is_visible_to_client').optional().isBoolean().withMessage('is_visible_to_client must be a boolean').toBoolean(),
 ];

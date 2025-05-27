@@ -1,5 +1,5 @@
 import { CommentsModelType } from '@/models';
-import { ProjectStatus } from '../enums';
+import { ProjectMemberTypeEnum, ProjectStatus } from '../enums';
 
 export type CreateProjectType = {
   name: string;
@@ -37,6 +37,7 @@ export type CreateMilestoneStagesType = {
 export type AddProjectMember = {
   user_id: string;
   is_visible_to_client?: boolean;
+  member_type?: ProjectMemberTypeEnum;
 };
 
 export type CreateTask = {

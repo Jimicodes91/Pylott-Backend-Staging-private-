@@ -94,3 +94,8 @@ export enum FieldTypeEnum {
 export enum QueueNames {
   MILESTONE_TRACKING = 'milestone-tracking',
 }
+
+export enum ProjectMemberTypeEnum {
+  INTERNAL = 'internal',
+  CLIENT = 'client',
+}

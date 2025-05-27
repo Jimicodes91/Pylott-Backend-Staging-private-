@@ -13,6 +13,7 @@ export class ProjectMembers extends BaseModel {
   user_id: string;
   is_visible_to_client: boolean;
   added_by: string;
+  member_type?: string;
 
   user: User;
 
