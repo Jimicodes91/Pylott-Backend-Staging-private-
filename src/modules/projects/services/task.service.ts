@@ -45,6 +45,17 @@ export class TaskService {
     try {
       const { company_id } = user;
 
+      const start = dayjs(payload.start_date);
+      const end = dayjs(payload.end_date);
+
+      if (end.isBefore(start)) {
+        return {
+          status: false,
+          message: 'End date cannot be before start date',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+
       const project = await this.projectRepository.findOne({ id: project_id, company_id, deleted_at: null });
       if (!project) {
         return {
@@ -360,10 +371,15 @@ export class TaskService {
       task.end_date = dayjs(task.end_date).format('DD MMM, YYYY');
       task['assignees'] = task.assignees.map((assignee) => assignee.user).flat() as any;
 
+      const today = dayjs().startOf('day');
+      const endDate = dayjs(task.end_date).startOf('day');
+
+      const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && endDate.isBefore(today);
+
       return {
         status: true,
         message: 'Task retrieved successfully',
-        data: task,
+        data: { ...task, is_overdue: isOverdue },
       };
     } catch (error) {
       console.log(
@@ -385,11 +401,16 @@ export class TaskService {
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id);
 
       const remappedTasks = tasks.map((task) => {
+        const today = dayjs().startOf('day');
+        const endDate = dayjs(task.end_date).startOf('day');
+
+        const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && endDate.isBefore(today);
         return {
           ...task,
           start_date: dayjs(task.start_date).format('DD MMM, YYYY'),
           end_date: dayjs(task.end_date).format('DD MMM, YYYY'),
           assignees: task.assignees.map((assignee) => assignee.user).flat(),
+          is_over_due: isOverdue,
         };
       });
 
