@@ -242,7 +242,7 @@ export class AuthService {
       if (!user) {
         throw new HttpError('Invalid email or password', 401);
       }
-
+      console.log(user.password);
       if (!user.is_verified) {
         const verificationToken = crypto.randomBytes(32).toString('hex');
         await this.userRepository.update(
@@ -256,7 +256,8 @@ export class AuthService {
         throw new HttpError('Verify your email first. A new link has been sent.', 403);
       }
 
-      const isPasswordValid = bcrypt.compareSync(data.password, user.password);
+      const isPasswordValid = await bcrypt.compare(data.password, user.password);
+      console.log(isPasswordValid);
       if (!isPasswordValid) {
         throw new HttpError('Invalid email or password', 401);
       }
@@ -450,7 +451,7 @@ export class AuthService {
     }
   }
 
-  public async completeRegistration(email: string, password: string, name: string, companyId: string, role: UserRoles) {
+  public async completeRegistration(email: string, password: string, companyId: string, role: UserRoles, name: string) {
     try {
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
@@ -460,13 +461,17 @@ export class AuthService {
       const hashedPassword = await this.hashPassword(password);
 
       const newUser = await this.userRepository.create({
-        name,
-        email,
+        name: name,
+        email: email,
         password: hashedPassword,
         company_id: companyId,
-        role,
+        role: role,
         is_verified: true,
       });
+
+      if (newUser) {
+        console.log('user created:', newUser);
+      }
 
       // Define role to column mapping
       const roleColumnMap = {
@@ -484,6 +489,7 @@ export class AuthService {
       if (!columnName) {
         throw new HttpError('Invalid user role specified', 400);
       }
+
       // Modified pushToArray call with error handling
       try {
         await this.companyRepository.pushToArray({ id: companyId }, columnName, newUser.id);
@@ -492,7 +498,7 @@ export class AuthService {
         throw new HttpError('Failed to update company records', 500);
       }
 
-      // 6. Create role-specific records
+      // Create role-specific records
       try {
         if (role === UserRoles.CLIENT) {
           await this.clientRepository.create({
@@ -512,8 +518,6 @@ export class AuthService {
         console.error('Failed to create role-specific record:', roleError);
         throw new HttpError('Failed to create role-specific profile', 500);
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
       return newUser;
     } catch (error: any) {

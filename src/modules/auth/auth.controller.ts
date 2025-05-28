@@ -118,7 +118,7 @@ export class AuthController {
         return errorResponse(res, 'Email, name, role, password, and company ID are required');
       }
 
-      const result = await this.authService.completeRegistration(email, name, password, companyId, role);
+      const result = await this.authService.completeRegistration(email, password, companyId, role, name);
 
       return successResponse(res, 'Registration completed successfully', result);
     } catch (error: any) {
