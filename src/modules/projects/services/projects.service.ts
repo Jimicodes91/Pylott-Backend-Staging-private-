@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Objection from 'objection';
+import { v4 as uuidv4 } from 'uuid';
+import { RedisClientType } from 'redis';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -18,19 +20,22 @@ import {
   ProjectFormsRepository,
   ProjectFormFieldRepository,
   UserRepository,
+  ProjectMembersRepository,
 } from '@/repositories';
 
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
-import { MilestonesModelType, ProjectFormFieldModelType, ProjectModelType, UserModelType } from '@/models';
+import { MilestonesModelType, ProjectFormFieldModelType, ProjectMemebersModelType, ProjectModelType, UserModelType } from '@/models';
 import { CreateProjectType } from '@/shared/types/projects.type';
-import { DocumentsDirectory, MetadataType, ProjectStatus, UserRoles } from '@/shared/enums';
+import { DocumentsDirectory, MetadataType, ProjectMemberTypeEnum, ProjectStatus, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { ContactRespository } from '@/repositories/contact.repository';
 import { AuthService } from '@/modules/auth/services/auth.service';
+import { Redis } from '@/shared/utils/redis/redis';
 
 @injectable()
 export class ProjectService {
   private traceId = '[PROJECT SERVICE]';
+  private readonly redis: RedisClientType;
 
   constructor(
     private readonly projectRepository: ProjectRepository,
@@ -38,6 +43,7 @@ export class ProjectService {
     private readonly contactRepository: ContactRespository,
     private readonly userRepository: UserRepository,
     private readonly projectTypeRepository: ProjectTypeRepository,
+    private readonly projectMembersRepository: ProjectMembersRepository,
     private readonly projectSettingsRepository: ProjectSettingsRepository,
     private readonly documentsRepository: DocumentsRepository,
     private readonly attachmentsRepository: DocumentAttachmentsRepository,
@@ -45,7 +51,10 @@ export class ProjectService {
     private readonly projectFormFieldRepository: ProjectFormFieldRepository,
     private readonly authSvc: AuthService,
     private readonly cloudinary: Cloudinary,
-  ) {}
+    _redis: Redis,
+  ) {
+    this.redis = _redis.getInstance();
+  }
 
   async getAllProjects(
     company_id: string,
@@ -62,10 +71,19 @@ export class ProjectService {
       const query: ObjectLiteral = { company_id, deleted_at: null };
 
       if (filters.status) query.status = filters.status;
-      if (filters.client_id) query.client_id = filters.client_id;
       if (filters.consultant_id) query.consultant_id = filters.consultant_id;
       if (filters.project_type_id) query.project_type_id = filters.project_type_id;
       if (filters.milestone_id) query.milestone_id = filters.milestone_id;
+
+      if (filters.client_id) {
+        const contact = await this.userRepository.findOne({ company_id, id: filters.client_id, deleted_at: null });
+        const clientRecord = await this.contactRepository.findOne({
+          company_id,
+          deleted_at: null,
+          email: contact.email,
+        });
+        query.client_id = clientRecord.id;
+      }
 
       const projects = await this.projectRepository.getProjectsAndAssociatedEntities(query, filters.search);
 
@@ -170,6 +188,7 @@ export class ProjectService {
     try {
       const company_id = user.company_id;
       let milestone: MilestonesModelType;
+      const projectId = uuidv4();
 
       if (payload['journey']) {
         const projectType = await this.projectTypeRepository.findOne({
@@ -228,6 +247,7 @@ export class ProjectService {
       }
 
       const nonExistentClients = [];
+      const existentClients: Array<Partial<ProjectMemebersModelType>> = [];
 
       if (payload['project_client']) {
         for (const client of payload['project_client']) {
@@ -246,6 +266,9 @@ export class ProjectService {
 
           const clientUserType = await this.userRepository.findOne({ deleted_at: null, email: clientRecord.email });
           if (!clientUserType) nonExistentClients.push(clientRecord.email);
+          else {
+            existentClients.push({ added_by: user.id, company_id, member_type: ProjectMemberTypeEnum.CLIENT, project_id: projectId, user_id: clientUserType.id, is_visible_to_client: true });
+          }
         }
       }
 
@@ -279,6 +302,7 @@ export class ProjectService {
       await Objection.Model.transaction(async (trx) => {
         project = await this.projectRepository.create(
           {
+            id: projectId,
             company_id,
             name: payload['project_name'] || null,
             client_id: payload.client_id || null,
@@ -330,6 +354,8 @@ export class ProjectService {
           trx,
         );
 
+        await this.projectMembersRepository.createMultiple(existentClients, trx);
+
         if (payload.milestones && payload.milestones.length) {
           for (const milestoneRecord of payload.milestones) {
             const existingMilestone = await this.milestonesRepository.findOne({
@@ -356,8 +382,15 @@ export class ProjectService {
 
       for (const payload of nonExistentClients) {
         try {
-          console.log(`${this.traceId} Inviting project client to pylott: ===> ${JSON.stringify({ email: payload, user_id: user.id })}`);
           await this.authSvc.sendInvitation(user.id, payload, UserRoles.CLIENT);
+          const projectMember: Partial<ProjectMemebersModelType> = {
+            added_by: user.id,
+            company_id,
+            is_visible_to_client: true,
+            member_type: ProjectMemberTypeEnum.CLIENT,
+            project_id: projectId,
+          };
+          await this.redis.set(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${payload}`, JSON.stringify(projectMember));
         } catch (error: any) {
           // Fail safe
           console.error(`${this.traceId} Error inviting project client to pylott:`, error);

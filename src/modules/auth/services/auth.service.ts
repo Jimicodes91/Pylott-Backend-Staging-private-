@@ -3,17 +3,19 @@ import { inject, injectable } from 'tsyringe';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import { RedisClientType } from 'redis';
 
-import { ClientRepository, CompanyRepository, ConsultantRepository, UserRepository } from '@/repositories';
+import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembersRepository, UserRepository } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { strongPassword } from '@/shared/utils/any';
-import { UserRoles } from '@/shared/enums';
+import { RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
 import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, FRONTEND_URL, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
 import { GoogleAuthData } from '@/shared/types/google.type';
 import { StatusCodes } from 'http-status-codes';
+import { Redis } from '@/shared/utils/redis/redis';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
@@ -21,13 +23,18 @@ import { StatusCodes } from 'http-status-codes';
 export class AuthService {
   private googleClient: OAuth2Client;
   private FRONTEND_URL = FRONTEND_URL;
+  private readonly redis: RedisClientType;
+
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(ClientRepository) private clientRepository: ClientRepository,
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
+    private readonly projectMemberRepository: ProjectMembersRepository,
+    _redis: Redis,
   ) {
     this.googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${this.FRONTEND_URL}/auth/google/callback`);
+    this.redis = _redis.getInstance();
   }
 
   // Generate Google OAuth URL for client-side redirection
@@ -506,6 +513,13 @@ export class AuthService {
             company_id: companyId,
             is_active: true,
           });
+
+          const isProjectClient = await this.redis.get(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${email}`);
+          const parsedCache = JSON.parse((isProjectClient as string) || '{}');
+
+          if (Object.keys(parsedCache).length) {
+            await this.projectMemberRepository.create({ ...parsedCache, user_id: newUser.id });
+          }
         } else if (role === UserRoles.CONSULTANT) {
           await this.consultantRepository.create({
             user_id: newUser.id,

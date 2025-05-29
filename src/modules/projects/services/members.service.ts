@@ -2,7 +2,7 @@ import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
 
 import { ProjectMembersRepository, UserRepository, ProjectRepository } from '@/repositories';
-import { ServiceType } from '@/shared/types/general.type';
+import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { UserModelType } from '@/models';
 import { AddProjectMember } from '@/shared/types/projects.type';
 
@@ -16,7 +16,7 @@ export class MemberService {
     private readonly projectRepository: ProjectRepository,
   ) {}
 
-  async getProjectMembers(company_id: string, project_id: string): Promise<ServiceType> {
+  async getProjectMembers(company_id: string, project_id: string, query: ObjectLiteral = {}): Promise<ServiceType> {
     try {
       const project = await this.projectRepository.findOne({
         id: project_id,
@@ -31,7 +31,7 @@ export class MemberService {
         };
       }
 
-      const members = await this.projectMembersRepository.getProjectMembers(project_id, company_id);
+      const members = await this.projectMembersRepository.getProjectMembers(project_id, company_id, query);
 
       return {
         status: true,

@@ -134,6 +134,10 @@ export class MetadataService {
         };
       }
 
+      if (metadata.is_system) {
+        return { status: false, message: `Cannot not edit system ${typeName} type` };
+      }
+
       // const isNameTaken = await this.metadataRepository.findNameWhereNotId(metadata_id, payload.name, type);
 
       // if (isNameTaken)

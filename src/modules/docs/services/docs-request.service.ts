@@ -7,7 +7,7 @@ import { StatusCodes } from 'http-status-codes';
 import { DocumentRequestsRepository } from '@/repositories/document_request.repository';
 import { MetadataRepository, ProjectRepository, ProjectTaskRepository, ProjectMembersRepository, UserRepository, ProjectTaskAssigneesRepository } from '@/repositories';
 
-import { UserModelType } from '@/models';
+import { MetadataModelType, UserModelType } from '@/models';
 import { DocumentRequestType } from '@/shared/types/projects.type';
 import { ServiceType } from '@/shared/types/general.type';
 import { AUDIT_TRAIL_ACTION, EmailSubject, MetadataType, ProjectTaskStatus } from '@/shared/enums';
@@ -40,6 +40,14 @@ export class DocRequestService {
         company_id,
         type: MetadataType.DOCUMENT,
         id: payload.document_type_id,
+        deleted_at: null,
+      };
+
+      const docRequestMetadataQuery: Partial<MetadataModelType> = {
+        company_id,
+        type: MetadataType.TASK,
+        deleted_at: null,
+        is_system: true,
       };
 
       const eventType = await this.metadataRepository.findOne(metadataQuery);
@@ -53,6 +61,17 @@ export class DocRequestService {
       const project = await this.projectRepository.findOne({ id: project_id, company_id });
 
       if (!project) return { status: false, message: 'Project not found', statusCode: StatusCodes.NOT_FOUND };
+
+      let docRequestMetadataType = await this.metadataRepository.findOne(docRequestMetadataQuery);
+
+      if (!docRequestMetadataQuery) {
+        const data: Partial<MetadataModelType> = {
+          ...docRequestMetadataQuery,
+          name: 'Document Request',
+          description: 'Task type for document requests',
+        };
+        docRequestMetadataType = await this.metadataRepository.create(data);
+      }
 
       const docReqId = uuidv4();
       const taskId = uuidv4();
@@ -70,6 +89,8 @@ export class DocRequestService {
             status: ProjectTaskStatus.PENDING,
             start_date: dayjs().format(),
             end_date: dayjs(payload.end_date).format(),
+            task_type_id: docRequestMetadataType.id,
+            project_type_id: project.project_type_id,
           },
           trx,
         );

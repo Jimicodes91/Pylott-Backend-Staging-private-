@@ -99,3 +99,7 @@ export enum ProjectMemberTypeEnum {
   INTERNAL = 'internal',
   CLIENT = 'client',
 }
+
+export enum RedisPrefixKeyEnum {
+  PROJECT_CLIENT_INVITATION = 'PROJECT_CLIENT_INVITATION',
+}

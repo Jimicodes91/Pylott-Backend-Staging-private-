@@ -8,7 +8,7 @@ export default async function Bootstrap() {
   validateEnvs();
   dbConnect();
 
-  if (app.env !== "development") {
+  if (app.env !== 'development') {
     const tracker = container.resolve(MilestoneTrackerService);
     await tracker.scheduleGlobalChecks();
   }
