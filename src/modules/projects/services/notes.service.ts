@@ -3,7 +3,7 @@ import Objection from 'objection';
 import { injectable } from 'tsyringe';
 import { v4 as uuidv4 } from 'uuid';
 
-import { CommentRepository, DocumentAttachmentsRepository, DocumentsRepository, ProjectNotesRepository, ProjectRepository, UserRepository } from '@/repositories';
+import { CommentRepository, DocumentAttachmentsRepository, DocumentsRepository, ProjectMembersRepository, ProjectNotesRepository, ProjectRepository, UserRepository } from '@/repositories';
 
 import { CommentsModelType, DocumentsModelType, ProjectNotesModelType, UserModelType } from '@/models';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
@@ -11,7 +11,9 @@ import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType } from '@/shared/e
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateComment, CreateNote, EnrichedComment, EnrichedNote, NoteMentionMetadata } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
-// import sendEmail from '@/shared/utils/nodemailer';
+import sendEmail from '@/shared/utils/nodemailer';
+import { toTitleCase } from '@/shared/utils/any';
+import { newNoteAddedEmail } from '@/shared/utils/email';
 
 @injectable()
 export class NotesService {
@@ -26,6 +28,7 @@ export class NotesService {
     private readonly notesRepository: ProjectNotesRepository,
     private readonly documentRepository: DocumentsRepository,
     private readonly attachmentRepository: DocumentAttachmentsRepository,
+    private readonly projectMemberRepository: ProjectMembersRepository,
   ) {}
 
   async createNote(user: UserModelType, project_id: string, payload: CreateNote): Promise<ServiceType> {
@@ -85,12 +88,14 @@ export class NotesService {
         project_id,
       );
 
-      // await sendEmail();
-      // @here Mail draft is inaccurate
-      // if (payload.mentions && payload.mentions.length) {
-      //   const mentionedUsers = await this.userRepository.findAllWhereIdIn(payload.mentions);
-      //   // send mail
-      // }
+      const projectMembers = await this.projectMemberRepository.getInternalProjectMembersVisibleClients(project.id, user.company_id);
+      if (projectMembers.length) {
+        await projectMembers.forEach(async (pm) => {
+          const { user } = pm;
+          const email = newNoteAddedEmail(user.name, project.name, '');
+          await sendEmail(user.email, `New Note Added to ${toTitleCase(project.name)}`, email);
+        });
+      }
 
       return {
         status: true,

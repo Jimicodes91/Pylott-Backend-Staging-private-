@@ -3,6 +3,7 @@ import { injectable } from 'tsyringe';
 import BaseRepository from './base.repository';
 import { ProjectMembers, ProjectMemebersModelType } from '@/models';
 import { ObjectLiteral } from '@/shared/types/general.type';
+import { ProjectMemberTypeEnum } from '@/shared/enums';
 
 @injectable()
 export class ProjectMembersRepository extends BaseRepository<ProjectMemebersModelType, ProjectMembers> {
@@ -18,5 +19,14 @@ export class ProjectMembersRepository extends BaseRepository<ProjectMemebersMode
     }
 
     return await qb.withGraphFetched({ user: true, creator: true }).orderBy('created_at');
+  }
+
+  async getInternalProjectMembersVisibleClients(project_id: string, company_id: string) {
+    return await this.model
+      .query()
+      .where({ project_id, company_id, deleted_at: null })
+      .where('member_type', ProjectMemberTypeEnum.INTERNAL)
+      .orWhere('is_visible_to_client', true)
+      .withGraphFetched({ user: true });
   }
 }

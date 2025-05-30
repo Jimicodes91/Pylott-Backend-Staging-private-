@@ -7,7 +7,7 @@ import advancedFormat from 'dayjs/plugin/advancedFormat';
 
 dayjs.extend(advancedFormat);
 
-import { EventsRepository, MetadataRepository, ProjectRepository, UserRepository } from '@/repositories';
+import { EventsRepository, MetadataRepository, ProjectMembersRepository, ProjectRepository, UserRepository } from '@/repositories';
 
 import { EventDto } from '@/shared/types/dto/event.dto';
 import { EmailSubject, MetadataType } from '@/shared/enums';
@@ -16,7 +16,7 @@ import { EventModelType, UserModelType } from '@/models';
 import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
 import { CreateCalenderEvent } from '@/shared/types/events.type';
 import sendEmail from '@/shared/utils/nodemailer';
-import { eventCreatedEmail } from '@/shared/utils/email';
+import { newEventScheduledEmail } from '@/shared/utils/email';
 // import { dateTimeFormat } from '@/shared/constants/date.constants';
 
 @injectable()
@@ -29,6 +29,7 @@ export class EventService {
     private readonly projectRepository: ProjectRepository,
     private readonly userRepository: UserRepository,
     private readonly googleCalender: GoogleAPIsCalender,
+    private readonly projectMemberRepository: ProjectMembersRepository,
   ) {}
 
   public async createEvent(user: UserModelType, project_id: string, payload: EventDto): Promise<ServiceType> {
@@ -56,8 +57,8 @@ export class EventService {
 
       if (eventNameTaken) return { status: false, message: 'Event with name already exists' };
 
-      payload.start_datetime = dayjs(payload.start_datetime).format("YYYY-MM-DD HH:mm:ss");
-      payload.end_datetime = dayjs(payload.end_datetime).format("YYYY-MM-DD HH:mm:ss");
+      payload.start_datetime = dayjs(payload.start_datetime).format('YYYY-MM-DD HH:mm:ss');
+      payload.end_datetime = dayjs(payload.end_datetime).format('YYYY-MM-DD HH:mm:ss');
 
       const gcalData: CreateCalenderEvent = {
         summary: payload.name,
@@ -90,7 +91,17 @@ export class EventService {
 
         users.forEach(async (user) => {
           const emailSubject = `${EmailSubject.EVENT_CREATED} - ${payload.name}`;
-          const email = eventCreatedEmail(user.name, payload.name, payload.start_datetime, '');
+          const email = newEventScheduledEmail(user.name, payload.name, payload.start_datetime, '');
+          await sendEmail(user.email, emailSubject, email);
+        });
+      }
+
+      const projectMembers = await this.projectMemberRepository.getInternalProjectMembersVisibleClients(project.id, user.company_id);
+      if (projectMembers.length) {
+        await projectMembers.forEach(async (pm) => {
+          const { user } = pm;
+          const emailSubject = `${EmailSubject.EVENT_CREATED} - ${payload.name}`;
+          const email = newEventScheduledEmail(user.name, payload.name, payload.start_datetime, '');
           await sendEmail(user.email, emailSubject, email);
         });
       }

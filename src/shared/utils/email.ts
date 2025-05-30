@@ -1,45 +1,56 @@
-export const eventCreatedEmail = (userName: string, eventName: string, eventDate: string, eventLink: string) => {
+export const newEventScheduledEmail = (userName: string, eventName: string, eventDate: string, eventLink: string) => {
   return `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { color: #2c3e50; font-size: 24px; margin-bottom: 20px; }
-        .content { margin-bottom: 25px; }
-        .event-name { font-weight: bold; color: #3498db; }
-        .event-date { font-weight: bold; }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 15px 0;
-        }
-        .footer { margin-top: 30px; font-size: 14px; color: #7f8c8d; }
-    </style>
-</head>
-<body>
-    <div class="header">New Event Scheduled</div>
-    
-    <div class="content">
-        <p>Dear ${userName},</p>
-        
-        <p>A new event, <span class="event-name">${eventName}</span>, 
-        has been scheduled for <span class="event-date">${eventDate}</span>.</p>
-        
-        <a href="${eventLink}" class="button">View Event Details</a>
-    </div>
-    
-    <div class="footer">
-        <p>See you there!</p>
-        <p>Best regards,<br>The Pylott Team</p>
-    </div>
-</body>
-</html>
-  `;
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { color: #2c3e50; font-size: 24px; margin-bottom: 20px; }
+          .content { margin-bottom: 25px; }
+          .highlight { font-weight: bold; color: #3498db; }
+          .event-name { font-weight: bold; color: #9b59b6; }
+          .event-date { 
+              display: inline-block;
+              background-color: #f5f5f5;
+              padding: 8px 12px;
+              border-radius: 4px;
+              margin: 10px 0;
+          }
+          .button {
+              display: inline-block;
+              padding: 10px 20px;
+              background-color: #3498db;
+              color: white;
+              text-decoration: none;
+              border-radius: 5px;
+              margin: 15px 0;
+          }
+          .footer { margin-top: 30px; font-size: 14px; color: #7f8c8d; }
+          .icon { margin-right: 8px; }
+      </style>
+  </head>
+  <body>
+      <div class="header">📅 New Event Scheduled</div>
+      
+      <div class="content">
+          <p>Dear <span class="highlight">${userName}</span>,</p>
+          
+          <p><span class="event-name">${eventName}</span> has been scheduled.</p>
+          
+          <div class="event-date">
+              <span class="icon">⏰</span> Date: ${eventDate}
+          </div>
+          
+          <br>
+          <a href="${eventLink}" class="button">View Event Details</a>
+      </div>
+      
+      <div class="footer">
+          <p>Best regards,<br>The Pylott Team</p>
+      </div>
+  </body>
+  </html>
+    `;
 };
 
 export const taskCompletedEmail = (userName: string, taskName: string, taskLink: string) => {
@@ -344,4 +355,190 @@ export const createMilestoneTransitionEmail = (projectName: string, fromMileston
     `;
 
   return body;
+};
+
+export const newNoteAddedEmail = (userName: string, projectName: string, noteLink: string) => {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { color: #2c3e50; font-size: 24px; margin-bottom: 20px; }
+          .content { margin-bottom: 25px; }
+          .highlight { font-weight: bold; color: #3498db; }
+          .button {
+              display: inline-block;
+              padding: 10px 20px;
+              background-color: #3498db;
+              color: white;
+              text-decoration: none;
+              border-radius: 5px;
+              margin: 15px 0;
+          }
+          .footer { margin-top: 30px; font-size: 14px; color: #7f8c8d; }
+          .icon { margin-right: 8px; }
+      </style>
+  </head>
+  <body>
+      <div class="header">📝 New Note Added</div>
+      
+      <div class="content">
+          <p>Dear <span class="highlight">${userName}</span>,</p>
+          
+          <p>A new note has been added to <span class="highlight">${projectName}</span>.</p>
+          
+          <br>
+          <a href="${noteLink}" class="button">View Note</a>
+      </div>
+      
+      <div class="footer">
+          <p>Best regards,<br>The Pylott Team</p>
+      </div>
+  </body>
+  </html>
+    `;
+};
+
+export const newMilestoneAddedEmail = (userName: string, milestoneName: string, projectName: string, milestoneLink: string) => {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { color: #2c3e50; font-size: 24px; margin-bottom: 20px; }
+          .content { margin-bottom: 25px; }
+          .highlight { font-weight: bold; color: #3498db; }
+          .milestone-name { 
+              font-weight: bold; 
+              color: #e74c3c;
+              background-color: #fdeaea;
+              padding: 2px 6px;
+              border-radius: 4px;
+          }
+          .button {
+              display: inline-block;
+              padding: 10px 20px;
+              background-color: #3498db;
+              color: white;
+              text-decoration: none;
+              border-radius: 5px;
+              margin: 15px 0;
+          }
+          .footer { margin-top: 30px; font-size: 14px; color: #7f8c8d; }
+          .icon { margin-right: 8px; }
+      </style>
+  </head>
+  <body>
+      <div class="header">📌 New Milestone Added</div>
+      
+      <div class="content">
+          <p>Dear <span class="highlight">${userName}</span>,</p>
+          
+          <p>A new milestone, <span class="milestone-name">${milestoneName}</span>, has been added to <span class="highlight">${projectName}</span>.</p>
+          
+          <br>
+          <a href="${milestoneLink}" class="button">View Milestone</a>
+      </div>
+      
+      <div class="footer">
+          <p>Best regards,<br>The Pylott Team</p>
+      </div>
+  </body>
+  </html>
+    `;
+};
+
+export const newProjectCreatedEmail = (userName: string, projectName: string, projectLink: string) => {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Project Created - ${projectName}</title>
+      <style>
+          body { 
+              font-family: 'Arial', sans-serif; 
+              line-height: 1.6; 
+              color: #333333; 
+              max-width: 600px; 
+              margin: 0 auto; 
+              padding: 20px;
+              background-color: #f9f9f9;
+          }
+          .email-container {
+              background-color: #ffffff;
+              border-radius: 8px;
+              padding: 30px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+          }
+          .header {
+              color: #2c3e50;
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 25px;
+              border-bottom: 2px solid #f0f0f0;
+              padding-bottom: 15px;
+          }
+          .content {
+              margin-bottom: 25px;
+          }
+          .project-name {
+              font-weight: bold;
+              color: #3498db;
+              background-color: #f0f8ff;
+              padding: 3px 6px;
+              border-radius: 4px;
+          }
+          .button {
+              display: inline-block;
+              padding: 12px 24px;
+              background-color: #3498db;
+              color: white;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+              font-weight: bold;
+              text-align: center;
+          }
+          .footer {
+              margin-top: 30px;
+              font-size: 14px;
+              color: #7f8c8d;
+              border-top: 1px solid #eeeeee;
+              padding-top: 20px;
+          }
+          .link {
+              color: #3498db;
+              text-decoration: none;
+          }
+      </style>
+  </head>
+  <body>
+      <div class="email-container">
+          <div class="header">New Project Created</div>
+          
+          <div class="content">
+              <p>Dear <strong>${userName}</strong>,</p>
+              
+              <p>A new project, <span class="project-name">${projectName}</span>, has been successfully created.</p>
+              
+              <a href="${projectLink}" class="button">View Project</a>
+              
+              <p>Start collaborating now!</p>
+          </div>
+          
+          <div class="footer">
+              <p>Best regards,<br><strong>The Pylott Team</strong></p>
+              <p style="font-size: 12px; margin-top: 15px; color: #95a5a6;">
+                  <a href="https://pylott.com" class="link">Pylott</a> | 
+                  <a href="https://pylott.com/support" class="link">Help Center</a>
+              </p>
+          </div>
+      </div>
+  </body>
+  </html>
+    `;
 };

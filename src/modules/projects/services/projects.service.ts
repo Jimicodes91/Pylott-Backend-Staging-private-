@@ -31,6 +31,9 @@ import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { ContactRespository } from '@/repositories/contact.repository';
 import { AuthService } from '@/modules/auth/services/auth.service';
 import { Redis } from '@/shared/utils/redis/redis';
+import sendEmail from '@/shared/utils/nodemailer';
+import { toTitleCase } from '@/shared/utils/any';
+import { newProjectCreatedEmail } from '@/shared/utils/email';
 
 @injectable()
 export class ProjectService {
@@ -248,6 +251,7 @@ export class ProjectService {
 
       const nonExistentClients = [];
       const existentClients: Array<Partial<ProjectMemebersModelType>> = [];
+      const existentClientsEmail = [];
 
       if (payload['project_client']) {
         for (const client of payload['project_client']) {
@@ -267,6 +271,7 @@ export class ProjectService {
           const clientUserType = await this.userRepository.findOne({ deleted_at: null, email: clientRecord.email });
           if (!clientUserType) nonExistentClients.push(clientRecord.email);
           else {
+            existentClientsEmail.push(clientUserType.email);
             existentClients.push({ added_by: user.id, company_id, member_type: ProjectMemberTypeEnum.CLIENT, project_id: projectId, user_id: clientUserType.id, is_visible_to_client: true });
           }
         }
@@ -395,6 +400,11 @@ export class ProjectService {
           // Fail safe
           console.error(`${this.traceId} Error inviting project client to pylott:`, error);
         }
+      }
+
+      for (const _email of existentClientsEmail) {
+        const emailTemplate = newProjectCreatedEmail(user.name, project.name, '');
+        await sendEmail(_email, `New Project Created - ${toTitleCase(payload.name)}`, emailTemplate);
       }
 
       return {
