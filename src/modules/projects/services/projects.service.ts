@@ -80,12 +80,14 @@ export class ProjectService {
 
       if (filters.client_id) {
         const contact = await this.userRepository.findOne({ company_id, id: filters.client_id, deleted_at: null });
+
         const clientRecord = await this.contactRepository.findOne({
           company_id,
           deleted_at: null,
           email: contact.email,
         });
-        query.client_id = clientRecord.id;
+
+        if (clientRecord) query.client_id = clientRecord.id;
       }
 
       const projects = await this.projectRepository.getProjectsAndAssociatedEntities(query, filters.search);
