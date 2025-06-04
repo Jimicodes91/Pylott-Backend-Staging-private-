@@ -92,8 +92,8 @@ export class NotesService {
       if (projectMembers.length) {
         await projectMembers.forEach(async (pm) => {
           const { user } = pm;
-          const email = newNoteAddedEmail(user.name, project.name, '');
-          await sendEmail(user.email, `New Note Added to ${toTitleCase(project.name)}`, email);
+          const email = newNoteAddedEmail(user.name, project?.name ?? '', '');
+          await sendEmail(user.email, `New Note Added to ${toTitleCase(project?.name ?? '')}`, email);
         });
       }
 
