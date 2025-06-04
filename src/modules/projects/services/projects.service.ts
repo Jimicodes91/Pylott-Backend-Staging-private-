@@ -403,8 +403,8 @@ export class ProjectService {
       }
 
       for (const _email of existentClientsEmail) {
-        const emailTemplate = newProjectCreatedEmail(user.name, project.name, '');
-        await sendEmail(_email, `New Project Created - ${toTitleCase(payload.name)}`, emailTemplate);
+        const emailTemplate = newProjectCreatedEmail(user.name, payload['project_name'], '');
+        await sendEmail(_email, `New Project Created - ${toTitleCase(payload['project_name'])}`, emailTemplate);
       }
 
       return {
