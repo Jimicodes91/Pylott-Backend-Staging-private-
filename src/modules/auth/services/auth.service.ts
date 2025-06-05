@@ -16,6 +16,8 @@ import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, FRONTEND_URL, P
 import { GoogleAuthData } from '@/shared/types/google.type';
 import { StatusCodes } from 'http-status-codes';
 import { Redis } from '@/shared/utils/redis/redis';
+import { AddContactDto } from '@/modules/contact/contact.dto';
+import { ContactService } from '@/modules/contact/contact.service';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
@@ -30,6 +32,7 @@ export class AuthService {
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(ClientRepository) private clientRepository: ClientRepository,
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
+    @inject(ContactService) private contactService: ContactService,
     private readonly projectMemberRepository: ProjectMembersRepository,
     _redis: Redis,
   ) {
@@ -572,6 +575,17 @@ export class AuthService {
       }
 
       await this.companyRepository.update({ id: companyId }, { client_id: newUser.id });
+
+      // 6. Add client to company contacts
+      const contactData: AddContactDto = {
+        name,
+        email,
+        phone: newUser.phone_number,
+        company_id: companyId,
+        assigned_to: [], // Empty array or default assignments
+      };
+
+      await this.contactService.addToContact(contactData);
 
       await this.sendTemporaryPasswordEmail(email, temporaryPassword);
       return { message: 'Client added successfully. Temporary password sent via email.' };
