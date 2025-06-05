@@ -27,6 +27,7 @@ export class UserService {
 
       // Update fields if they exist in the updateData
       if (updateData.name) user.name = updateData.name;
+      if (updateData.phone_number) user.phone_number = updateData.phone_number;
       if (updateData.email) user.email = updateData.email;
       if (updateData.pfp) user.pfp = updateData.pfp;
       if (updateData.currency) user.currency = updateData.currency;

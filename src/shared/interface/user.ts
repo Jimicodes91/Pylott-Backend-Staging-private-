@@ -10,6 +10,7 @@ export interface IUser {
   timezone: string;
   isBlocked: boolean;
   pfp: string;
+  phone_number?: string;
   company?: string;
   isVerified: boolean;
   isActive: boolean;
@@ -34,6 +35,7 @@ export interface AdminSignupData {
 
 export interface UserUpdateData {
   name?: string;
+  phone_number?: string;
   email?: string;
   timezone?: string;
   currency?: string;

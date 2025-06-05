@@ -12,6 +12,7 @@ export class User extends BaseModel {
   pfp?: string;
   password: string;
   name?: string;
+  phone_number?: string;
   role?: UserRoles;
   company_id?: string;
   is_blocked?: boolean;
@@ -34,14 +35,14 @@ export class User extends BaseModel {
 
   static relationMappings = (): ModelsRelationMapping => ({
     company: {
-        relation: BaseModel.BelongsToOneRelation,
-        modelClass: Company,
-        join: {
-          from: 'users.company_id',
-          to: 'companies.id',
-        },
+      relation: BaseModel.BelongsToOneRelation,
+      modelClass: Company,
+      join: {
+        from: 'users.company_id',
+        to: 'companies.id',
       },
-});
+    },
+  });
 }
 
 export type UserModelType = ModelObject<User>;
