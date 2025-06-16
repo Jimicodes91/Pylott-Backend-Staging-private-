@@ -4,6 +4,7 @@ import BaseRepository from './base.repository';
 import { ProjectTask, ProjectTaskModelType } from '@/models';
 import { TaskStatusCounts } from '@/shared/interface/model';
 import { ProjectTaskStatus } from '@/shared/enums';
+import { ObjectLiteral } from '@/shared/types/general.type';
 
 @injectable()
 export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, ProjectTask> {
@@ -23,10 +24,12 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
     return await this.model.query().where({ company_id, project_id, id: task_id, deleted_at: null }).withGraphFetched({ assignees: true }).first();
   }
 
-  async getAllTasks(company_id: string, project_id: string = null) {
+  async getAllTasks(company_id: string, project_id: string = null, query: ObjectLiteral = {}) {
     let qb = this.model.query().where({ company_id, deleted_at: null });
 
     if (project_id) qb = qb.where({ project_id });
+
+    if (query.search) qb = qb.whereILike('name', `%${query.search.trim()}%`);
 
     return await qb.withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true });
   }

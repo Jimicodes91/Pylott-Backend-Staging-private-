@@ -18,7 +18,7 @@ import {
 import { AttachmentsModelType, DocumentsModelType, ProjectTaskAssigneesModelType, ProjectTaskModelType, UserModelType } from '@/models';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 import { AUDIT_TRAIL_ACTION, DocumentsDirectory, EmailSubject, MetadataType, ProjectTaskStatus } from '@/shared/enums';
-import { ServiceType } from '@/shared/types/general.type';
+import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { CreateTask } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { newTaskAssignedEmail, taskCompletedEmail } from '@/shared/utils/email';
@@ -396,9 +396,9 @@ export class TaskService {
     }
   }
 
-  async getAllTask(company_id: string, project_id: string | null): Promise<ServiceType> {
+  async getAllTask(company_id: string, project_id: string | null, query: ObjectLiteral = {}): Promise<ServiceType> {
     try {
-      const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id);
+      const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
 
       const remappedTasks = tasks.map((task) => {
         const today = dayjs().startOf('day');
