@@ -73,11 +73,13 @@ export class DocRequestService {
         docRequestMetadataType = await this.metadataRepository.create(data);
       }
 
+      console.log('DEBUGGG ====>', docRequestMetadataType);
+
       const docReqId = uuidv4();
       const taskId = uuidv4();
 
       await Objection.Model.transaction(async (trx) => {
-        const task = await this.taskRepository.create(
+        await this.taskRepository.create(
           {
             id: taskId,
             author_id: user.id,
@@ -98,7 +100,7 @@ export class DocRequestService {
         await this.projectTaskAssigneesRepository.create(
           {
             assignee_id: payload.assignee_id,
-            task_id: task.id,
+            task_id: taskId,
             company_id,
             project_id,
           },
