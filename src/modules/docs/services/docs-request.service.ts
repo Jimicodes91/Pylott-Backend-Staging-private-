@@ -64,7 +64,7 @@ export class DocRequestService {
 
       let docRequestMetadataType = await this.metadataRepository.findOne(docRequestMetadataQuery);
 
-      if (!docRequestMetadataQuery) {
+      if (!docRequestMetadataType) {
         const data: Partial<MetadataModelType> = {
           ...docRequestMetadataQuery,
           name: 'Document Request',
@@ -72,8 +72,6 @@ export class DocRequestService {
         };
         docRequestMetadataType = await this.metadataRepository.create(data);
       }
-
-      console.log('DEBUGGG ====>', docRequestMetadataType);
 
       const docReqId = uuidv4();
       const taskId = uuidv4();
