@@ -143,8 +143,9 @@ export class AuthService {
 
     await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `${this.FRONTEND_URL}/reset-password?token=${token}`;
+    const resetLink = `${this.FRONTEND_URL}/reset-password?token=${email}`;
     await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
   }
 
@@ -399,7 +400,7 @@ export class AuthService {
 
   public async resetPassword(token: string, newPassword: string) {
     try {
-      const user = await this.userRepository.findOne({ verification_token: token });
+      const user = await this.userRepository.findOne({ email: token });
       if (!user) {
         throw new HttpError('Invalid or expired token', 400);
       }
