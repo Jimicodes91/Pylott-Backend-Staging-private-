@@ -26,6 +26,7 @@ import {
   updateTaskValidationRules,
 } from '@/shared/validations/projects';
 import { ProjectFormController } from './project_form.controller';
+import { canPerformActionOnProject } from '@/shared/middlewares/project.middleware';
 
 const documentController = container.resolve(DocsController);
 const eventsController = container.resolve(EventController);
@@ -100,7 +101,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Tasks
    */
-  server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), projectController.createTask);
+  server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), canPerformActionOnProject, projectController.createTask);
   server.get(`${prefix}/tasks`, authGuard, projectController.getAllTasks);
   server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.getTaskById);
   server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), projectController.updateTask);
