@@ -104,17 +104,17 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), canPerformActionOnProject, projectController.createTask);
   server.get(`${prefix}/tasks`, authGuard, projectController.getAllTasks);
   server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.getTaskById);
-  server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), projectController.updateTask);
-  server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.deleteTask);
-  server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, projectController.deleteTaskAttachment);
+  server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), canPerformActionOnProject, projectController.updateTask);
+  server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, canPerformActionOnProject, projectController.deleteTask);
+  server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, canPerformActionOnProject, projectController.deleteTaskAttachment);
 
   /**
    * Notes
    */
-  server.post(`${prefix}/:project_id/notes`, authGuard, schemaValidator(createNoteValidationRules), projectController.createNote);
+  server.post(`${prefix}/:project_id/notes`, authGuard, schemaValidator(createNoteValidationRules), canPerformActionOnProject, projectController.createNote);
   server.get(`${prefix}/:project_id/notes`, authGuard, projectController.getAllNotes);
   server.get(`${prefix}/:project_id/notes/:note_id`, authGuard, projectController.getNoteDetails);
-  server.patch(`${prefix}/:project_id/notes/:note_id/pin-state`, authGuard, schemaValidator(toggleNotePinValidationRules), projectController.toggleNotePin);
+  server.patch(`${prefix}/:project_id/notes/:note_id/pin-state`, authGuard, schemaValidator(toggleNotePinValidationRules), canPerformActionOnProject, projectController.toggleNotePin);
 
   /**
    * Comments
