@@ -1,10 +1,11 @@
-import { injectable } from 'tsyringe';
+import { container, injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
 import { ProjectTask, ProjectTaskModelType } from '@/models';
 import { TaskStatusCounts } from '@/shared/interface/model';
 import { ProjectTaskStatus } from '@/shared/enums';
 import { ObjectLiteral } from '@/shared/types/general.type';
+import { ProjectTaskAssigneesRepository } from './project_task_asignees.repository';
 
 @injectable()
 export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, ProjectTask> {
@@ -25,7 +26,24 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
   }
 
   async getAllTasks(company_id: string, project_id: string = null, query: ObjectLiteral = {}) {
+    let allTaskIds = [];
+
+    if (query.assignee_id) {
+      const projectTaskAssigneeRepository = container.resolve(ProjectTaskAssigneesRepository);
+
+      const _projectTaskAssignee = await projectTaskAssigneeRepository.findMany({
+        project_id,
+        assignee_id: query.assignee_id,
+      });
+
+      allTaskIds = _projectTaskAssignee.map((pta) => pta.task_id);
+    }
+
     let qb = this.model.query().where({ company_id, deleted_at: null });
+
+    if (allTaskIds && allTaskIds.length) {
+      qb.whereIn('id', allTaskIds);
+    }
 
     if (project_id) qb = qb.where({ project_id });
 
