@@ -16,13 +16,15 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
 
     const qb = this.model.query().where(otherQueries);
 
-    console.log(JSON.stringify(otherQueries), 'TESTING');
+    console.log(JSON.stringify({ otherQueries, client_user_id }), 'TESTING');
 
     if (search && search.length) {
       qb.andWhere('name', 'like', `%${search}%`);
     }
 
     if (client_user_id) {
+      console.log(JSON.stringify({ otherQueries, client_user_id }), 'TESTING 2');
+
       qb.andWhereRaw(
         `JSON_CONTAINS(form_data->'$.project_client', JSON_ARRAY((
         SELECT id FROM contacts WHERE user_id = ? AND company_id = ? AND deleted_at IS NULL
@@ -30,6 +32,8 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
         [client_user_id],
       );
     }
+
+    console.log(`SQL QUERY ===> ${JSON.stringify(qb.toKnexQuery().toSQL().sql)} === ${JSON.stringify(qb.toKnexQuery().toSQL().bindings)}`);
 
     return await qb
       .withGraphFetched({
