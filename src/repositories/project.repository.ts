@@ -16,25 +16,19 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
 
     let qb = this.model.query().skipUndefined().where(otherQueries);
 
-    console.log(JSON.stringify({ otherQueries, client_user_id }), 'TESTING');
-
     if (search && search.length) {
       console.log('GOT HERE', search);
       qb = qb.andWhere('name', 'like', `%${search}%`);
     }
 
-    // if (client_user_id) {
-    //   console.log(JSON.stringify({ otherQueries, client_user_id }), 'TESTING 2');
-
-    //   qb.andWhereRaw(
-    //     `JSON_CONTAINS(form_data->'$.project_client', JSON_ARRAY((
-    //     SELECT id FROM contacts WHERE user_id = ? AND company_id = ? AND deleted_at IS NULL
-    //   )))`,
-    //     [client_user_id],
-    //   );
-    // }
-
-    console.log(`SQL QUERY ===> ${JSON.stringify(qb.toKnexQuery().toSQL().sql)} === ${JSON.stringify(qb.toKnexQuery().toSQL().bindings)}`);
+    if (client_user_id) {
+      qb.andWhereRaw(
+        `JSON_CONTAINS(form_data->'$.project_client', JSON_ARRAY((
+        SELECT id FROM contacts WHERE user_id = ? AND company_id = ? AND deleted_at IS NULL
+      )))`,
+        [client_user_id],
+      );
+    }
 
     return await qb
       .withGraphFetched({

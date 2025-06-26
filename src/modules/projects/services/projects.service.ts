@@ -173,8 +173,6 @@ export class ProjectService {
         filters.search,
       );
 
-      console.log('GOT HERE ====>', JSON.stringify(projects[0]));
-
       if (!projects.length) {
         return {
           status: true,
@@ -196,7 +194,6 @@ export class ProjectService {
 
       let clientsMap = new Map();
       if (allClientContactIds.size > 0) {
-        console.log([...allClientContactIds], 'HERE 2');
         const clients = await this.contactRepository.getClientsWhereIn([...allClientContactIds]);
         clientsMap = new Map(clients.map((c) => [c.id, c]));
       }
