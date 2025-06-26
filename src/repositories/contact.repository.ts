@@ -136,7 +136,7 @@ export class ContactRespository extends BaseRepository<ContactModelType, Contact
     }
   }
 
-  public async getClientsWhereIn(ids: [string]) {
+  public async getClientsWhereIn(ids: string[]) {
     return this.model.query().whereIn('id', ids).whereNull('deleted_at');
   }
 }

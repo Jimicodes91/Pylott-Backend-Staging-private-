@@ -23,7 +23,7 @@ import {
   ProjectMembersRepository,
 } from '@/repositories';
 
-import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
+import { ServiceType } from '@/shared/types/general.type';
 import { MilestonesModelType, ProjectFormFieldModelType, ProjectMemebersModelType, ProjectModelType, UserModelType } from '@/models';
 import { CreateProjectType } from '@/shared/types/projects.type';
 import { DocumentsDirectory, MetadataType, ProjectMemberTypeEnum, ProjectStatus, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
@@ -59,6 +59,97 @@ export class ProjectService {
     this.redis = _redis.getInstance();
   }
 
+  // async getAllProjectsv1(
+  //   company_id: string,
+  //   filters: {
+  //     status?: string;
+  //     client_id?: string;
+  //     consultant_id?: string;
+  //     project_type_id?: string;
+  //     milestone_id?: string;
+  //     search?: string;
+  //   } = {},
+  // ): Promise<ServiceType> {
+  //   try {
+  //     const query: ObjectLiteral = { company_id, deleted_at: null };
+
+  //     if (filters.status) query.status = filters.status;
+  //     if (filters.consultant_id) query.consultant_id = filters.consultant_id;
+  //     if (filters.project_type_id) query.project_type_id = filters.project_type_id;
+  //     if (filters.milestone_id) query.milestone_id = filters.milestone_id;
+
+  //     if (filters.client_id) {
+  //       const contact = await this.userRepository.findOne({ company_id, id: filters.client_id, deleted_at: null });
+
+  //       const clientRecord = await this.contactRepository.findOne({
+  //         company_id,
+  //         deleted_at: null,
+  //         email: contact.email,
+  //       });
+
+  //       if (clientRecord) query.client_id = clientRecord.id;
+  //     }
+
+  //     const projects = await this.projectRepository.getProjectsAndAssociatedEntities(query, filters.search);
+
+  //     const formattedProjects = await Promise.all(
+  //       projects.map(async (project) => {
+  //         const form = await this.projectFormRepository.getCompanyForm(company_id);
+  //         const formFields = form ? await this.projectFormFieldRepository.findMany({ form_id: form.id }) : [];
+
+  //         const formattedFormFields = await Promise.all(
+  //           formFields.map(async (f) => {
+  //             const payload = {
+  //               id: f.id,
+  //               name: f.name,
+  //               type: f.type,
+  //               is_required: f.is_required,
+  //               value: project.form_data?.[f.slug] || null,
+  //               slug: f.slug,
+  //             };
+
+  //             if (f.slug === 'project_client' && project.form_data?.[f.slug] && Array.isArray(project.form_data?.[f.slug])) {
+  //               const clients = await this.contactRepository.getClientsWhereIn(project.form_data?.[f.slug]);
+
+  //               const mappedClients = clients;
+
+  //               payload.value = mappedClients;
+  //             }
+
+  //             return payload;
+  //           }),
+  //         );
+
+  //         return {
+  //           ...project,
+  //           form_fields: formattedFormFields,
+  //           timeline: this.calculateTimeline(project?.milestone?.duration ?? 0),
+  //           documents:
+  //             project.documents?.map((doc) => ({
+  //               id: doc.id,
+  //               name: doc.name,
+  //               attachments: doc.attachments,
+  //               type: doc.document_type_id === 'custom_field' ? 'custom' : doc.document_type_id,
+  //             })) || [],
+  //         };
+  //       }),
+  //     );
+
+  //     return {
+  //       status: true,
+  //       message: 'Projects fetched successfully',
+  //       data: formattedProjects,
+  //     };
+  //   } catch (error) {
+  //     console.error(`${this.traceId} Error fetching projects:`, error);
+  //     return {
+  //       status: false,
+  //       message: 'Failed to fetch projects',
+  //       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+  //     };
+  //   }
+  // }
+
   async getAllProjects(
     company_id: string,
     filters: {
@@ -71,38 +162,75 @@ export class ProjectService {
     } = {},
   ): Promise<ServiceType> {
     try {
-      const query: ObjectLiteral = { company_id, deleted_at: null };
-
-      if (filters.status) query.status = filters.status;
-      if (filters.consultant_id) query.consultant_id = filters.consultant_id;
-      if (filters.project_type_id) query.project_type_id = filters.project_type_id;
-      if (filters.milestone_id) query.milestone_id = filters.milestone_id;
-
-      if (filters.client_id) {
-        const contact = await this.userRepository.findOne({ company_id, id: filters.client_id, deleted_at: null });
-
-        const clientRecord = await this.contactRepository.findOne({
+      const projects = await this.projectRepository.getProjectsAndAssociatedEntities(
+        {
           company_id,
-          deleted_at: null,
-          email: contact.email,
-        });
+          status: filters.status,
+          consultant_id: filters.consultant_id,
+          project_type_id: filters.project_type_id,
+          milestone_id: filters.milestone_id,
+          client_user_id: filters.client_id,
+        },
+        filters.search,
+      );
 
-        if (clientRecord) query.client_id = clientRecord.id;
+      if (!projects.length) {
+        return {
+          status: true,
+          message: 'Projects fetched successfully',
+          data: [],
+        };
       }
 
-      const projects = await this.projectRepository.getProjectsAndAssociatedEntities(query, filters.search);
+      const form = await this.projectFormRepository.getCompanyForm(company_id);
+      const formFields = form ? await this.projectFormFieldRepository.findMany({ form_id: form.id }) : [];
 
-      const formattedProjects = projects.map((project) => ({
-        ...project,
-        timeline: this.calculateTimeline(project?.milestone?.duration ?? 0),
-        documents:
-          project.documents?.map((doc) => ({
-            id: doc.id,
-            name: doc.name,
-            attachments: doc.attachments,
-            type: doc.document_type_id === 'custom_field' ? 'custom' : doc.document_type_id,
-          })) || [],
-      }));
+      const allClientContactIds = new Set<string>();
+      projects.forEach((project) => {
+        const clientIds = project.form_data?.project_client;
+        if (clientIds && Array.isArray(clientIds)) {
+          clientIds.forEach((id) => allClientContactIds.add(id));
+        }
+      });
+
+      let clientsMap = new Map();
+      if (allClientContactIds.size > 0) {
+        const clients = await this.contactRepository.getClientsWhereIn([...allClientContactIds]);
+        clientsMap = new Map(clients.map((c) => [c.id, c]));
+      }
+
+      const formattedProjects = projects.map((project) => {
+        const formattedFormFields = formFields.map((f) => {
+          const value = project.form_data?.[f.slug] || null;
+          const payload = {
+            id: f.id,
+            name: f.name,
+            type: f.type,
+            is_required: f.is_required,
+            value,
+            slug: f.slug,
+          };
+
+          if (f.slug === 'project_client' && Array.isArray(value)) {
+            payload.value = value.map((id) => clientsMap.get(id)).filter(Boolean);
+          }
+
+          return payload;
+        });
+
+        return {
+          ...project,
+          form_fields: formattedFormFields,
+          timeline: this.calculateTimeline(project?.milestone?.duration ?? 0),
+          documents:
+            project.documents?.map((doc) => ({
+              id: doc.id,
+              name: doc.name,
+              attachments: doc.attachments,
+              type: doc.document_type_id === 'custom_field' ? 'custom' : doc.document_type_id,
+            })) || [],
+        };
+      });
 
       return {
         status: true,
