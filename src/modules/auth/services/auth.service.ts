@@ -17,7 +17,7 @@ import { GoogleAuthData } from '@/shared/types/google.type';
 import { StatusCodes } from 'http-status-codes';
 import { Redis } from '@/shared/utils/redis/redis';
 import { AddContactDto } from '@/modules/contact/contact.dto';
-import { ContactService } from '@/modules/contact/contact.service';
+import { ContactRespository } from '@/repositories/contact.repository';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
@@ -32,7 +32,7 @@ export class AuthService {
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(ClientRepository) private clientRepository: ClientRepository,
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
-    @inject(ContactService) private contactService: ContactService,
+    @inject(ContactRespository) private contactRepository: ContactRespository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     _redis: Redis,
   ) {
@@ -205,6 +205,9 @@ export class AuthService {
         token_expires: Date.now() + TOKEN_EXPIRATION_MS,
         role: UserRoles.ADMIN,
       });
+      if (!newUser) {
+        throw new HttpError('Error creating user', 400);
+      }
 
       await this.sendVerificationEmail(email, verificationToken);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -328,6 +331,7 @@ export class AuthService {
   public async verifyEmail(token: string) {
     try {
       const user = await this.userRepository.findOne({ verification_token: token });
+
       if (!user) {
         throw new HttpError('Invalid or expired token', 400);
       }
@@ -480,8 +484,8 @@ export class AuthService {
         is_verified: true,
       });
 
-      if (newUser) {
-        console.log('user created:', newUser);
+      if (!newUser) {
+        throw new HttpError('Error creating user', 400);
       }
 
       // Define role to column mapping
@@ -517,6 +521,17 @@ export class AuthService {
             company_id: companyId,
             is_active: true,
           });
+
+          // Add client to company contacts
+          const contactData = {
+            name,
+            email,
+            phone: newUser.phone_number || '',
+            company_id: companyId,
+            assigned_to: [], // Empty array or default assignments
+          };
+
+          await this.contactRepository.create(contactData);
 
           const isProjectClient = await this.redis.get(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${email}`);
           const parsedCache = JSON.parse((isProjectClient as string) || '{}');
@@ -581,12 +596,12 @@ export class AuthService {
       const contactData: AddContactDto = {
         name,
         email,
-        phone: newUser.phone_number,
+        phone: newUser.phone_number || '',
         company_id: companyId,
         assigned_to: [], // Empty array or default assignments
       };
 
-      await this.contactService.addToContact(contactData);
+      await this.contactRepository.create(contactData);
 
       await this.sendTemporaryPasswordEmail(email, temporaryPassword);
       return { message: 'Client added successfully. Temporary password sent via email.' };

@@ -79,7 +79,7 @@ export const storage = {
 
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'https://pylot-tkrh.vercel.app';
 
-export const TOKEN_EXPIRATION_MS = 5 * 60 * 60 * 1000;
+export const TOKEN_EXPIRATION_MS = 5 * 60 * 60 * 1000; // 5 hours
 export const PASSWORD_RESET_TOKEN_LENGTH = 15;
 export const TEMP_PASSWORD_LENGTH = 8;
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '653485325620-j99cl2a2c48054rr4725ot7ub9j8mb85.apps.g';
