@@ -14,13 +14,13 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
   async getProjectsAndAssociatedEntities(query: ObjectLiteral, search?: string) {
     const { client_user_id = null, ...otherQueries } = query;
 
-    const qb = this.model.query().where(otherQueries);
+    let qb = this.model.query().skipUndefined().where(otherQueries);
 
     console.log(JSON.stringify({ otherQueries, client_user_id }), 'TESTING');
 
     if (search && search.length) {
       console.log('GOT HERE', search);
-      qb.andWhere('name', 'like', `%${search}%`);
+      qb = qb.andWhere('name', 'like', `%${search}%`);
     }
 
     // if (client_user_id) {
