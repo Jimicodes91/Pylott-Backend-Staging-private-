@@ -164,12 +164,11 @@ export class ProjectService {
     try {
       const projects = await this.projectRepository.getProjectsAndAssociatedEntities(
         {
-          company_id,
-          status: filters.status,
-          consultant_id: filters.consultant_id,
-          project_type_id: filters.project_type_id,
-          milestone_id: filters.milestone_id,
-          client_user_id: filters.client_id,
+          status: filters?.status,
+          consultant_id: filters?.consultant_id,
+          project_type_id: filters?.project_type_id,
+          milestone_id: filters?.milestone_id,
+          client_user_id: filters?.client_id,
         },
         filters.search,
       );
