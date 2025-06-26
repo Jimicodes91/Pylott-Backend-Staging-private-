@@ -25,7 +25,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
         `JSON_CONTAINS(form_data->'$.project_client', JSON_ARRAY((
         SELECT id FROM contacts WHERE user_id = ? AND company_id = ? AND deleted_at IS NULL
       )))`,
-        [client_user_id, query.company_id],
+        [client_user_id],
       );
     }
 
