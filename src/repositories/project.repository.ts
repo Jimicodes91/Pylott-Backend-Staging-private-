@@ -19,6 +19,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
     console.log(JSON.stringify({ otherQueries, client_user_id }), 'TESTING');
 
     if (search && search.length) {
+      console.log('GOT HERE', search);
       qb.andWhere('name', 'like', `%${search}%`);
     }
 
