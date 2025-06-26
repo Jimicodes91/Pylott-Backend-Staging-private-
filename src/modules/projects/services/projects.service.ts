@@ -174,6 +174,8 @@ export class ProjectService {
         filters.search,
       );
 
+      console.log('GOT HERE ====>', JSON.stringify(projects[0]));
+
       if (!projects.length) {
         return {
           status: true,

@@ -16,7 +16,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
 
     const qb = this.model.query().where(otherQueries);
 
-    console.log(otherQueries, 'TESTING');
+    console.log(JSON.stringify(otherQueries), 'TESTING');
 
     if (search && search.length) {
       qb.andWhere('name', 'like', `%${search}%`);
