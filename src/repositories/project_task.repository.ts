@@ -26,30 +26,40 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
   }
 
   async getAllTasks(company_id: string, project_id: string = null, query: ObjectLiteral = {}) {
-    let allTaskIds = [];
+    let assignedTaskIds: string[] = [];
 
     if (query.assignee_id) {
       const projectTaskAssigneeRepository = container.resolve(ProjectTaskAssigneesRepository);
-
-      const _projectTaskAssignee = await projectTaskAssigneeRepository.findMany({
+      const assignments = await projectTaskAssigneeRepository.findMany({
         project_id,
         assignee_id: query.assignee_id,
       });
-
-      allTaskIds = _projectTaskAssignee.map((pta) => pta.task_id);
+      assignedTaskIds = assignments.map((pta) => pta.task_id);
     }
 
-    let qb = this.model.query().where({ company_id, deleted_at: null });
+    const qb = this.model.query().where({ company_id, deleted_at: null });
 
-    if (allTaskIds && allTaskIds.length) {
-      qb.whereIn('id', allTaskIds);
+    if (project_id) {
+      qb.where({ project_id });
     }
 
-    if (project_id) qb = qb.where({ project_id });
+    if (query.assignee_id) {
+      qb.where((builder) => {
+        builder.whereIn('id', assignedTaskIds).orWhere('is_visible_to_client', true);
+      });
+    }
 
-    if (query.search) qb = qb.whereILike('name', `%${query.search.trim()}%`);
+    if (query.search) {
+      qb.whereILike('name', `%${query.search.trim()}%`);
+    }
 
-    return await qb.withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true });
+    return await qb.withGraphFetched({
+      document: { attachments: true },
+      task_type: true,
+      pipeline: true,
+      assignees: { user: true },
+      company: true,
+    });
   }
 
   async getTaskWhereName(project_id: string, name: string, task_id: string) {
