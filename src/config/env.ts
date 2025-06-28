@@ -1,0 +1,110 @@
+import 'dotenv/config';
+import * as process from 'process';
+
+import { requiredBootTimeEnvs } from '../shared/constants/env.constants';
+
+export const app = {
+  url: process.env.BASE_PATH || '',
+  port: process.env.PORT || 5000,
+  env: process.env.NODE_ENV || 'development',
+  name: process.env.APP_NAME || 'Pylott',
+  email: process.env.APP_EMAIL || 'oolat31@gmail.com',
+};
+
+// Process 1,000 Jobs every 2 seconds
+export const queueConfig = {
+  max: 1000,
+  duration: 2,
+};
+
+export const database = {
+  knex: {
+    client: process.env.DB_CLIENT || 'mysql2',
+    connection: {
+      database: process.env.DB_DATABASE,
+      user: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      port: Number(process.env.DB_PORT),
+      host: process.env.DB_HOST,
+      charset: 'utf8mb4',
+    },
+    pool: {
+      min: 2,
+      max: 10,
+    },
+    migrations: {
+      tableName: 'knex_migrations',
+      directory: './migrations',
+      extension: 'ts',
+    },
+    debug: false,
+  },
+};
+
+export const redis = {
+  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  port: process.env.REDIS_PORT,
+  host: process.env.REDIS_HOST,
+  password: process.env.REDIS_PASSWORD,
+};
+
+export const mail = {
+  smtp: {
+    user: process.env.SMTP_USERNAME,
+    pass: process.env.SMTP_PASSWORD,
+    port: Number(process.env.SMTP_PORT),
+    host: process.env.SMTP_HOST,
+    secure: false,
+    sender: process.env.SMTP_SENDER,
+  },
+  nodemailer: {
+    user: process.env.NODEMAILER_USER || 'emmp.org.ng@gmail.com',
+    pass: process.env.NODEMAILER_PASSWORD || 'mjoh xzgs nzya lbum',
+    mail: process.env.NODEMAILER_MAIL || 'gmail',
+    host: process.env.NODEMAILER_HOST || 'smtp.gmail.com',
+    secure: false,
+    port: process.env.NODEMAILER_PORT || 465,
+  },
+};
+
+export const JWT_SECRET_KEY = process.env.JWT_SECRET || 'kbsbdabdjabkdjshudeuwhhnnm,asdnkjashdasddsad';
+
+export const storage = {
+  cloudinary: {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  },
+};
+
+export const FRONTEND_URL = process.env.FRONTEND_URL || 'https://pylot-tkrh.vercel.app';
+
+export const TOKEN_EXPIRATION_MS = 5 * 60 * 60 * 1000; // 5 hours
+export const PASSWORD_RESET_TOKEN_LENGTH = 15;
+export const TEMP_PASSWORD_LENGTH = 8;
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '653485325620-j99cl2a2c48054rr4725ot7ub9j8mb85.apps.g';
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
+
+export const calender = {
+  api_key: process.env.CALCOM_API_KEY ?? 'https://api.cal.com/v2',
+  base_url: process.env.CALCOM_API_BASE_URL,
+};
+
+/**
+ * Configures the environment variables for the application and throws an error if
+ * any required environment variables are missing.
+ */
+export const validateEnvs = () => {
+  const missingRequiredEnvsHandler = (accNullEnvs, currEnv) => {
+    const currEnvSet = process.env[currEnv.toUpperCase()];
+    return currEnvSet ? accNullEnvs : [...accNullEnvs, currEnv.toUpperCase()];
+  };
+
+  const nullEnvKeys = requiredBootTimeEnvs.reduce(missingRequiredEnvsHandler, []);
+
+  const concatenatedMissingEnvs = nullEnvKeys.join(', ');
+
+  const errMsg = `The following required env variable(s) are missing: ${concatenatedMissingEnvs}`;
+
+  if (nullEnvKeys.length) throw new Error(errMsg);
+};

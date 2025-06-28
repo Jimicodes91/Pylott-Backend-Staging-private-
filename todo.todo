@@ -1,0 +1,13 @@
+Tuesday (PENDING)
+- Calender switch from google to cal
+
+
+Thursday/Friday (CLIENT MANAGEMENT)
+- Client management (Client on a project is a user)
+- If not user, invite user as client
+- Project members (internal and client) ? (Create client project members table and endpoint and endpoint to fetch members or add to existing endpoint)
+
+
+Others/Extras
+- Permissions (Client perform task assigned to them, view a note, mainly view operations)
+- Get client project view ()
