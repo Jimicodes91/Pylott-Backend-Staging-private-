@@ -84,11 +84,36 @@ export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, Or
     return await this.model.query().patchAndFetchById(id, updateData);
   }
   public async markAsPaid(id: string, amountPaid: string, paymentProofUrl?: string) {
+    // First, get the current record to check outstanding balance
+    const currentRecord = await this.model.query().where({ id }).first();
+
+    if (!currentRecord) {
+      throw new Error('Organization finance record not found');
+    }
+
+    // Convert string amounts to numbers for calculations
+    const currentOutstandingBalance = parseFloat(currentRecord.outstanding_balance || '0');
+    const currentAmountPaid = parseFloat(currentRecord.amount_paid || '0');
+    const paymentAmount = parseFloat(amountPaid);
+
+    // Check if there's an outstanding balance to pay
+    if (currentOutstandingBalance <= 0) {
+      throw new Error('No outstanding balance to pay');
+    }
+
+    // Calculate new outstanding balance and amount paid
+    const newOutstandingBalance = Math.max(0, currentOutstandingBalance - paymentAmount);
+    const newAmountPaid = currentAmountPaid + paymentAmount;
+
+    // Determine if the payment is complete (outstanding balance is zero)
+    const isPaymentComplete = newOutstandingBalance === 0;
+
+    // Update the record
     return await this.model.query().patchAndFetchById(id, {
-      has_paid: true,
-      payment_status: 'paid',
-      amount_paid: amountPaid,
-      outstanding_balance: '0', // Assuming full payment
+      has_paid: isPaymentComplete,
+      payment_status: isPaymentComplete ? 'paid' : 'partial',
+      amount_paid: newAmountPaid.toString(),
+      outstanding_balance: newOutstandingBalance.toString(),
       payment_proof_url: paymentProofUrl,
       payment_date: new Date(),
     });
