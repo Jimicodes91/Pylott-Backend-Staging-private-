@@ -23,17 +23,46 @@ export class OrgFinanceService {
       throw new HttpError(error.message || 'Failed to fetch org_finance records', error.statusCode || 500);
     }
   }
+
   public async getOrgFinanceById(id: string) {
     try {
       const orgFinance = await this.orgFinanceRepository.getOrgFinanceById(id);
       if (!orgFinance) {
         throw new HttpError('OrgFinance not found', 404);
       }
-      return orgFinance;
+
+      let paymentHistory = [];
+      let lastPaymentDate = null;
+
+      if (orgFinance.organization_id) {
+        const { data } = await this.orgFinanceRepository.getAllOrganizationFinanceRecord(
+          1, // page number
+          100, // page size limit
+          orgFinance.organization_id,
+        );
+
+        // Filter records within the last 2 years
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+        paymentHistory = data.filter((record) => new Date(record.created_at) >= twoYearsAgo);
+
+        if (paymentHistory.length > 0) {
+          // Assuming the most recent payment is the last one due to 'orderBy'
+          lastPaymentDate = paymentHistory[paymentHistory.length - 1].created_at;
+        }
+      }
+
+      return {
+        ...orgFinance,
+        paymentHistory,
+        lastPaymentDate,
+      };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to fetch org_finance record', error.statusCode || 500);
     }
   }
+
   public async createOrgFinance(orgFinance: OrgFinanceDTO) {
     try {
       const createdOrgFinance = await this.orgFinanceRepository.createOrgFinance(orgFinance);
