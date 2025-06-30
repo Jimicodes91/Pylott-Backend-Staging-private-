@@ -76,7 +76,7 @@ export class OrgFinanceController {
       const paymentProof = req.file; // From multer
 
       if (!amount_paid) {
-        return errorResponse(res, 'MARK_AS_PAID_ERROR');
+        return errorResponse(res, 'error amount is required');
       }
 
       const updatedOrgFinance = await this.orgFinanceService.markAsPaid(req.params.id, amount_paid, paymentProof);

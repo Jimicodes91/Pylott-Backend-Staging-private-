@@ -13,7 +13,7 @@ export class Cloudinary implements IStorage {
   private readonly traceId = '[Cloudinary]:';
 
   constructor() {
-    cloudinary.config(cloudConfig);
+    cloudinary.config(cloudinary.config(cloudConfig));
   }
 
   public async upload(mediaDirectory: DocumentsDirectory, media: string, fileName: string) {
