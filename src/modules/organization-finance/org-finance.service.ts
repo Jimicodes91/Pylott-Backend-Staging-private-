@@ -1,6 +1,7 @@
 import { inject, injectable } from 'tsyringe';
 
 import { OrgFinanceRepository } from '@/repositories/org-finance.repository';
+import { OrgFinancePaymentRepository } from '@/repositories/org-finance-payment.repository';
 import HttpError from '@/shared/utils/errorHandler';
 import { OrgFinanceDTO } from './org-finance.dto';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
@@ -10,6 +11,7 @@ import { DocumentsDirectory } from '@/shared/enums';
 export class OrgFinanceService {
   constructor(
     @inject(OrgFinanceRepository) private orgFinanceRepository: OrgFinanceRepository,
+    @inject(OrgFinancePaymentRepository) private orgFinancePaymentRepository: OrgFinancePaymentRepository,
     @inject(Cloudinary) private cloudinary: Cloudinary,
   ) {}
 
@@ -31,27 +33,11 @@ export class OrgFinanceService {
         throw new HttpError('OrgFinance not found', 404);
       }
 
-      let paymentHistory = [];
-      let lastPaymentDate = null;
+      // Get all payment records for this org_finance
+      const paymentHistory = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
 
-      if (orgFinance.organization_id) {
-        const { data } = await this.orgFinanceRepository.getAllOrganizationFinanceRecord(
-          1, // page number
-          100, // page size limit
-          orgFinance.organization_id,
-        );
-
-        // Filter records within the last 2 years
-        const twoYearsAgo = new Date();
-        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-
-        paymentHistory = data.filter((record) => new Date(record.created_at) >= twoYearsAgo);
-
-        if (paymentHistory.length > 0) {
-          // Assuming the most recent payment is the last one due to 'orderBy'
-          lastPaymentDate = paymentHistory[paymentHistory.length - 1].created_at;
-        }
-      }
+      // Get the last payment date
+      const lastPaymentDate = paymentHistory.length > 0 ? paymentHistory[0].payment_date : null;
 
       return {
         ...orgFinance,
@@ -108,14 +94,20 @@ export class OrgFinanceService {
         paymentProofUrl = uploadResult.data;
       }
 
-      // Update the finance record
+      // Mark as paid - this will create a new payment record and update the main record
       const updatedOrgFinance = await this.orgFinanceRepository.markAsPaid(id, amountPaid, paymentProofUrl);
 
       if (!updatedOrgFinance) {
         throw new HttpError('OrgFinance not found', 404);
       }
 
-      return updatedOrgFinance;
+      // Get the updated payment history
+      const paymentHistory = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
+
+      return {
+        ...updatedOrgFinance,
+        paymentHistory,
+      };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to mark org_finance as paid', error.statusCode || 500);
     }
