@@ -26,6 +26,12 @@ export class UserController {
     try {
       const { userId } = req.params;
       const updateData = req.body;
+      // If a file was uploaded, convert it to base64 and set as pfp
+      const file = (req as any).file;
+      if (file) {
+        const base64 = file.buffer.toString('base64');
+        updateData.pfp = `data:${file.mimetype};base64,${base64}`;
+      }
 
       if (!userId) {
         return errorResponse(res, 'User ID is required');
