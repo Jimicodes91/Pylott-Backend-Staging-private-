@@ -5,7 +5,7 @@ import { injectable } from 'tsyringe';
 import bodyParser from 'body-parser';
 import express, { NextFunction, Request, Response } from 'express';
 import http from 'http';
-// import cors from 'cors';
+import cors from 'cors';
 
 import bootstrap from './bootstrap';
 import entrypoint from '@shared/routes/entrypoint';
@@ -36,7 +36,16 @@ export default class Application {
   }
 
   private setMiddlewares() {
-    this.server.use(this._corsConfig);
+    // this.server.use(this._corsConfig);
+    this.server.use(
+      cors({
+        origin: true,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Api-key', 'Api-Reference-Id', 'x-api-key'],
+      }),
+    );
+
     this.server.use(bodyParser.json({ limit: '10mb' }));
     this.server.use(bodyParser.urlencoded({ limit: '10mb', extended: false }));
 
@@ -46,6 +55,7 @@ export default class Application {
   }
 
   private _corsConfig(req: Request, res: Response, next: NextFunction) {
+    console.log('CORS_CALLED');
     const origin = req.headers.origin; // Get the origin from the request header
 
     // IF YOU NEED Access-Control-Allow-Credentials: true
