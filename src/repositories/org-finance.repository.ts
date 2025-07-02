@@ -18,7 +18,7 @@ export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, Or
         .query()
         .where({ organization_id: companyId })
         .page(page - 1, pageSize) // Objection.js uses 0-based page index
-        .orderBy('created_at');
+        .orderBy('created_at', 'desc'); // Newest first
 
       return {
         data: results.results,

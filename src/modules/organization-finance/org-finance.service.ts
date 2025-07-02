@@ -34,7 +34,11 @@ export class OrgFinanceService {
       }
 
       // Get all payment records for this org_finance
-      const paymentHistory = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
+      const paymentHistoryRaw = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
+      const paymentHistory = paymentHistoryRaw.map((payment: any) => ({
+        ...payment,
+        payment_proof_url: payment.payment_proof_url || null,
+      }));
 
       // Get the last payment date
       const lastPaymentDate = paymentHistory.length > 0 ? paymentHistory[0].payment_date : null;
