@@ -19,3 +19,4 @@ export * from './document_request.repository';
 export * from './project_form_field.repository';
 export * from './project_forms.repository';
 export * from './project_task_asignees.repository';
+export * from './org-finance-payment.repository';

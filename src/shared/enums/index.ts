@@ -54,6 +54,7 @@ export enum DocumentsDirectory {
   PROJECTS = 'projects',
   FORM_FIELD = 'form-field',
   PAYMENT_PROOF = 'payment_proof',
+  PROFILE_PICTURES = 'profile_pictures',
 }
 
 export enum EventStatus {

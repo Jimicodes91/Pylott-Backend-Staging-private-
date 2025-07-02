@@ -1,6 +1,7 @@
 import { inject, injectable } from 'tsyringe';
 
 import { OrgFinanceRepository } from '@/repositories/org-finance.repository';
+import { OrgFinancePaymentRepository } from '@/repositories/org-finance-payment.repository';
 import HttpError from '@/shared/utils/errorHandler';
 import { OrgFinanceDTO } from './org-finance.dto';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
@@ -10,6 +11,7 @@ import { DocumentsDirectory } from '@/shared/enums';
 export class OrgFinanceService {
   constructor(
     @inject(OrgFinanceRepository) private orgFinanceRepository: OrgFinanceRepository,
+    @inject(OrgFinancePaymentRepository) private orgFinancePaymentRepository: OrgFinancePaymentRepository,
     @inject(Cloudinary) private cloudinary: Cloudinary,
   ) {}
 
@@ -23,17 +25,30 @@ export class OrgFinanceService {
       throw new HttpError(error.message || 'Failed to fetch org_finance records', error.statusCode || 500);
     }
   }
+
   public async getOrgFinanceById(id: string) {
     try {
       const orgFinance = await this.orgFinanceRepository.getOrgFinanceById(id);
       if (!orgFinance) {
         throw new HttpError('OrgFinance not found', 404);
       }
-      return orgFinance;
+
+      // Get all payment records for this org_finance
+      const paymentHistory = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
+
+      // Get the last payment date
+      const lastPaymentDate = paymentHistory.length > 0 ? paymentHistory[0].payment_date : null;
+
+      return {
+        ...orgFinance,
+        paymentHistory,
+        lastPaymentDate,
+      };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to fetch org_finance record', error.statusCode || 500);
     }
   }
+
   public async createOrgFinance(orgFinance: OrgFinanceDTO) {
     try {
       const createdOrgFinance = await this.orgFinanceRepository.createOrgFinance(orgFinance);
@@ -79,14 +94,20 @@ export class OrgFinanceService {
         paymentProofUrl = uploadResult.data;
       }
 
-      // Update the finance record
+      // Mark as paid - this will create a new payment record and update the main record
       const updatedOrgFinance = await this.orgFinanceRepository.markAsPaid(id, amountPaid, paymentProofUrl);
 
       if (!updatedOrgFinance) {
         throw new HttpError('OrgFinance not found', 404);
       }
 
-      return updatedOrgFinance;
+      // Get the updated payment history
+      const paymentHistory = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
+
+      return {
+        ...updatedOrgFinance,
+        paymentHistory,
+      };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to mark org_finance as paid', error.statusCode || 500);
     }

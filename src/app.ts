@@ -47,7 +47,20 @@ export default class Application {
   }
 
   private _corsConfig() {
-    const allowAll = '*';
-    return { origin: allowAll };
+    const allowedOrigins = ['https://www.pylott.io', 'http://localhost:6000'];
+
+    return {
+      origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        const msg = `The CORS policy for this site does not ` + `allow access from the specified Origin. (${origin})`;
+        return callback(new Error(msg), false);
+      },
+      credentials: true,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    };
   }
 }

@@ -22,3 +22,4 @@ export * from './subscription.model';
 export * from './project_forms.model';
 export * from './project_form_fields.model';
 export * from './project_task_asignees.model';
+export * from './org-finance-payment.model';

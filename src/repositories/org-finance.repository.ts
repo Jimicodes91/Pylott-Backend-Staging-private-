@@ -3,10 +3,11 @@ import { injectable } from 'tsyringe';
 import { OrgFinance, OrgFinanceModelType } from '@/models/org-finance.model';
 import BaseRepository from './base.repository';
 import { OrgFinanceDTO } from '@/modules/organization-finance/org-finance.dto';
+import { OrgFinancePaymentRepository } from './org-finance-payment.repository';
 
 @injectable()
 export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, OrgFinance> {
-  constructor() {
+  constructor(private orgFinancePaymentRepository: OrgFinancePaymentRepository) {
     super(OrgFinance);
   }
 
@@ -84,13 +85,45 @@ export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, Or
     return await this.model.query().patchAndFetchById(id, updateData);
   }
   public async markAsPaid(id: string, amountPaid: string, paymentProofUrl?: string) {
-    return await this.model.query().patchAndFetchById(id, {
-      has_paid: true,
-      payment_status: 'paid',
+    // First, get the current record to check outstanding balance
+    const currentRecord = await this.model.query().where({ id }).first();
+
+    if (!currentRecord) {
+      throw new Error('Organization finance record not found');
+    }
+
+    // Convert string amounts to numbers for calculations
+    const currentOutstandingBalance = parseFloat(currentRecord.outstanding_balance || '0');
+    const paymentAmount = parseFloat(amountPaid);
+
+    // Check if there's an outstanding balance to pay
+    if (currentOutstandingBalance <= 0) {
+      throw new Error('No outstanding balance to pay');
+    }
+
+    // Create a new payment record
+    await this.orgFinancePaymentRepository.createPayment({
+      org_finance_id: id,
       amount_paid: amountPaid,
-      outstanding_balance: '0', // Assuming full payment
       payment_proof_url: paymentProofUrl,
       payment_date: new Date(),
+    });
+
+    // Calculate new outstanding balance
+    const newOutstandingBalance = Math.max(0, currentOutstandingBalance - paymentAmount);
+
+    // Get total amount paid from all payment records
+    const totalAmountPaid = await this.orgFinancePaymentRepository.getTotalAmountPaid(id);
+
+    // Determine if the payment is complete (outstanding balance is zero)
+    const isPaymentComplete = newOutstandingBalance === 0;
+
+    // Update the main record
+    return await this.model.query().patchAndFetchById(id, {
+      has_paid: isPaymentComplete,
+      payment_status: isPaymentComplete ? 'paid' : 'partial',
+      amount_paid: totalAmountPaid.toString(),
+      outstanding_balance: newOutstandingBalance.toString(),
     });
   }
 }
