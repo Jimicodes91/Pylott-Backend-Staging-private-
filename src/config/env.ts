@@ -8,7 +8,7 @@ export const app = {
   port: process.env.PORT || 5000,
   env: process.env.NODE_ENV || 'development',
   name: process.env.APP_NAME || 'Pylott',
-  email: process.env.APP_EMAIL || 'oolat31@gmail.com',
+  email: process.env.APP_EMAIL || 'support@pylott.io',
 };
 
 // Process 1,000 Jobs every 2 seconds
@@ -71,9 +71,9 @@ export const JWT_SECRET_KEY = process.env.JWT_SECRET || 'kbsbdabdjabkdjshudeuwhh
 
 export const storage = {
   cloudinary: {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dh7oldcpu',
-    api_key: process.env.CLOUDINARY_API_KEY || '472522851295872',
-    api_secret: process.env.CLOUDINARY_API_SECRET || 'DhJEurIAjwYWpAW1AL5eLVJxWOU',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   },
 };
 
