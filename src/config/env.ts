@@ -49,6 +49,9 @@ export const redis = {
 };
 
 export const mail = {
+  sendgrid: {
+    api_key: process.env.SENDGRID_API_KEY,
+  },
   smtp: {
     user: process.env.SMTP_USERNAME,
     pass: process.env.SMTP_PASSWORD,
