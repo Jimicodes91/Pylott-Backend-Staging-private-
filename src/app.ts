@@ -3,7 +3,7 @@ import 'module-alias/register';
 import 'express-async-errors';
 import { injectable } from 'tsyringe';
 import bodyParser from 'body-parser';
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import http from 'http';
 import cors from 'cors';
 
@@ -36,10 +36,9 @@ export default class Application {
   }
 
   private setMiddlewares() {
-    // this.server.use(this._corsConfig);
     this.server.use(
       cors({
-        origin: true,
+        origin: ['https://www.pylott.io', 'https://pylott.io', 'https://staging.pylott.io', 'http://localhost:3000'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Api-key', 'Api-Reference-Id', 'x-api-key'],
@@ -52,30 +51,5 @@ export default class Application {
     entrypoint(this.server);
     this.server.use(notFoundHandler);
     this.server.use(errorHandler);
-  }
-
-  private _corsConfig(req: Request, res: Response, next: NextFunction) {
-    console.log('CORS_CALLED');
-    const origin = req.headers.origin; // Get the origin from the request header
-
-    // IF YOU NEED Access-Control-Allow-Credentials: true
-    // THEN Access-Control-Allow-Origin MUST REFLECT THE REQUESTING ORIGIN
-    // It CANNOT be '*'.
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    } else {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-key, Api-Reference-Id, x-api-key');
-    res.setHeader('Access-Control-Allow-Credentials', 'true'); // Keep this if your app uses credentials
-
-    if (req.method === 'OPTIONS') {
-      res.statusCode = 204;
-      res.end();
-    } else {
-      next();
-    }
   }
 }
