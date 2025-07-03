@@ -8,7 +8,7 @@ export const app = {
   port: process.env.PORT || 5000,
   env: process.env.NODE_ENV || 'development',
   name: process.env.APP_NAME || 'Pylott',
-  email: process.env.APP_EMAIL || 'support@pylott.io',
+  email: process.env.APP_EMAIL || 'ava@pylott.io',
 };
 
 // Process 1,000 Jobs every 2 seconds
