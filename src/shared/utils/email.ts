@@ -555,7 +555,7 @@ export function authEmailTemplate({
   actionLink,
   supportEmail = 'ava@pylott.io',
   websiteLink = 'https://pylott.io',
-  logoUrl = 'https://pylot-tkrh.vercel.app/assets/logo-DabAzhJ7.svg',
+  logoUrl = 'https://www.pylott.io/assets/logo-DabAzhJ7.svg',
   companyName = 'Pylott Team',
   copyright = 'Copyright © 2025 Pylott Technologies, All rights reserved.',
 }: {
