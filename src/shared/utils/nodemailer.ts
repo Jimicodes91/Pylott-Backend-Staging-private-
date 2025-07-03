@@ -6,7 +6,7 @@ sgMail.setApiKey(mail.sendgrid.api_key);
 const sendEmail = async (to: string | Array<string>, subject: string, html: string) => {
 	const msg = {
 		to,
-		from: app.email,
+		from: `Pylott Support <${app.email}>`,
 		subject,
 		html,
 	};
