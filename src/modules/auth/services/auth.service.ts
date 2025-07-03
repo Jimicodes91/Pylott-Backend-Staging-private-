@@ -18,6 +18,7 @@ import { StatusCodes } from 'http-status-codes';
 import { Redis } from '@/shared/utils/redis/redis';
 import { AddContactDto } from '@/modules/contact/contact.dto';
 import { ContactRespository } from '@/repositories/contact.repository';
+import { authEmailTemplate } from '../../../shared/utils/email';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
@@ -120,31 +121,26 @@ export class AuthService {
     await sendEmail(
       email,
       subject,
-      `<html>
-        <body>
-          <h2>${title}</h2>
-          <p>${content}</p>
-          <a style="font-size: 16px; color: #ffffff; background-color: #2563eb; 
-             padding: 10px 15px; text-decoration: none; border-radius: 5px;" 
-             href="${actionLink}">${actionText}</a>
-             <p>You can also click the link below:</p>
-             <a style="font-size: 16px; color: #2563eb; text-decoration: none;"><br/>${actionLink}</a>
-          <p>If you didn't request this, please ignore this email.</p>
-          <p>This link will expire in 24 hours.</p>
-          <p>If you have any questions, feel free to reach out to us.</p>
-          <p>Best regards,<br/>Pylott Team</p>
-        </body>
-      </html>`,
+      authEmailTemplate({
+        userName: email,
+        mainTitle: title,
+        message: content,
+        actionText,
+        actionLink,
+        // You can add more params if needed
+      }),
     );
   }
 
   private async sendVerificationEmail(email: string, token: string) {
     const verificationLink = `${this.FRONTEND_URL}/verify-account?token=${token}`;
-
     await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
   }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async sendPasswordResetEmail(email: string, token: string) {
+    console.log(token);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const resetLink = `${this.FRONTEND_URL}/reset-password?token=${email}`;
     await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
   }

@@ -542,3 +542,414 @@ export const newProjectCreatedEmail = (userName: string, projectName: string, pr
   </html>
     `;
 };
+
+/**
+ * Generates the HTML for auth-related emails (verification, invite, etc.) using the new template.
+ * @param params Object containing all dynamic values for the template.
+ */
+export function authEmailTemplate({
+  userName,
+  mainTitle = 'Verify email address',
+  message = 'Thank you for signing up with us! To complete your registration and get started, we just need to verify your email address.',
+  actionText = 'Verify Email',
+  actionLink,
+  supportEmail = 'ava@pylott.io',
+  websiteLink = 'https://pylott.io',
+  logoUrl = 'https://pylot-tkrh.vercel.app/assets/logo-DabAzhJ7.svg',
+  companyName = 'Pylott Team',
+  copyright = 'Copyright © 2025 Pylott Technologies, All rights reserved.',
+}: {
+  userName: string;
+  mainTitle?: string;
+  message?: string;
+  actionText?: string;
+  actionLink: string;
+  supportEmail?: string;
+  websiteLink?: string;
+  logoUrl?: string;
+  companyName?: string;
+  copyright?: string;
+}) {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>${mainTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    style="
+      font-family: 'DM Sans', sans-serif;
+      font-optical-sizing: auto;
+      font-style: normal;
+    "
+  >
+    <div>
+      <table
+        width="100%"
+        border="0"
+        cellpadding="0"
+        cellspacing="0"
+        style="background-color: #092327; padding-top: 20px; position: relative"
+        bgcolor="#092327"
+      >
+        <tbody>
+          <tr>
+            <td
+              align="center"
+              style="background-color: #092327; margin-top: 0"
+              bgcolor="#092327"
+            >
+              <a
+                href="${websiteLink}"
+                style="color: inherit"
+                target="_blank"
+                ><table width="100%" cellpadding="0" cellspacing="0">
+                  <tbody>
+                    <tr>
+                      <td
+                        align="center"
+                        style="
+                          padding-left: 20px;
+                          padding-right: 20px;
+                          padding-top: 40px;
+                          padding-bottom: 60px;
+                          color: #fff;
+                        "
+                      >
+                        <img
+                          src="${logoUrl}"
+                          alt="Pylott"
+                          width="100"
+                          border="0"
+                          style="
+                            border: none;
+                            outline: none;
+                            border-collapse: collapse;
+                            display: block;
+                            border-style: none;
+                          "
+                        />
+                      </td>
+                    </tr>
+                  </tbody></table
+              ></a>
+            </td>
+          </tr>
+          <tr>
+            <td
+              align="center"
+              style="margin-top: 0; padding-bottom: 20px"
+              bgcolor="#092327"
+            >
+              <table
+                align="center"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                style="
+                  background-color: #ffffff;
+                  width: 600px;
+                  position: relative;
+                  border-radius: 16px;
+                "
+                width="600"
+                bgcolor="#ffffff"
+              >
+                <tbody>
+                  <tr>
+                    <td align="center">
+                      <table>
+                        <tr>
+                          <td align="center">
+                            <table
+                              align="left"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      font-family: DM Sans, Roboto, Segoe UI,
+                                        sans-serif;
+                                      font-weight: 700;
+                                      font-size: 22px;
+                                      line-height: 22px;
+                                      letter-spacing: -0.35px;
+                                      padding-top: 32px;
+                                      padding-bottom: 32px;
+                                      color: #383838;
+                                    "
+                                  >
+                                    ${mainTitle}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 8px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    Dear ${userName},
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 20px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    ${message}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 20px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    Please click the link below to confirm your
+                                    email address: <br />
+                                    <a href="${actionLink}">${actionLink}</a>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 20px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    If you did not sign up for an account with
+                                    us, please ignore this message. Your account
+                                    will not be activated.
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 20px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    If you have any questions or need
+                                    assistance, feel free to reach out to our
+                                    support team at <a href="mailto:${supportEmail}">${supportEmail}</a>.
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 40px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    Thank you,
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 0px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    ${companyName}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              border="0"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      padding-top: 100px;
+                                      padding-bottom: 80px;
+                                      color: #383838;
+                                      font-size: 16px;
+                                      font-weight: 300;
+                                    "
+                                  >
+                                    <a
+                                      href="${actionLink}"
+                                      target="_blank"
+                                      style="
+                                        display: inline-block;
+                                        width: 100%;
+                                        color: #ffffff;
+                                        height: 50px;
+                                        margin-right: 8px;
+                                        background-color: #191819;
+                                        text-align: center;
+                                        line-height: 50px;
+                                        vertical-align: middle;
+                                        border-radius: 30px;
+                                        text-decoration: none;
+                                      "
+                                    >
+                                      ${actionText}
+                                    </a>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <table
+                align="center"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                style="
+                  background-color: transparent;
+                  width: 600px;
+                  padding-top: 40px;
+                  padding-bottom: 100px;
+                "
+                width="600"
+                bgcolor="transparent"
+              >
+                <tbody>
+                  <tr>
+                    <td align="center" style="color: #fff; font-weight: 300;">
+                      <span>${copyright}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
+  `;
+}
