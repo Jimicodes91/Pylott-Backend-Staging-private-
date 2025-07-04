@@ -130,6 +130,7 @@ export class ProjectService {
           ...project,
           form_fields: formattedFormFields,
           timeline: this.calculateTimeline(project?.milestone?.duration ?? 0),
+          project_timeline: this.calculateTimeline(project?.project_type?.milestones.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0),
           documents:
             project.documents?.map((doc) => ({
               id: doc.id,
@@ -230,13 +231,10 @@ export class ProjectService {
       const company_id = user.company_id;
       let milestone: MilestonesModelType;
       const projectId = uuidv4();
+      let projectType;
 
       if (payload['journey']) {
-        const projectType = await this.projectTypeRepository.findOne({
-          id: payload['journey'],
-          company_id,
-          deleted_at: null,
-        });
+        projectType = await this.projectTypeRepository.getProjectType(company_id, payload['journey']);
 
         if (!projectType) {
           return {
@@ -448,7 +446,7 @@ export class ProjectService {
       return {
         status: true,
         message: 'Project created successfully',
-        data: this.formatProjectWithTimeline(project, milestone?.duration ?? 0),
+        data: this.formatProjectWithTimeline({ ...project, project_type: projectType }, milestone?.duration ?? 0),
         statusCode: StatusCodes.CREATED,
       };
     } catch (error) {
@@ -780,6 +778,7 @@ export class ProjectService {
     return {
       ...project,
       timeline: override_value ?? this.calculateTimeline(project?.milestone?.duration ?? 0),
+      project_timeline: this.calculateTimeline(project?.project_type?.milestones.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0),
     };
   }
 
@@ -811,4 +810,6 @@ export class ProjectService {
 
     return `${days} ${days === 1 ? 'day' : 'days'}`;
   }
+
+  private estimatedProjectTimeline() {}
 }

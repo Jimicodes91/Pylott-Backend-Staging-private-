@@ -117,12 +117,12 @@ export class AuthService {
     }
   }
 
-  private async sendEmailTemplate(email: string, subject: string, title: string, content: string, actionLink: string, actionText: string) {
+  private async sendEmailTemplate(email: string, subject: string, title: string, content: string, actionLink: string, actionText: string, name: string) {
     await sendEmail(
       email,
       subject,
       authEmailTemplate({
-        userName: email,
+        userName: name,
         mainTitle: title,
         message: content,
         actionText,
@@ -132,17 +132,17 @@ export class AuthService {
     );
   }
 
-  private async sendVerificationEmail(email: string, token: string) {
+  private async sendVerificationEmail(email: string, token: string, name: string) {
     const verificationLink = `${this.FRONTEND_URL}/verify-account?token=${token}`;
-    await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email');
+    await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email', name);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private async sendPasswordResetEmail(email: string, token: string) {
+  private async sendPasswordResetEmail(email: string, token: string, name: string) {
     console.log(token);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const resetLink = `${this.FRONTEND_URL}/reset-password?token=${email}`;
-    await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password');
+    await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password', name);
   }
 
   private async sendTemporaryPasswordEmail(email: string, tempPassword: string) {
@@ -205,7 +205,7 @@ export class AuthService {
         throw new HttpError('Error creating user', 400);
       }
 
-      await this.sendVerificationEmail(email, verificationToken);
+      await this.sendVerificationEmail(email, verificationToken, newUser.name);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userResponse } = newUser;
       return userResponse;
@@ -237,7 +237,7 @@ export class AuthService {
         role: UserRoles.ADMIN,
       });
 
-      await this.sendVerificationEmail(email, verificationToken);
+      await this.sendVerificationEmail(email, verificationToken, newUser.name);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userResponse } = newUser;
       return userResponse;
@@ -262,7 +262,7 @@ export class AuthService {
             token_expires: Date.now() + TOKEN_EXPIRATION_MS,
           },
         );
-        await this.sendVerificationEmail(user.email, verificationToken);
+        await this.sendVerificationEmail(user.email, verificationToken, user.name);
         throw new HttpError('Verify your email first. A new link has been sent.', 403);
       }
 
@@ -374,7 +374,7 @@ export class AuthService {
         },
       );
 
-      await this.sendVerificationEmail(email, verificationToken);
+      await this.sendVerificationEmail(email, verificationToken, user.name);
       return { message: 'Verification email sent successfully' };
     } catch (error) {
       throw new HttpError(error.message || 'Error failure in sending Verification message', 500);
@@ -391,7 +391,7 @@ export class AuthService {
       const passwordResetToken = crypto.randomBytes(PASSWORD_RESET_TOKEN_LENGTH).toString('hex');
       await this.userRepository.update({ id: user.id }, { verification_token: passwordResetToken });
 
-      await this.sendPasswordResetEmail(email, passwordResetToken);
+      await this.sendPasswordResetEmail(email, passwordResetToken, user.name);
       return { message: 'Password reset email sent successfully' };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to send password reset email', 500);
@@ -454,6 +454,7 @@ export class AuthService {
 
         registrationLink,
         'Complete Registration',
+        `Pylott ${role}`,
       );
 
       return { message: 'Invitation sent successfully' };

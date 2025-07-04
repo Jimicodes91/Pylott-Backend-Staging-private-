@@ -17,7 +17,6 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
     let qb = this.model.query().skipUndefined().where(otherQueries);
 
     if (search && search.length) {
-      console.log('GOT HERE', search);
       qb = qb.andWhere('name', 'like', `%${search}%`);
     }
 
@@ -34,7 +33,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
       .withGraphFetched({
         documents: { attachments: true },
         milestone: true,
-        project_type: true,
+        project_type: { milestones: true },
         client: true,
       })
       .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
@@ -56,7 +55,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
     return this.model
       .query()
       .where({ id: project_id, company_id, deleted_at: null })
-      .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: true, client: true })
+      .withGraphFetched({ documents: { attachments: true }, milestone: true, project_type: { milestones: true }, client: true })
       .modifyGraph('milestone', (qb) => qb.orderBy('created_at', 'asc'))
       .first();
   }
