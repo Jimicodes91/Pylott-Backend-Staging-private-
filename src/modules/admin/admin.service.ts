@@ -3,12 +3,13 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 import { CompanyRepository, ProjectRepository, UserRepository } from '@/repositories';
-import { UserRoles } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, UserRoles } from '@/shared/enums';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { SubscriptionStatus } from '@/shared/utils/subscription.type';
 import { SubscriptionRepository } from '@/repositories/subscription.repository';
 import { CompanyFilterOptions } from '@/shared/interface/company';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 export interface UserFilterOptions {
   page?: number;
@@ -23,6 +24,7 @@ export class SysAdminService {
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(SubscriptionRepository) private subscriptionRepository: SubscriptionRepository,
     @inject(ProjectRepository) private projectRepository: ProjectRepository,
+    private readonly auditTrailService: AuditTrailService,
   ) {}
 
   public async getTotalOrganizations(): Promise<number> {
@@ -174,6 +176,15 @@ export class SysAdminService {
         </html>`,
       );
 
+      // Log sys admin added activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_ADDED, {
+        user_id: newUser.id,
+        company_id: null, // Sys admins don't belong to a company
+        description: 'SysAdmin added',
+        entity_description: `SysAdmin ${newUser.name} was added to the system`,
+        entity_id: newUser.id,
+      });
+
       return { message: 'SysAdmin added successfully. Temporary password sent via email.' };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to add SysAdmin', 500);
@@ -181,7 +192,23 @@ export class SysAdminService {
   }
 
   public async deactivateSysAdmin(userId: string) {
-    return this.userRepository.deactivateSysAdmin(userId);
+    const user = await this.userRepository.getById(userId);
+    if (!user) {
+      throw new HttpError('User not found', 404);
+    }
+
+    const result = await this.userRepository.deactivateSysAdmin(userId);
+
+    // Log sys admin deactivated activity
+    this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_DEACTIVATED, {
+      user_id: userId,
+      company_id: null, // Sys admins don't belong to a company
+      description: 'SysAdmin deactivated',
+      entity_description: `SysAdmin ${user.name} was deactivated`,
+      entity_id: userId,
+    });
+
+    return result;
   }
 
   public async getAllAdmins() {
@@ -202,12 +229,27 @@ export class SysAdminService {
       throw new HttpError('User Id is required', 400);
     }
 
+    // Get the user first to know their current status
+    const user = await this.userRepository.getById(userid);
+    if (!user) {
+      throw new HttpError('User not found', 404);
+    }
+
     const updatedUser = await this.userRepository.toggleUserStatus(userid);
     if (!updatedUser) {
       throw new HttpError('User not found', 404);
     }
 
-    return updatedUser;
+    // Log user status update activity
+    this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ADMIN_USER_STATUS_UPDATED, {
+      user_id: userid,
+      company_id: user.company_id,
+      description: 'User status updated by admin',
+      entity_description: `Admin updated status for ${user.name} to ${!user.is_active ? 'active' : 'inactive'}`,
+      entity_id: userid,
+    });
+
+    return { message: 'User status updated successfully' };
   }
 
   public async getTotalCompanies(filters?: { status?: string; subscription_status?: SubscriptionStatus }): Promise<number> {

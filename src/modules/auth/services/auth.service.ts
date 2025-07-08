@@ -9,7 +9,7 @@ import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembe
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { strongPassword } from '@/shared/utils/any';
-import { RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
 import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, FRONTEND_URL, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
@@ -19,6 +19,7 @@ import { Redis } from '@/shared/utils/redis/redis';
 import { AddContactDto } from '@/modules/contact/contact.dto';
 import { ContactRespository } from '@/repositories/contact.repository';
 import { authEmailTemplate } from '../../../shared/utils/email';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
@@ -35,6 +36,7 @@ export class AuthService {
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
     @inject(ContactRespository) private contactRepository: ContactRespository,
     private readonly projectMemberRepository: ProjectMembersRepository,
+    private readonly auditTrailService: AuditTrailService,
     _redis: Redis,
   ) {
     this.googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${this.FRONTEND_URL}/auth/google/callback`);
@@ -297,6 +299,16 @@ export class AuthService {
           login_count: (user.login_count || 0) + 1,
         },
       );
+
+      // Log user login activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_LOGIN, {
+        user_id: user.id,
+        company_id: user.company_id,
+        description: 'User logged in',
+        entity_description: `${user.name} logged in`,
+        entity_id: user.id,
+      });
+
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userData } = user;
       return {
@@ -344,6 +356,15 @@ export class AuthService {
           token_expires: null,
         },
       );
+
+      // Log email verification activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_EMAIL_VERIFIED, {
+        user_id: user.id,
+        company_id: user.company_id,
+        description: 'Email verified',
+        entity_description: `${user.name} verified their email`,
+        entity_id: user.id,
+      });
 
       const bearerToken = generateToken(user.email, user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -457,6 +478,15 @@ export class AuthService {
         `Pylott ${role}`,
       );
 
+      // Log invitation sent activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_INVITATION_SENT, {
+        user_id: adminId,
+        company_id: admin.company_id,
+        description: 'User invitation sent',
+        entity_description: `${admin.name} sent invitation to ${email} as ${role}`,
+        entity_id: adminId,
+      });
+
       return { message: 'Invitation sent successfully' };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to send invitation', 500);
@@ -549,6 +579,15 @@ export class AuthService {
         throw new HttpError('Failed to create role-specific profile', 500);
       }
 
+      // Log registration completed activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_REGISTRATION_COMPLETED, {
+        user_id: newUser.id,
+        company_id: companyId,
+        description: 'User registration completed',
+        entity_description: `${newUser.name} completed registration as ${role}`,
+        entity_id: newUser.id,
+      });
+
       return newUser;
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to complete registration', error.statusCode || 500);
@@ -627,6 +666,15 @@ export class AuthService {
       user.password = bcrypt.hashSync(newPassword, salt);
 
       await this.userRepository.update({ id: userId }, { password: user.password });
+
+      // Log password update activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_PASSWORD_UPDATE, {
+        user_id: userId,
+        company_id: user.company_id,
+        description: 'Password updated',
+        entity_description: `${user.name} updated their password`,
+        entity_id: userId,
+      });
 
       return { message: 'Password updated successfully' };
     } catch (error: any) {

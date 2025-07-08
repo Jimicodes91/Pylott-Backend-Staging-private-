@@ -3,13 +3,15 @@ import { UserUpdateData } from '@/shared/interface/user';
 import HttpError from '@/shared/utils/errorHandler';
 import { inject, injectable } from 'tsyringe';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
-import { DocumentsDirectory } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, DocumentsDirectory } from '@/shared/enums';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class UserService {
   constructor(
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(Cloudinary) private cloudinary: Cloudinary,
+    private readonly auditTrailService: AuditTrailService,
   ) {}
   public async getUser(id: string) {
     try {
@@ -56,6 +58,16 @@ export class UserService {
       if (updateData.language) user.language = updateData.language;
 
       await this.userRepository.update({ id: userId }, user);
+
+      // Log profile update activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_PROFILE_UPDATED, {
+        user_id: userId,
+        company_id: user.company_id,
+        description: 'User profile updated',
+        entity_description: `${user.name} updated their profile`,
+        entity_id: userId,
+      });
+
       return user;
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to update profile', 500);

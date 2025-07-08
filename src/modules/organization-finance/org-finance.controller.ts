@@ -37,7 +37,8 @@ export class OrgFinanceController {
 
   public createOrgFinance = async (req: Request, res: Response) => {
     try {
-      const orgFinance = await this.orgFinanceService.createOrgFinance(req.body);
+      const user = (req as any).user;
+      const orgFinance = await this.orgFinanceService.createOrgFinance(req.body, user);
       return successResponse(res, 'Org Finance record created successfully', orgFinance, 201);
     } catch (error: any) {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -63,7 +64,8 @@ export class OrgFinanceController {
 
   public updateOrgFinance = async (req: Request, res: Response) => {
     try {
-      const updatedOrgFinance = await this.orgFinanceService.updateOrgFinance(req.params.id, req.body);
+      const user = (req as any).user;
+      const updatedOrgFinance = await this.orgFinanceService.updateOrgFinance(req.params.id, req.body, user);
       return successResponse(res, 'Org Finance record updated successfully', updatedOrgFinance);
     } catch (error: any) {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -74,12 +76,13 @@ export class OrgFinanceController {
     try {
       const { amount_paid } = req.body;
       const paymentProof = req.file; // From multer
+      const user = (req as any).user;
 
       if (!amount_paid) {
         return errorResponse(res, 'error amount is required');
       }
 
-      const updatedOrgFinance = await this.orgFinanceService.markAsPaid(req.params.id, amount_paid, paymentProof);
+      const updatedOrgFinance = await this.orgFinanceService.markAsPaid(req.params.id, amount_paid, paymentProof, user);
 
       return successResponse(res, 'Org Finance marked as paid successfully', updatedOrgFinance);
     } catch (error: any) {

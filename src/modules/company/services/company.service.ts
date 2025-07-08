@@ -3,6 +3,8 @@ import { SubscriptionRepository } from '@/repositories/subscription.repository';
 import { CompanySignupData } from '@/shared/interface/company';
 import HttpError from '@/shared/utils/errorHandler';
 import { inject, injectable } from 'tsyringe';
+import { AUDIT_TRAIL_ACTION } from '@/shared/enums';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class CompanyService {
@@ -10,6 +12,7 @@ export class CompanyService {
     @inject(CompanyRepository) private companyRepository: CompanyRepository,
     @inject(UserRepository) private userRepository: UserRepository,
     @inject(SubscriptionRepository) private subscriptionRepository: SubscriptionRepository,
+    private readonly auditTrailService: AuditTrailService,
   ) {}
 
   public async createCompany(data: CompanySignupData, adminId: string) {
@@ -28,6 +31,15 @@ export class CompanyService {
       // Create the company in the database
       const company = await this.companyRepository.create(companyData);
       await this.userRepository.update({ id: adminId }, { company_id: company.id });
+
+      // Log company creation activity
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.COMPANY_CREATED, {
+        user_id: adminId,
+        company_id: company.id,
+        description: 'Company created',
+        entity_description: `Company ${company.name} was created`,
+        entity_id: company.id,
+      });
 
       return company;
     } catch (error: any) {

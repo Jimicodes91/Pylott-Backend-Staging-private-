@@ -12,7 +12,7 @@ export class AuditTrailService {
 
   constructor(private readonly activityLogRepository: ActivityLogRepository) {}
 
-  async createEvent(action: AUDIT_TRAIL_ACTION, payload: AuditTrailPayload, project_id: string) {
+  async createEvent(action: AUDIT_TRAIL_ACTION, payload: AuditTrailPayload, project_id?: string) {
     if (action === AUDIT_TRAIL_ACTION.NOTE_CREATED) {
       await this.logNoteCreatedActivity(project_id, payload);
     } else if (action === AUDIT_TRAIL_ACTION.COMMENT_DELETED) {
@@ -26,7 +26,34 @@ export class AuditTrailService {
     } else if (action === AUDIT_TRAIL_ACTION.PROJECT_CREATED || action === AUDIT_TRAIL_ACTION.PROJECT_UPDATED || action === AUDIT_TRAIL_ACTION.PROJECT_DELETED) {
       await this.logProjectActivity(project_id, payload);
     } else if (action === AUDIT_TRAIL_ACTION.PROJECT_MEMBER_ADDED) {
-      await this.logProjectMemberActivity(project_id, payload);
+      await this.logProjectMemberActivity(project_id!, payload);
+    } else if (
+      action === AUDIT_TRAIL_ACTION.USER_LOGIN ||
+      action === AUDIT_TRAIL_ACTION.USER_LOGOUT ||
+      action === AUDIT_TRAIL_ACTION.USER_SIGNUP ||
+      action === AUDIT_TRAIL_ACTION.USER_PASSWORD_RESET ||
+      action === AUDIT_TRAIL_ACTION.USER_PASSWORD_UPDATE ||
+      action === AUDIT_TRAIL_ACTION.USER_EMAIL_VERIFIED ||
+      action === AUDIT_TRAIL_ACTION.USER_INVITATION_SENT ||
+      action === AUDIT_TRAIL_ACTION.USER_REGISTRATION_COMPLETED
+    ) {
+      await this.logAuthActivity(payload);
+    } else if (
+      action === AUDIT_TRAIL_ACTION.ADMIN_USER_STATUS_UPDATED ||
+      action === AUDIT_TRAIL_ACTION.ADMIN_COMPANY_STATUS_UPDATED ||
+      action === AUDIT_TRAIL_ACTION.ADMIN_COMPANY_SUBSCRIPTION_UPDATED ||
+      action === AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_ADDED ||
+      action === AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_DEACTIVATED
+    ) {
+      await this.logAdminActivity(payload);
+    } else if (action === AUDIT_TRAIL_ACTION.CLIENT_CREATED || action === AUDIT_TRAIL_ACTION.CLIENT_UPDATED || action === AUDIT_TRAIL_ACTION.CLIENT_DELETED) {
+      await this.logClientActivity(payload);
+    } else if (action === AUDIT_TRAIL_ACTION.COMPANY_CREATED || action === AUDIT_TRAIL_ACTION.COMPANY_UPDATED || action === AUDIT_TRAIL_ACTION.COMPANY_SUBSCRIPTION_UPDATED) {
+      await this.logCompanyActivity(payload);
+    } else if (action === AUDIT_TRAIL_ACTION.ORG_FINANCE_CREATED || action === AUDIT_TRAIL_ACTION.ORG_FINANCE_UPDATED || action === AUDIT_TRAIL_ACTION.ORG_FINANCE_MARKED_PAID) {
+      await this.logOrgFinanceActivity(payload);
+    } else if (action === AUDIT_TRAIL_ACTION.USER_PROFILE_UPDATED) {
+      await this.logUserActivity(payload);
     }
   }
 
@@ -40,7 +67,7 @@ export class AuditTrailService {
         action,
       };
 
-      const result = await this.activityLogRepository.getAuditTrail(company_id, project_id, formattedFilters, pagination);
+      const result = await this.activityLogRepository.getAuditTrail(company_id, formattedFilters, pagination, project_id);
 
       return { status: true, message: 'Activity logs fetched successfully', data: result };
     } catch (error) {
@@ -152,6 +179,84 @@ export class AuditTrailService {
     });
   }
 
+  private async logAuthActivity(payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'users';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
+
+    await this.save({
+      project_id: null,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.USER_LOGIN,
+    });
+  }
+
+  private async logAdminActivity(payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'admin_actions';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
+
+    await this.save({
+      project_id: null,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.ADMIN_USER_STATUS_UPDATED,
+    });
+  }
+
+  private async logClientActivity(payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'clients';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
+
+    await this.save({
+      project_id: null,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.CLIENT_CREATED,
+    });
+  }
+
+  private async logCompanyActivity(payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'companies';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
+
+    await this.save({
+      project_id: null,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.COMPANY_CREATED,
+    });
+  }
+
+  private async logOrgFinanceActivity(payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'org_finance';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
+
+    await this.save({
+      project_id: null,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.ORG_FINANCE_CREATED,
+    });
+  }
+
+  private async logUserActivity(payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'users';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
+
+    await this.save({
+      project_id: null,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.USER_PROFILE_UPDATED,
+    });
+  }
+
   private async save({
     project_id,
     payload,
@@ -160,7 +265,7 @@ export class AuditTrailService {
     activity_name,
     extras,
   }: {
-    project_id: string;
+    project_id: string | null;
     payload: AuditTrailPayload;
     db_table: string;
     activity_description: string;

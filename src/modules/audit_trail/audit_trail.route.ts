@@ -8,4 +8,5 @@ const auditTrailController = container.resolve(AuditTrailController);
 
 export const auditTrailRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/projects`, authGuard, auditTrailController.getAuditTrail);
+  server.get(`${prefix}/all`, authGuard, auditTrailController.getAllActivityLogs);
 };
