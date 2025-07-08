@@ -26,7 +26,7 @@ import {
 import { ServiceType } from '@/shared/types/general.type';
 import { MilestonesModelType, ProjectFormFieldModelType, ProjectMemebersModelType, ProjectModelType, UserModelType } from '@/models';
 import { CreateProjectType } from '@/shared/types/projects.type';
-import { DocumentsDirectory, MetadataType, ProjectMemberTypeEnum, ProjectStatus, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType, ProjectMemberTypeEnum, ProjectStatus, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { ContactRespository } from '@/repositories/contact.repository';
 import { AuthService } from '@/modules/auth/services/auth.service';
@@ -34,6 +34,7 @@ import { Redis } from '@/shared/utils/redis/redis';
 import sendEmail from '@/shared/utils/nodemailer';
 import { toTitleCase } from '@/shared/utils/any';
 import { newProjectCreatedEmail } from '@/shared/utils/email';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
 export class ProjectService {
@@ -52,6 +53,7 @@ export class ProjectService {
     private readonly attachmentsRepository: DocumentAttachmentsRepository,
     private readonly projectFormRepository: ProjectFormsRepository,
     private readonly projectFormFieldRepository: ProjectFormFieldRepository,
+    private readonly auditTrailService: AuditTrailService,
     private readonly authSvc: AuthService,
     private readonly cloudinary: Cloudinary,
     _redis: Redis,
@@ -443,6 +445,20 @@ export class ProjectService {
         await sendEmail(_email, `New Project Created - ${toTitleCase(payload['project_name'])}`, emailTemplate);
       }
 
+      const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.PROJECT_CREATED,
+        {
+          user_id: user.id,
+          company_id,
+          description: 'Project created',
+          entity_description: `${author} created a new project (${payload['project_name']})`,
+          entity_id: projectId,
+        },
+        projectId,
+      );
+
       return {
         status: true,
         message: 'Project created successfully',
@@ -638,6 +654,20 @@ export class ProjectService {
         }
       });
 
+      const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.PROJECT_CREATED,
+        {
+          user_id: user.id,
+          company_id,
+          description: 'Project updated',
+          entity_description: `${author} updated project (${payload['project_name']})`,
+          entity_id: project_id,
+        },
+        project_id,
+      );
+
       return {
         status: true,
         message: 'Project updated successfully',
@@ -810,6 +840,4 @@ export class ProjectService {
 
     return `${days} ${days === 1 ? 'day' : 'days'}`;
   }
-
-  private estimatedProjectTimeline() {}
 }
