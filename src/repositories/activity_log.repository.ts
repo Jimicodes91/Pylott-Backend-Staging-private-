@@ -10,7 +10,7 @@ export class ActivityLogRepository extends BaseRepository<ActivityLogsModelType,
     super(ActivityLogs);
   }
 
-  async getAuditTrail(company_id: string, project_id: string, filters: AuditTrailFilter, pagination: { page: number; limit: number }) {
+  async getAuditTrail(company_id: string, filters: AuditTrailFilter, pagination: { page: number; limit: number }, project_id?: string) {
     const { start_date, end_date, action } = filters;
     const { page, limit } = pagination;
     const offset = (page - 1) * limit;
