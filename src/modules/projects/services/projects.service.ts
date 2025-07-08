@@ -662,7 +662,7 @@ export class ProjectService {
           user_id: user.id,
           company_id,
           description: 'Project updated',
-          entity_description: `${author} updated project (${payload['project_name']})`,
+          entity_description: `${author} updated project (${project.name})`,
           entity_id: project_id,
         },
         project_id,
