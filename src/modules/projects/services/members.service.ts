@@ -5,6 +5,8 @@ import { ProjectMembersRepository, UserRepository, ProjectRepository } from '@/r
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { UserModelType } from '@/models';
 import { AddProjectMember } from '@/shared/types/projects.type';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
+import { AUDIT_TRAIL_ACTION } from '@/shared/enums';
 
 @injectable()
 export class MemberService {
@@ -14,6 +16,7 @@ export class MemberService {
     private readonly projectMembersRepository: ProjectMembersRepository,
     private readonly userRepository: UserRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly auditTrailService: AuditTrailService,
   ) {}
 
   async getProjectMembers(company_id: string, project_id: string, query: ObjectLiteral = {}): Promise<ServiceType> {
@@ -98,7 +101,7 @@ export class MemberService {
         };
       }
 
-      await this.projectMembersRepository.create({
+      const result = await this.projectMembersRepository.create({
         project_id,
         user_id: payload.user_id,
         company_id,
@@ -106,6 +109,20 @@ export class MemberService {
         added_by: user.id,
         member_type: payload?.member_type ?? null,
       });
+
+      const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.PROJECT_MEMBER_ADDED,
+        {
+          user_id: user.id,
+          company_id,
+          description: 'Project member added',
+          entity_description: `${author} added ${memberUser.name} to project ${project.name}`,
+          entity_id: result.id,
+        },
+        project_id,
+      );
 
       return {
         status: true,

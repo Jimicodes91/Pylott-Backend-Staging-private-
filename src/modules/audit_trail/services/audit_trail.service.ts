@@ -23,6 +23,10 @@ export class AuditTrailService {
       await this.logNotePinnedActivity(project_id, payload);
     } else if (action === AUDIT_TRAIL_ACTION.NOTE_UNPINNED) {
       await this.logNoteUnPinnedActivity(project_id, payload);
+    } else if (action === AUDIT_TRAIL_ACTION.PROJECT_CREATED || action === AUDIT_TRAIL_ACTION.PROJECT_UPDATED || action === AUDIT_TRAIL_ACTION.PROJECT_DELETED) {
+      await this.logProjectActivity(project_id, payload);
+    } else if (action === AUDIT_TRAIL_ACTION.PROJECT_MEMBER_ADDED) {
+      await this.logProjectMemberActivity(project_id, payload);
     }
   }
 
@@ -112,6 +116,32 @@ export class AuditTrailService {
   private async logNoteUnPinnedActivity(project_id: string, payload: AuditTrailPayload) {
     const ASSOCIATED_ENTITY_TABLE = 'project_notes';
     const ACTIVITY_DESCRIPTION = `${payload.entity_description} pinned a note`;
+
+    await this.save({
+      project_id,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.NOTE_UNPINNED,
+    });
+  }
+
+  private async logProjectActivity(project_id: string, payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'projects';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
+
+    await this.save({
+      project_id,
+      payload,
+      db_table: ASSOCIATED_ENTITY_TABLE,
+      activity_description: ACTIVITY_DESCRIPTION,
+      activity_name: AUDIT_TRAIL_ACTION.NOTE_UNPINNED,
+    });
+  }
+
+  private async logProjectMemberActivity(project_id: string, payload: AuditTrailPayload) {
+    const ASSOCIATED_ENTITY_TABLE = 'project_members';
+    const ACTIVITY_DESCRIPTION = payload.entity_description;
 
     await this.save({
       project_id,
