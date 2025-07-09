@@ -602,7 +602,7 @@ export class ProjectService {
       let completedAt = project.completed_at;
       if (payload.status) {
         if (payload.status === ProjectStatus.COMPLETED && project.status !== ProjectStatus.COMPLETED) {
-          completedAt = new Date().toISOString();
+          completedAt = dayjs().format();
           const lastMilestone = await this.milestonesRepository.getLastCreatedMilestone(company_id, project.project_type_id);
           if (lastMilestone) {
             payload['milestone_id'] = lastMilestone.id;
