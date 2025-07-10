@@ -25,8 +25,9 @@ export class ProjectMembersRepository extends BaseRepository<ProjectMemebersMode
     return await this.model
       .query()
       .where({ project_id, company_id, deleted_at: null })
-      .where('member_type', ProjectMemberTypeEnum.INTERNAL)
-      .orWhere('is_visible_to_client', true)
+      .where((qb) => {
+        qb.where('member_type', ProjectMemberTypeEnum.INTERNAL).orWhere('is_visible_to_client', true);
+      })
       .withGraphFetched({ user: true });
   }
 }
