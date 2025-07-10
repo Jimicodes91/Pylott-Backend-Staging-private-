@@ -177,13 +177,17 @@ export class SysAdminService {
       );
 
       // Log sys admin added activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_ADDED, {
-        user_id: newUser.id,
-        company_id: null, // Sys admins don't belong to a company
-        description: 'SysAdmin added',
-        entity_description: `SysAdmin ${newUser.name} was added to the system`,
-        entity_id: newUser.id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_ADDED,
+        {
+          user_id: newUser.id,
+          company_id: null, // Sys admins don't belong to a company
+          description: 'SysAdmin added',
+          entity_description: `SysAdmin ${newUser.name} was added to the system`,
+          entity_id: newUser.id,
+        },
+        '',
+      );
 
       return { message: 'SysAdmin added successfully. Temporary password sent via email.' };
     } catch (error: any) {
@@ -200,13 +204,17 @@ export class SysAdminService {
     const result = await this.userRepository.deactivateSysAdmin(userId);
 
     // Log sys admin deactivated activity
-    this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_DEACTIVATED, {
-      user_id: userId,
-      company_id: null, // Sys admins don't belong to a company
-      description: 'SysAdmin deactivated',
-      entity_description: `SysAdmin ${user.name} was deactivated`,
-      entity_id: userId,
-    });
+    this.auditTrailService.createEvent(
+      AUDIT_TRAIL_ACTION.ADMIN_SYS_ADMIN_DEACTIVATED,
+      {
+        user_id: userId,
+        company_id: null, // Sys admins don't belong to a company
+        description: 'SysAdmin deactivated',
+        entity_description: `SysAdmin ${user.name} was deactivated`,
+        entity_id: userId,
+      },
+      '',
+    );
 
     return result;
   }
@@ -241,13 +249,17 @@ export class SysAdminService {
     }
 
     // Log user status update activity
-    this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ADMIN_USER_STATUS_UPDATED, {
-      user_id: userid,
-      company_id: user.company_id,
-      description: 'User status updated by admin',
-      entity_description: `Admin updated status for ${user.name} to ${!user.is_active ? 'active' : 'inactive'}`,
-      entity_id: userid,
-    });
+    this.auditTrailService.createEvent(
+      AUDIT_TRAIL_ACTION.ADMIN_USER_STATUS_UPDATED,
+      {
+        user_id: userid,
+        company_id: user.company_id,
+        description: 'User status updated by admin',
+        entity_description: `Admin updated status for ${user.name} to ${!user.is_active ? 'active' : 'inactive'}`,
+        entity_id: userid,
+      },
+      '',
+    );
 
     return { message: 'User status updated successfully' };
   }

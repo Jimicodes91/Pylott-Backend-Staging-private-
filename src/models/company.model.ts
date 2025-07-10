@@ -4,6 +4,7 @@ import BaseModel from './base.model';
 import { BillingCycle, PaymentMethod, SubscriptionPlan, SubscriptionStatus } from '@/shared/utils/subscription.type';
 import { User } from './user.model';
 import { Subscription } from './subscription.model';
+import { UserCompany } from './user_company.model';
 
 export class Company extends BaseModel {
   static tableName = 'companies';
@@ -37,6 +38,14 @@ export class Company extends BaseModel {
         join: {
           from: 'companies.id',
           to: 'users.company_id',
+        },
+      },
+      userCompanies: {
+        relation: Model.HasManyRelation,
+        modelClass: UserCompany,
+        join: {
+          from: 'companies.id',
+          to: 'user_companies.company_id',
         },
       },
       subscription: {

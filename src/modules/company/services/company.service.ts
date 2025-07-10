@@ -33,13 +33,17 @@ export class CompanyService {
       await this.userRepository.update({ id: adminId }, { company_id: company.id });
 
       // Log company creation activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.COMPANY_CREATED, {
-        user_id: adminId,
-        company_id: company.id,
-        description: 'Company created',
-        entity_description: `Company ${company.name} was created`,
-        entity_id: company.id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.COMPANY_CREATED,
+        {
+          user_id: adminId,
+          company_id: company.id,
+          description: 'Company created',
+          entity_description: `Company ${company.name} was created`,
+          entity_id: company.id,
+        },
+        '',
+      );
 
       return company;
     } catch (error: any) {

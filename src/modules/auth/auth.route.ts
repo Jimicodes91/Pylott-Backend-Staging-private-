@@ -34,6 +34,8 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/send-invite`, authenticateUser, authController.sendInvite);
 
+  server.post(`${prefix}/invite-existing-user`, authenticateUser, authController.inviteExistingUser);
+
   server.post(`${prefix}/complete-registration`, schemaValidator(completeRegistrationValidationRule), authController.completeRegistration);
 
   server.post(`${prefix}/add-client`, schemaValidator(addClientValidator), authController.addClient);
