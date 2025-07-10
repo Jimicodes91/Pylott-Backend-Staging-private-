@@ -12,7 +12,7 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
   }
 
   async getProjectsAndAssociatedEntities(query: ObjectLiteral, search?: string) {
-    const { client_user_id = null, ...otherQueries } = query;
+    const { client_email = null, ...otherQueries } = query;
 
     let qb = this.model.query().skipUndefined().where(otherQueries);
 
@@ -20,12 +20,24 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
       qb = qb.andWhere('name', 'like', `%${search}%`);
     }
 
-    if (client_user_id) {
-      qb.andWhereRaw(
-        `JSON_CONTAINS(form_data->'$.project_client', JSON_ARRAY((
-        SELECT id FROM contacts WHERE user_id = ? AND company_id = ? AND deleted_at IS NULL
-      )))`,
-        [client_user_id],
+    if (client_email) {
+      qb.whereExists(
+        this.model
+          .knex()
+          .select(1)
+          .from('contacts')
+          .whereRaw(
+            `
+                  JSON_CONTAINS(
+                      JSON_EXTRACT(projects.form_data, '$.project_client'),
+                      CAST(CONCAT('"', contacts.id, '"') AS JSON)
+                  )
+                  AND contacts.email = ?
+                  AND contacts.company_id = ?
+                  AND contacts.deleted_at IS NULL
+              `,
+            [client_email, otherQueries.company_id],
+          ),
       );
     }
 
