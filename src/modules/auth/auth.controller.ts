@@ -185,5 +185,23 @@ export class AuthController {
     }
   };
 
+  public inviteExistingUser = async (req: Request, res: Response) => {
+    try {
+      const adminId = (req as any).user.id;
+
+      if (!adminId) {
+        return errorResponse(res, 'Admin Id is required');
+      }
+      const { email, role } = req.body;
+      if (!adminId || !email || !role) {
+        return errorResponse(res, 'email, and role are required');
+      }
+      const result = await this.authService.inviteExistingUser(adminId, email, role);
+      return successResponse(res, 'User invited to company successfully', result);
+    } catch (error: any) {
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  };
+
   //public signup = async (req: Request, res: Response) => successResponse(res, 'Sample response', {});
 }

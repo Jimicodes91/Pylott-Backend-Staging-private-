@@ -25,4 +25,18 @@ export class AuditTrailController {
 
     return genericResponse({ res, data: others, statusCode });
   };
+
+  getAllActivityLogs = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { company_id } = req.user as UserModelType;
+    const filters = req.query as unknown as AuditTrailFilter;
+
+    const pagination = {
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 10,
+    };
+
+    const { statusCode = null, ...others } = await this.auditTrailService.getAuditTrail(company_id, undefined, filters, pagination);
+
+    return genericResponse({ res, data: others, statusCode });
+  };
 }
