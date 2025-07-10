@@ -73,13 +73,22 @@ export class ProjectService {
     } = {},
   ): Promise<ServiceType> {
     try {
+      if (filters.client_id) {
+        const user = await this.userRepository.findOne({ id: filters.client_id, deleted_at: null });
+
+        if (user) {
+          filters['client_email'] = user.email;
+        }
+      }
+
       const projects = await this.projectRepository.getProjectsAndAssociatedEntities(
         {
           status: filters?.status,
           consultant_id: filters?.consultant_id,
           project_type_id: filters?.project_type_id,
           milestone_id: filters?.milestone_id,
-          client_user_id: filters?.client_id,
+          client_email: filters['client_email'],
+          company_id,
         },
         filters.search,
       );
