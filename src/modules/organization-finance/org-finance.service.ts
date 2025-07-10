@@ -60,13 +60,17 @@ export class OrgFinanceService {
       const createdOrgFinance = await this.orgFinanceRepository.createOrgFinance(orgFinance);
 
       // Log org finance creation activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ORG_FINANCE_CREATED, {
-        user_id: user.id,
-        company_id: user.company_id,
-        description: 'Organization finance record created',
-        entity_description: `${user.name} created organization finance record`,
-        entity_id: createdOrgFinance.id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.ORG_FINANCE_CREATED,
+        {
+          user_id: user.id,
+          company_id: user.company_id,
+          description: 'Organization finance record created',
+          entity_description: `${user.name} created organization finance record`,
+          entity_id: createdOrgFinance.id,
+        },
+        '',
+      );
 
       return createdOrgFinance;
     } catch (error: any) {
@@ -92,13 +96,17 @@ export class OrgFinanceService {
       }
 
       // Log org finance update activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ORG_FINANCE_UPDATED, {
-        user_id: user.id,
-        company_id: user.company_id,
-        description: 'Organization finance record updated',
-        entity_description: `${user.name} updated organization finance record`,
-        entity_id: id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.ORG_FINANCE_UPDATED,
+        {
+          user_id: user.id,
+          company_id: user.company_id,
+          description: 'Organization finance record updated',
+          entity_description: `${user.name} updated organization finance record`,
+          entity_id: id,
+        },
+        '',
+      );
 
       return updatedOrgFinance;
     } catch (error: any) {
@@ -129,13 +137,17 @@ export class OrgFinanceService {
 
       // Log payment activity if user is provided
       if (user) {
-        this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.ORG_FINANCE_MARKED_PAID, {
-          user_id: user.id,
-          company_id: user.company_id,
-          description: 'Organization finance marked as paid',
-          entity_description: `${user.name} marked organization finance as paid with amount ${amountPaid}`,
-          entity_id: id,
-        });
+        this.auditTrailService.createEvent(
+          AUDIT_TRAIL_ACTION.ORG_FINANCE_MARKED_PAID,
+          {
+            user_id: user.id,
+            company_id: user.company_id,
+            description: 'Organization finance marked as paid',
+            entity_description: `${user.name} marked organization finance as paid with amount ${amountPaid}`,
+            entity_id: id,
+          },
+          '',
+        );
       }
 
       // Get the updated payment history

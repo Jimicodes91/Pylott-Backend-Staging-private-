@@ -12,7 +12,7 @@ export class AuditTrailService {
 
   constructor(private readonly activityLogRepository: ActivityLogRepository) {}
 
-  async createEvent(action: AUDIT_TRAIL_ACTION, payload: AuditTrailPayload, project_id?: string) {
+  async createEvent(action: AUDIT_TRAIL_ACTION, payload: AuditTrailPayload, project_id: string) {
     if (action === AUDIT_TRAIL_ACTION.NOTE_CREATED) {
       await this.logNoteCreatedActivity(project_id, payload);
     } else if (action === AUDIT_TRAIL_ACTION.COMMENT_DELETED) {
@@ -274,10 +274,10 @@ export class AuditTrailService {
   }) {
     await this.activityLogRepository.create({
       user_id: payload.user_id,
-      company_id: payload.company_id,
+      company_id: payload.company_id || '', // Use empty string if company_id is null
       description: activity_description,
       name: activity_name,
-      project_id,
+      project_id: project_id || '', // Use empty string if project_id is null
       entity: JSON.stringify({
         id: payload.entity_id,
         description: payload.entity_description,

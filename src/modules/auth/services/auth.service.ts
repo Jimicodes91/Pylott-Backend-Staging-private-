@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { RedisClientType } from 'redis';
 
-import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembersRepository, UserRepository } from '@/repositories';
+import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembersRepository, UserRepository, UserCompanyRepository } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { strongPassword } from '@/shared/utils/any';
@@ -35,6 +35,7 @@ export class AuthService {
     @inject(ClientRepository) private clientRepository: ClientRepository,
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
     @inject(ContactRespository) private contactRepository: ContactRespository,
+    @inject(UserCompanyRepository) private userCompanyRepository: UserCompanyRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     private readonly auditTrailService: AuditTrailService,
     _redis: Redis,
@@ -300,19 +301,35 @@ export class AuthService {
         },
       );
 
+      // Get all companies the user belongs to
+      const userCompanies = await this.userCompanyRepository.getUserCompanies(user.id);
+
       // Log user login activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_LOGIN, {
-        user_id: user.id,
-        company_id: user.company_id,
-        description: 'User logged in',
-        entity_description: `${user.name} logged in`,
-        entity_id: user.id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_LOGIN,
+        {
+          user_id: user.id,
+          company_id: user.company_id || '',
+          description: 'User logged in',
+          entity_description: `${user.name} logged in`,
+          entity_id: user.id,
+        },
+        '123',
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userData } = user;
       return {
-        user: userData,
+        user: {
+          ...userData,
+          companies: userCompanies.map((uc) => ({
+            id: uc.company.id,
+            name: uc.company.name,
+            role: uc.role,
+            joined_at: uc.joined_at,
+            is_active: uc.is_active,
+          })),
+        },
         token: accessToken,
       };
     } catch (error) {
@@ -358,13 +375,17 @@ export class AuthService {
       );
 
       // Log email verification activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_EMAIL_VERIFIED, {
-        user_id: user.id,
-        company_id: user.company_id,
-        description: 'Email verified',
-        entity_description: `${user.name} verified their email`,
-        entity_id: user.id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_EMAIL_VERIFIED,
+        {
+          user_id: user.id,
+          company_id: user.company_id,
+          description: 'Email verified',
+          entity_description: `${user.name} verified their email`,
+          entity_id: user.id,
+        },
+        '123',
+      );
 
       const bearerToken = generateToken(user.email, user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -455,8 +476,13 @@ export class AuthService {
       }
 
       const existingUser = await this.userRepository.findOne({ email });
+
+      // Check if user exists and is already in this company
       if (existingUser) {
-        throw new HttpError('Email is already registered', 400);
+        const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, admin.company_id);
+        if (isUserInCompany) {
+          throw new HttpError('User is already a member of this company', 400);
+        }
       }
 
       const company = await this.companyRepository.getCompanyNameById(admin.company_id);
@@ -479,13 +505,17 @@ export class AuthService {
       );
 
       // Log invitation sent activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_INVITATION_SENT, {
-        user_id: adminId,
-        company_id: admin.company_id,
-        description: 'User invitation sent',
-        entity_description: `${admin.name} sent invitation to ${email} as ${role}`,
-        entity_id: adminId,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_INVITATION_SENT,
+        {
+          user_id: adminId,
+          company_id: admin.company_id,
+          description: 'User invitation sent',
+          entity_description: `${admin.name} sent invitation to ${email} as ${role}`,
+          entity_id: adminId,
+        },
+        '123',
+      );
 
       return { message: 'Invitation sent successfully' };
     } catch (error: any) {
@@ -506,7 +536,6 @@ export class AuthService {
         name: name,
         email: email,
         password: hashedPassword,
-        company_id: companyId,
         role: role,
         is_verified: true,
       });
@@ -515,32 +544,13 @@ export class AuthService {
         throw new HttpError('Error creating user', 400);
       }
 
-      // Define role to column mapping
-      const roleColumnMap = {
-        [UserRoles.CLIENT]: 'client_users',
-        [UserRoles.CONSULTANT]: 'consultant_users',
-        [UserRoles.ADMIN]: 'admin',
-      };
+      // Add user to the company using the new user_companies table
+      await this.userCompanyRepository.addUserToCompany(newUser.id, companyId, role);
 
-      // Verify the column exists before trying to update
-      if (!roleColumnMap[role]) {
-        throw new HttpError('Invalid user role specified', 400);
-      }
+      // For backward compatibility, set the primary company_id
+      await this.userRepository.update({ id: newUser.id }, { company_id: companyId });
 
-      const columnName = roleColumnMap[role];
-      if (!columnName) {
-        throw new HttpError('Invalid user role specified', 400);
-      }
-
-      // Modified pushToArray call with error handling
-      try {
-        await this.companyRepository.pushToArray({ id: companyId }, columnName, newUser.id);
-      } catch (pushError) {
-        console.error('Failed to update company references:', pushError);
-        throw new HttpError('Failed to update company records', 500);
-      }
-
-      // Create role-specific records
+      // Create role-specific records for backward compatibility
       try {
         if (role === UserRoles.CLIENT) {
           await this.clientRepository.create({
@@ -580,13 +590,17 @@ export class AuthService {
       }
 
       // Log registration completed activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_REGISTRATION_COMPLETED, {
-        user_id: newUser.id,
-        company_id: companyId,
-        description: 'User registration completed',
-        entity_description: `${newUser.name} completed registration as ${role}`,
-        entity_id: newUser.id,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_REGISTRATION_COMPLETED,
+        {
+          user_id: newUser.id,
+          company_id: companyId,
+          description: 'User registration completed',
+          entity_description: `${newUser.name} completed registration as ${role}`,
+          entity_id: newUser.id,
+        },
+        '123',
+      );
 
       return newUser;
     } catch (error: any) {
@@ -597,7 +611,11 @@ export class AuthService {
     try {
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
-        throw new HttpError('Email is already registered', 400);
+        // Check if user is already in this company
+        const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, companyId);
+        if (isUserInCompany) {
+          throw new HttpError('User is already a member of this company', 400);
+        }
       }
 
       const temporaryPassword = crypto.randomBytes(32).toString('hex').slice(0, TEMP_PASSWORD_LENGTH);
@@ -608,13 +626,18 @@ export class AuthService {
         email,
         password: hashedPassword,
         role: UserRoles.CLIENT,
-        company_id: companyId,
         is_verified: true,
       });
 
       if (!newUser) {
         throw new HttpError('Error creating user', 400);
       }
+
+      // Add user to the company using the new user_companies table
+      await this.userCompanyRepository.addUserToCompany(newUser.id, companyId, UserRoles.CLIENT);
+
+      // For backward compatibility, set the primary company_id
+      await this.userRepository.update({ id: newUser.id }, { company_id: companyId });
 
       const client = await this.clientRepository.create({
         company_id: companyId,
@@ -668,17 +691,75 @@ export class AuthService {
       await this.userRepository.update({ id: userId }, { password: user.password });
 
       // Log password update activity
-      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_PASSWORD_UPDATE, {
-        user_id: userId,
-        company_id: user.company_id,
-        description: 'Password updated',
-        entity_description: `${user.name} updated their password`,
-        entity_id: userId,
-      });
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_PASSWORD_UPDATE,
+        {
+          user_id: userId,
+          company_id: user.company_id,
+          description: 'Password updated',
+          entity_description: `${user.name} updated their password`,
+          entity_id: userId,
+        },
+        '123',
+      );
 
       return { message: 'Password updated successfully' };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to update password', 500);
+    }
+  }
+
+  public async inviteExistingUser(adminId: string, email: string, role: UserRoles) {
+    try {
+      const admin = await this.userRepository.getById(adminId);
+      if (!admin.company_id) {
+        throw new HttpError('Admin is not associated with a company', 400);
+      }
+
+      const existingUser = await this.userRepository.findOne({ email });
+      if (!existingUser) {
+        throw new HttpError('User not found with this email', 404);
+      }
+
+      // Check if user is already in this company
+      const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, admin.company_id);
+      if (isUserInCompany) {
+        throw new HttpError('User is already a member of this company', 400);
+      }
+
+      // Add user to the company
+      await this.userCompanyRepository.addUserToCompany(existingUser.id, admin.company_id, role, adminId);
+
+      const company = await this.companyRepository.getCompanyNameById(admin.company_id);
+      const companyName = company.name;
+
+      // Send email notification to the user
+      await this.sendEmailTemplate(
+        email,
+        `Welcome to ${companyName}`,
+        `You've been added to ${companyName}`,
+        `You have been added to ${companyName} as a ${role}. You can now access the company's projects and resources.`,
+        `${this.FRONTEND_URL}/login`,
+        'Login to Pylott',
+        `Pylott ${role}`,
+      );
+
+      // Log invitation sent activity
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_INVITATION_SENT,
+        {
+          user_id: adminId,
+          company_id: admin.company_id,
+          description: 'Existing user invited to company',
+          entity_description: `${admin.name} invited ${existingUser.name} to ${companyName} as ${role}`,
+          entity_id: existingUser.id,
+        },
+        '123',
+      );
+
+      return { message: 'User added to company successfully' };
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to invite user to company', 500);
     }
   }
 }
