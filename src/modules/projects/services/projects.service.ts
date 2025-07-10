@@ -318,7 +318,7 @@ export class ProjectService {
           const clientUserType = await this.userRepository.findOne({ deleted_at: null, email: clientRecord.email });
           if (!clientUserType) nonExistentClients.push(clientRecord.email);
           else {
-            existentClientsEmail.push(clientUserType.email);
+            existentClientsEmail.push({ email: clientUserType.email, name: clientUserType.name });
             existentClients.push({ added_by: user.id, company_id, member_type: ProjectMemberTypeEnum.CLIENT, project_id: projectId, user_id: clientUserType.id, is_visible_to_client: true });
           }
         }
@@ -450,8 +450,8 @@ export class ProjectService {
       }
 
       for (const _email of existentClientsEmail) {
-        const emailTemplate = newProjectCreatedEmail(user.name, payload['project_name'], '');
-        await sendEmail(_email, `New Project Created - ${toTitleCase(payload['project_name'])}`, emailTemplate);
+        const emailTemplate = newProjectCreatedEmail(_email.name, payload['project_name'], '');
+        await sendEmail(_email.email, `New Project Created - ${toTitleCase(payload['project_name'])}`, emailTemplate);
       }
 
       const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
