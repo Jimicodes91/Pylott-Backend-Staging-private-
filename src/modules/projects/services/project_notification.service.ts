@@ -34,7 +34,6 @@ export class NotificationService {
   }
 
   public async sendMilestoneDueNotification(project: ProjectModelType, milestone: MilestonesModelType, overdueDuration: string): Promise<void> {
-    // @Todo use frontend url
     const url = `${app.url}/api/v1/projects/${project.id}`;
     const emailContent = createMilestoneDueEmail(project.name, milestone.name, overdueDuration, milestone.duration, url);
 
