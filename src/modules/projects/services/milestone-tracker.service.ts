@@ -1,12 +1,13 @@
 import { injectable } from 'tsyringe';
+import cron from 'node-cron';
 import dayjs from 'dayjs';
-import Bull from 'bull';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
+
 import { ProjectRepository, MilestonesRepository } from '@/repositories';
+
 import { ProjectModelType, MilestonesModelType } from '@/models';
-import { ProjectStatus, QueueNames } from '@/shared/enums';
-import { PylottQueue } from '@/shared/utils/queue/bull';
+import { ProjectStatus } from '@/shared/enums';
 import { NotificationService } from './project_notification.service';
 
 dayjs.extend(duration);
@@ -21,36 +22,23 @@ export class MilestoneTrackerService {
     private readonly projectRepository: ProjectRepository,
     private readonly milestonesRepository: MilestonesRepository,
     private readonly notificationService: NotificationService,
-    private readonly queue: PylottQueue,
-  ) {
-    queue.registerQueue(QueueNames.MILESTONE_TRACKING);
-    this.registerQueueHandlers();
-  }
-
-  private registerQueueHandlers(): void {
-    this.queue.registerHandler(QueueNames.MILESTONE_TRACKING, 'global-milestone-check', this.processGlobalCheck.bind(this));
-
-    this.queue.registerHandler(QueueNames.MILESTONE_TRACKING, 'check-project-milestones', this.processProjectJob.bind(this));
-  }
+  ) {}
 
   public async scheduleGlobalChecks(): Promise<void> {
-    await this.queue.getQueue(QueueNames.MILESTONE_TRACKING).add(
-      'global-milestone-check',
-      { scope: 'GLOBAL' },
+    cron.schedule(
+      '0 0 * * *',
+      async () => {
+        console.log(`${this.traceId} Executing global daily check via node-cron`);
+        await this.processGlobalCheck();
+      },
       {
-        // repeat: { cron: '*/1 * * * *', tz: 'UTC' }, // every second - Just for local testing
-        repeat: { cron: '0 0 * * *', tz: 'UTC' }, // 12Am UTC
-        jobId: 'global-daily-check',
-        removeOnComplete: true,
-        priority: 1,
+        timezone: 'UTC',
       },
     );
-    console.log(`${this.traceId} Scheduled global daily checks`);
+    console.log(`${this.traceId} Scheduled global daily checks using node-cron`);
   }
 
-  private async processGlobalCheck(job: Bull.Job<{ scope: string }>): Promise<void> {
-    if (job.data.scope !== 'GLOBAL') return;
-
+  private async processGlobalCheck(): Promise<void> {
     try {
       const projects = await this.projectRepository.findMany({
         status: ProjectStatus.IN_PROGRESS,
@@ -61,30 +49,10 @@ export class MilestoneTrackerService {
 
       for (let i = 0; i < projects.length; i += this.BATCH_SIZE) {
         const batch = projects.slice(i, i + this.BATCH_SIZE);
-        await Promise.all(
-          batch.map((project) => this.queue.getQueue(QueueNames.MILESTONE_TRACKING).add('check-project-milestones', { project_id: project.id }, { priority: 3, removeOnComplete: true })),
-        );
+        await Promise.all(batch.map((project) => this.processProjectMilestones(project)));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${this.traceId} Global check failed: ${error.message}`);
-      throw error;
-    }
-  }
-
-  private async processProjectJob(job: Bull.Job<{ project_id: string }>): Promise<void> {
-    const { project_id } = job.data;
-
-    try {
-      const project = await this.projectRepository.getProjectAndMembers(project_id);
-
-      if (!project) {
-        console.warn(`${this.traceId} Project ${project_id} not found`);
-        return;
-      }
-
-      await this.processProjectMilestones(project);
-    } catch (error) {
-      console.error(`${this.traceId} Project ${project_id} processing failed: ${error.message}`);
       throw error;
     }
   }
@@ -118,7 +86,7 @@ export class MilestoneTrackerService {
 
       await this.checkCurrentMilestone(project, currentMilestone, allMilestones);
       await this.checkTotalProjectDuration(project, allMilestones);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${this.traceId} Failed processing project ${project.id}: ${error.message}`);
     }
   }
@@ -128,14 +96,10 @@ export class MilestoneTrackerService {
 
     const durationDays = Number(currentMilestone.duration);
 
-    // console.log(`${this.traceId} Checking current milestone for project ${project.id} with duration ===> ${JSON.stringify({ durationDays, project, currentMilestone })}`);
-
     if (isNaN(durationDays) || durationDays <= 0) return;
 
     const endDate = dayjs(project.milestone_start_date).add(durationDays, 'day');
     const isOverdue = dayjs().isAfter(endDate);
-
-    // console.log(`${this.traceId} Current milestone overdue status for project ${project.id} ===> ${JSON.stringify({ durationDays, project, currentMilestone, isOverdue })}`);
 
     if (isOverdue) {
       const isFinal = allMilestones[allMilestones.length - 1].id === currentMilestone.id;
@@ -170,9 +134,6 @@ export class MilestoneTrackerService {
   }
 
   private async handleIntermediateMilestoneOverdue(project: ProjectModelType, currentMilestone: MilestonesModelType): Promise<void> {
-    // const nextIndex = allMilestones.findIndex((m) => m.id === currentMilestone.id) + 1;
-    // const nextMilestone = nextIndex < allMilestones.length ? allMilestones[nextIndex] : null;
-
     try {
       await this.projectRepository.update(
         { id: project.id },
@@ -187,7 +148,7 @@ export class MilestoneTrackerService {
       const overDueDuration = dayjs.duration(dayjs().diff(endDate)).humanize();
 
       this.notificationService.sendMilestoneDueNotification(project, currentMilestone, overDueDuration);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${this.traceId} Failed to update project ${project.id}: ${error.message}`);
       throw error;
     }
@@ -205,7 +166,7 @@ export class MilestoneTrackerService {
 
       const totalDuration = await this.calculateTotalDuration(project.project_type_id);
       this.notificationService.sendProjectDueNotification(project, totalDuration).catch((err) => console.error(`Notification failed: ${err.message}`));
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${this.traceId} Failed to mark project ${project.id} as due: ${error.message}`);
       throw error;
     }
@@ -222,7 +183,7 @@ export class MilestoneTrackerService {
       );
 
       this.notificationService.sendProjectDueNotification(project, totalDurationDays).catch((err) => console.error(`Notification failed: ${err.message}`));
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${this.traceId} Failed to mark project ${project.id} as due: ${error.message}`);
       throw error;
     }
@@ -237,10 +198,29 @@ export class MilestoneTrackerService {
   }
 
   public async enqueueCompanyCheck(companyId: string): Promise<void> {
-    await this.queue.getQueue(QueueNames.MILESTONE_TRACKING).add('global-milestone-check', { company_id: companyId }, { priority: 2 });
+    console.log(`${this.traceId} Manually triggering check for company ${companyId}`);
+    const projects = await this.projectRepository.findMany({
+      company_id: companyId,
+      status: ProjectStatus.IN_PROGRESS,
+      deleted_at: null,
+    });
+
+    for (let i = 0; i < projects.length; i += this.BATCH_SIZE) {
+      const batch = projects.slice(i, i + this.BATCH_SIZE);
+      await Promise.all(batch.map((project) => this.processProjectMilestones(project)));
+    }
+    console.log(`${this.traceId} Finished manual check for company ${companyId}`);
   }
 
   public async enqueueProjectCheck(projectId: string): Promise<void> {
-    await this.queue.getQueue(QueueNames.MILESTONE_TRACKING).add('check-project-milestones', { project_id: projectId }, { priority: 3 });
+    console.log(`${this.traceId} Manually triggering check for project ${projectId}`);
+    const project = await this.projectRepository.getProjectAndMembers(projectId);
+
+    if (!project) {
+      console.warn(`${this.traceId} Project ${projectId} not found for manual check`);
+      return;
+    }
+    await this.processProjectMilestones(project);
+    console.log(`${this.traceId} Finished manual check for project ${projectId}`);
   }
 }

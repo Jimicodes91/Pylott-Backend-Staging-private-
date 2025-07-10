@@ -277,7 +277,7 @@ export class AuditTrailService {
       company_id: payload.company_id || '', // Use empty string if company_id is null
       description: activity_description,
       name: activity_name,
-      project_id: project_id || '', // Use empty string if project_id is null
+      project_id: project_id,
       entity: JSON.stringify({
         id: payload.entity_id,
         description: payload.entity_description,

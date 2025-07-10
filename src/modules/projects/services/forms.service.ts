@@ -46,7 +46,7 @@ export class ProjectFormService {
       { name: 'Project name', type: 'text', is_required: true, is_custom: false, sort_order: 1 },
       { name: 'Journey', type: 'select', is_required: true, is_custom: false, sort_order: 2, options: [], api_locator: 'journey-list' },
       { name: 'Description', type: 'text', is_required: false, is_custom: false, sort_order: 3 },
-      { name: 'Project Client', type: 'select', is_required: true, is_custom: false, sort_order: 4, api_locator: 'contact-list', is_multiple: true },
+      { name: 'Project Client', type: 'select', is_required: false, is_custom: false, sort_order: 4, api_locator: 'contact-list', is_multiple: true },
       { name: 'Client Organization', type: 'text', is_required: true, is_custom: false, sort_order: 5 },
       { name: 'Project value', type: 'number', is_required: false, is_custom: false, sort_order: 6 },
       { name: 'Nationality', type: 'text', is_required: false, is_custom: false, sort_order: 7 },
