@@ -65,16 +65,18 @@ export class TaskService {
         };
       }
 
-      const metadataQuery = {
-        company_id,
-        type: MetadataType.TASK,
-        id: payload.task_type_id,
-        deleted_at: null,
-      };
+      if (payload.task_type_id) {
+        const metadataQuery = {
+          company_id,
+          type: MetadataType.TASK,
+          id: payload.task_type_id,
+          deleted_at: null,
+        };
 
-      const taskType = await this.metadataRepository.findOne(metadataQuery);
+        const taskType = await this.metadataRepository.findOne(metadataQuery);
 
-      if (!taskType) return { status: false, message: 'Task type not found', statusCode: StatusCodes.NOT_FOUND };
+        if (!taskType) return { status: false, message: 'Task type not found', statusCode: StatusCodes.NOT_FOUND };
+      }
 
       const projectType = await this.projectTypeRepository.findOne({
         id: payload.project_type_id,
@@ -91,7 +93,6 @@ export class TaskService {
 
       const task_id = uuidv4();
       const document_id = uuidv4();
-      const task_type_id = uuidv4();
 
       const assigneePayload: Array<Partial<ProjectTaskAssigneesModelType>> = [];
 
@@ -120,16 +121,6 @@ export class TaskService {
         };
       }
       await Objection.Model.transaction(async (trx) => {
-        const metadataQuery = {
-          company_id,
-          type: MetadataType.TASK,
-          deleted_at: null,
-        };
-
-        const eventType = await this.metadataRepository.findOne(metadataQuery);
-
-        if (!eventType) await this.metadataRepository.create({ ...metadataQuery, id: task_type_id, name: 'Task' });
-
         const projectTaskData: Partial<ProjectTaskModelType> = {
           id: task_id,
           project_id,
@@ -141,7 +132,7 @@ export class TaskService {
           end_date: dayjs(payload.end_date).format(),
           is_visible_to_client: payload.is_visible_to_client,
           author_id: user.id,
-          task_type_id: payload.task_type_id,
+          task_type_id: payload?.task_type_id ?? null,
           project_type_id: payload.project_type_id,
         };
 
@@ -151,7 +142,6 @@ export class TaskService {
           project_id,
           task_id,
           type: MetadataType.TASK,
-          document_type_id: task_type_id,
           name: payload.name,
           is_visible_to_client: payload.is_visible_to_client,
         };

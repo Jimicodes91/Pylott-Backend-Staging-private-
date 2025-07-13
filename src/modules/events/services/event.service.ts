@@ -36,16 +36,18 @@ export class EventService {
     try {
       const company_id = user.company_id;
 
-      const metadataQuery = {
-        company_id,
-        type: MetadataType.EVENT,
-        id: payload.event_type_id,
-        deleted_at: null,
-      };
+      if (payload.event_type_id) {
+        const metadataQuery = {
+          company_id,
+          type: MetadataType.EVENT,
+          id: payload.event_type_id,
+          deleted_at: null,
+        };
 
-      const eventType = await this.metadataRepository.findOne(metadataQuery);
+        const eventType = await this.metadataRepository.findOne(metadataQuery);
 
-      if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
+        if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
+      }
 
       const project = await this.projectRepository.findOne({ id: project_id, company_id, deleted_at: null });
 
@@ -120,14 +122,17 @@ export class EventService {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
 
-      const metadataQuery = {
-        company_id,
-        type: MetadataType.EVENT,
-        id: payload.event_type_id,
-      };
+      if (payload.event_type_id) {
+        const metadataQuery = {
+          company_id,
+          type: MetadataType.EVENT,
+          id: payload.event_type_id,
+        };
 
-      const eventType = await this.metadataRepository.findOne(metadataQuery);
-      if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
+        const eventType = await this.metadataRepository.findOne(metadataQuery);
+
+        if (!eventType) return { status: false, message: 'Event type not found', statusCode: StatusCodes.NOT_FOUND };
+      }
 
       if (payload.name) {
         payload.name = payload.name.trim();

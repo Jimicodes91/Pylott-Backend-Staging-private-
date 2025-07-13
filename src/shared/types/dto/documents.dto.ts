@@ -4,7 +4,7 @@ export type CreateMetadataType = {
 };
 
 export type UploadDocumentType = {
-  document_type_id: string;
+  document_type_id?: string;
   description: string;
   file_name: string;
   attachment: string;

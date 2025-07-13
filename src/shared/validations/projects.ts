@@ -455,7 +455,7 @@ export const createTaskValidationRules = [
       return true;
     }),
 
-  body('task_type_id').trim().isString().withMessage('Task type ID must be a string'),
+  body('task_type_id').optional().trim().isString().withMessage('Task type ID must be a string'),
 
   body('project_type_id').notEmpty().isString().withMessage('Project type ID must be a string'),
 
