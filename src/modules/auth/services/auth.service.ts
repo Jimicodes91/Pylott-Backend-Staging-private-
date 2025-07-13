@@ -305,17 +305,13 @@ export class AuthService {
       const userCompanies = await this.userCompanyRepository.getUserCompanies(user.id);
 
       // Log user login activity
-      this.auditTrailService.createEvent(
-        AUDIT_TRAIL_ACTION.USER_LOGIN,
-        {
-          user_id: user.id,
-          company_id: user.company_id || '',
-          description: 'User logged in',
-          entity_description: `${user.name} logged in`,
-          entity_id: user.id,
-        },
-        '123',
-      );
+      this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_LOGIN, {
+        user_id: user.id,
+        company_id: user.company_id || '',
+        description: 'User logged in',
+        entity_description: `${user.name} logged in`,
+        entity_id: user.id,
+      });
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userData } = user;
@@ -760,6 +756,32 @@ export class AuthService {
       return { message: 'User added to company successfully' };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to invite user to company', 500);
+    }
+  }
+
+  public async logout(userId: string) {
+    try {
+      const user = await this.userRepository.getById(userId);
+      if (!user) {
+        throw new HttpError('User not found', 404);
+      }
+
+      // Log logout activity
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_LOGOUT,
+        {
+          user_id: userId,
+          company_id: user.company_id,
+          description: 'User logged out',
+          entity_description: `${user.name} logged out`,
+          entity_id: userId,
+        },
+        '123',
+      );
+
+      return { message: 'Logged out successfully' };
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to logout', 500);
     }
   }
 }

@@ -12,7 +12,7 @@ export class AuditTrailService {
 
   constructor(private readonly activityLogRepository: ActivityLogRepository) {}
 
-  async createEvent(action: AUDIT_TRAIL_ACTION, payload: AuditTrailPayload, project_id: string) {
+  async createEvent(action: AUDIT_TRAIL_ACTION, payload: AuditTrailPayload, project_id?: string) {
     if (action === AUDIT_TRAIL_ACTION.NOTE_CREATED) {
       await this.logNoteCreatedActivity(project_id, payload);
     } else if (action === AUDIT_TRAIL_ACTION.COMMENT_DELETED) {
@@ -77,6 +77,35 @@ export class AuditTrailService {
         `${this.traceId} Error occurred fetching milestones ===> ${JSON.stringify({
           company_id,
           project_id,
+          filters,
+          pagination,
+          err_msg: error?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  async getAdminActivities(filters: AuditTrailFilter = {}, pagination: { page: number; limit: number } = { page: 1, limit: 10 }): Promise<ServiceType> {
+    try {
+      const { start_date, end_date, action } = filters;
+
+      const formattedFilters = {
+        start_date: start_date ? dayjs(start_date).startOf('day').toISOString() : null,
+        end_date: end_date ? dayjs(end_date).endOf('day').toISOString() : null,
+        action,
+      };
+
+      const result = await this.activityLogRepository.getAdminActivities(formattedFilters, pagination);
+
+      return { status: true, message: 'Admin activities fetched successfully', data: result };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error occurred fetching admin activities ===> ${JSON.stringify({
           filters,
           pagination,
           err_msg: error?.message,
