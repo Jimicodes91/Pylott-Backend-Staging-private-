@@ -24,7 +24,7 @@ export class EventController {
     const { project_id, event_id } = req.params;
     const payload = req.body as Partial<EventDto>;
     const user = req.user as UserModelType;
-    const { statusCode = null, ...others } = await this.eventService.updateEvent(user.company_id, event_id, project_id, payload);
+    const { statusCode = null, ...others } = await this.eventService.updateEvent(user, event_id, project_id, payload);
     return genericResponse({ res, data: others, statusCode });
   };
 

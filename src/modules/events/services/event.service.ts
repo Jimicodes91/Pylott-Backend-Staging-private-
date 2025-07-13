@@ -10,13 +10,14 @@ dayjs.extend(advancedFormat);
 import { EventsRepository, MetadataRepository, ProjectMembersRepository, ProjectRepository, UserRepository } from '@/repositories';
 
 import { EventDto } from '@/shared/types/dto/event.dto';
-import { EmailSubject, MetadataType } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, EmailSubject, MetadataType } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { EventModelType, UserModelType } from '@/models';
 import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
 import { CreateCalenderEvent } from '@/shared/types/events.type';
 import sendEmail from '@/shared/utils/nodemailer';
 import { newEventScheduledEmail } from '@/shared/utils/email';
+import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 // import { dateTimeFormat } from '@/shared/constants/date.constants';
 
 @injectable()
@@ -28,6 +29,7 @@ export class EventService {
     private readonly eventRepository: EventsRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly userRepository: UserRepository,
+    private readonly auditTrailService: AuditTrailService,
     private readonly googleCalender: GoogleAPIsCalender,
     private readonly projectMemberRepository: ProjectMembersRepository,
   ) {}
@@ -86,7 +88,7 @@ export class EventService {
         is_visible_to_client: payload.is_visible_to_client,
       };
 
-      await this.eventRepository.create(insertData);
+      const event = await this.eventRepository.create(insertData);
 
       if (payload.invites && payload.invites.length) {
         const users = await this.userRepository.findAllWhereEmailIn(payload.invites);
@@ -108,6 +110,20 @@ export class EventService {
         });
       }
 
+      const trailPrefix = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.EVENT_CREATED,
+        {
+          user_id: user.id,
+          company_id: user.company_id,
+          description: 'Event created',
+          entity_description: `${trailPrefix} created a new event (${event.name})`,
+          entity_id: event.id,
+        },
+        project_id,
+      );
+
       return { status: true, message: 'Event created successfully', statusCode: StatusCodes.CREATED };
     } catch (error: any) {
       console.log(`${this.traceId} Error occurred creating event ===> ${JSON.stringify({ payload, err_msg: error?.message })}`);
@@ -117,7 +133,8 @@ export class EventService {
       };
     }
   }
-  public async updateEvent(company_id: string, event_id: string, project_id: string, payload: Partial<EventDto>): Promise<ServiceType> {
+  public async updateEvent(user: UserModelType, event_id: string, project_id: string, payload: Partial<EventDto>): Promise<ServiceType> {
+    const company_id = user.company_id;
     try {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
@@ -168,6 +185,20 @@ export class EventService {
 
       // if (gcalResponse);
       await this.eventRepository.update({ id: event_id, project_id }, updateData);
+
+      const trailPrefix = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.EVENT_CREATED,
+        {
+          user_id: user.id,
+          company_id: user.company_id,
+          description: 'Event updated',
+          entity_description: `${trailPrefix} updated event (${record.name})`,
+          entity_id: event_id,
+        },
+        project_id,
+      );
 
       return { status: true, message: 'Event updated successfully', statusCode: StatusCodes.OK };
     } catch (error: any) {
