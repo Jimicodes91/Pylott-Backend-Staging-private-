@@ -1,5 +1,6 @@
+import { v2 as cloudinary, UploadApiOptions, UploadApiResponse } from 'cloudinary';
 import { singleton } from 'tsyringe';
-import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
 import slugify from 'slugify';
 
 import { IStorage } from '@/shared/interface/storage';
@@ -11,15 +12,41 @@ const { cloudinary: cfg } = storage;
 
 @singleton()
 export class Cloudinary implements IStorage {
-  private readonly traceId = '[Cloudinary]:';
+  private readonly traceId = '[Cloudinary]';
 
   constructor() {
     cloudinary.config(cfg);
   }
 
-  public async upload(mediaDirectory: DocumentsDirectory, media: string, fileName: string) {
-    const cleanedMedia = this.ensureDataUrl(media);
-    return this.save(mediaDirectory, fileName, cleanedMedia);
+  public async upload(mediaDirectory: DocumentsDirectory, media: string, fileName: string): Promise<{ status: boolean; data: string | null }> {
+    try {
+      const base64 = media.includes(',') ? media.split(',')[1] : media;
+      const buffer = Buffer.from(base64, 'base64');
+      const stream = Readable.from(buffer);
+
+      const slug = this.slugifyFileName(fileName);
+      const publicId = `${env}/${mediaDirectory}/${slug}`;
+
+      const options: UploadApiOptions = {
+        public_id: publicId,
+        resource_type: 'auto',
+        use_filename: true,
+        unique_filename: false,
+      };
+
+      const result: UploadApiResponse = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
+          if (error) reject(error);
+          else resolve(result!);
+        });
+        stream.pipe(uploadStream);
+      });
+
+      return { status: true, data: result.secure_url };
+    } catch (error) {
+      console.error(`${this.traceId} upload failed: ${error.message}`, error.stack);
+      return { status: false, data: null };
+    }
   }
 
   private slugifyFileName(name: string): string {
@@ -29,35 +56,5 @@ export class Cloudinary implements IStorage {
       lower: true,
       trim: true,
     });
-  }
-
-  private async save(
-    folder_name: string,
-    file_name: string,
-    file_data: string,
-    config?: {
-      format?: 'jpg' | 'png';
-      overwrite?: boolean;
-      transformation?: object[];
-    },
-  ) {
-    const publicId = `${env}/${folder_name}/` + this.slugifyFileName(file_name);
-
-    try {
-      const res = await cloudinary.uploader.upload(file_data, {
-        ...config,
-        public_id: publicId,
-        overwrite: config?.overwrite ?? false,
-        unique_filename: false,
-      });
-      return { status: true, data: res.secure_url };
-    } catch (err) {
-      console.error(err, `${this.traceId} Could not upload media to Cloudinary`, { folder_name, file_name, config });
-      return { status: false, data: null };
-    }
-  }
-
-  private ensureDataUrl(media: string) {
-    return media.includes(',') ? media : `data:image/png;base64,${media}`;
   }
 }
