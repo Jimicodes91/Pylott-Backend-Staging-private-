@@ -27,15 +27,17 @@ export class DocsService {
     const { attachment, ...others } = payload;
 
     try {
-      const metadataQuery = {
-        company_id,
-        type: MetadataType.DOCUMENT,
-        id: payload.document_type_id,
-      };
+      if (payload.document_type_id) {
+        const metadataQuery = {
+          company_id,
+          type: MetadataType.DOCUMENT,
+          id: payload.document_type_id,
+        };
 
-      const eventType = await this.metadataRepository.findOne(metadataQuery);
+        const eventType = await this.metadataRepository.findOne(metadataQuery);
 
-      if (!eventType) return { status: false, message: 'Document type not found', statusCode: StatusCodes.NOT_FOUND };
+        if (!eventType) return { status: false, message: 'Document type not found', statusCode: StatusCodes.NOT_FOUND };
+      }
 
       const project = await this.projectRepository.findOne({ id: project_id, company_id });
 
@@ -53,7 +55,7 @@ export class DocsService {
         project_id,
         description: others.description,
         type: MetadataType.DOCUMENT,
-        document_type_id: others.document_type_id,
+        document_type_id: others?.document_type_id ?? null,
         name: others.file_name,
         is_visible_to_client: others?.is_visible_to_client,
       };
@@ -183,8 +185,6 @@ export class DocsService {
       if (!document) return { status: false, message: 'Document not found', statusCode: StatusCodes.NOT_FOUND };
 
       let attachmentUrl = payload.attachment;
-
-      console.log(attachmentUrl);
 
       if (payload.attachment && !payload.attachment.includes('http')) {
         const fileName = `${project_id}/${document.name}`;

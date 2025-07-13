@@ -1,7 +1,7 @@
 import { body } from 'express-validator';
 
 export const uploadDocumentValidationRules = [
-  body('document_type_id').isUUID().withMessage('Document Type Id must be a valid UUID'),
+  body('document_type_id').optional().isUUID().withMessage('Document Type Id must be a valid UUID'),
 
   body('description').optional().isString().withMessage('Description must be a string').trim(),
 
