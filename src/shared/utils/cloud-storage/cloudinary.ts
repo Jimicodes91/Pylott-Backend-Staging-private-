@@ -1,25 +1,34 @@
 import { singleton } from 'tsyringe';
 import { v2 as cloudinary } from 'cloudinary';
+import slugify from 'slugify';
 
 import { IStorage } from '@/shared/interface/storage';
 import { app, storage } from '@config/env';
 import { DocumentsDirectory } from '@/shared/enums';
 
 const { env } = app;
-const { cloudinary: cloudConfig } = storage;
+const { cloudinary: cfg } = storage;
 
 @singleton()
 export class Cloudinary implements IStorage {
   private readonly traceId = '[Cloudinary]:';
 
   constructor() {
-    cloudinary.config(cloudConfig);
+    cloudinary.config(cfg);
   }
 
   public async upload(mediaDirectory: DocumentsDirectory, media: string, fileName: string) {
-    media = this.clean(media);
+    const cleanedMedia = this.ensureDataUrl(media);
+    return this.save(mediaDirectory, fileName, cleanedMedia);
+  }
 
-    return await this.save(mediaDirectory, fileName, media);
+  private slugifyFileName(name: string): string {
+    return slugify(name, {
+      replacement: '-',
+      remove: /[^a-zA-Z0-9 -]/g,
+      lower: true,
+      trim: true,
+    });
   }
 
   private async save(
@@ -27,30 +36,28 @@ export class Cloudinary implements IStorage {
     file_name: string,
     file_data: string,
     config?: {
-      format: 'jpg' | 'png';
+      format?: 'jpg' | 'png';
       overwrite?: boolean;
       transformation?: object[];
     },
   ) {
-    file_name = file_name
-      .split(/\s+/g)
-      .join('-')
-      .split(/[^a-zA-Z ]/g)
-      .join('-')
-      .toLowerCase();
+    const publicId = `${env}/${folder_name}/` + this.slugifyFileName(file_name);
 
     try {
-      const data = await cloudinary.uploader.upload(file_data, {
+      const res = await cloudinary.uploader.upload(file_data, {
         ...config,
-        public_id: `${env}/${folder_name}/${file_name}`,
+        public_id: publicId,
+        overwrite: config?.overwrite ?? false,
+        unique_filename: false,
       });
-      return { status: true, data: data.secure_url };
-    } catch (error) {
-      console.error(error, `${this.traceId} Could not upload media to cloudinary`, { folder_name, file_name, file_data, config });
+      return { status: true, data: res.secure_url };
+    } catch (err) {
+      console.error(err, `${this.traceId} Could not upload media to Cloudinary`, { folder_name, file_name, config });
       return { status: false, data: null };
     }
   }
-  private clean(media_base64: string) {
-    return media_base64.split(',').length > 1 ? media_base64 : 'data:image/png;base64,' + media_base64;
+
+  private ensureDataUrl(media: string) {
+    return media.includes(',') ? media : `data:image/png;base64,${media}`;
   }
 }
