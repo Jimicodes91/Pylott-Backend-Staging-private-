@@ -427,7 +427,13 @@ export class TaskService {
 
   async deleteTask(project_id: string, task_id: string): Promise<ServiceType> {
     try {
-      await this.projectTaskRepository.delete({ project_id, id: task_id }, true);
+      await Objection.Model.transaction(async (trx) => {
+        await this.projectTaskRepository.delete({ project_id, id: task_id }, false, trx);
+        const document = await this.documentRepository.findOne({ task_id, deleted_at: null });
+        if (document) {
+          await this.attachmentRepository.delete({ document_id: document.id, deleted_at: null }, false, trx);
+        }
+      });
 
       return {
         status: true,
