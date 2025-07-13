@@ -317,6 +317,10 @@ export class EventService {
 
       if (project_id) queryData.project_id = project_id;
 
+      if (user.role.toLowerCase() === 'client') {
+        queryData.is_visible_to_client = true;
+      }
+
       const records = await this.eventRepository.findMany(queryData);
 
       const mappedRecords = await Promise.all(

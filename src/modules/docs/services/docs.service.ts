@@ -7,7 +7,7 @@ import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository,
 
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { ServiceType } from '@/shared/types/general.type';
-import { AttachmentsModelType, DocumentsModelType } from '@/models';
+import { AttachmentsModelType, DocumentsModelType, UserModelType } from '@/models';
 import { DocumentsDirectory, MetadataType } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 
@@ -103,9 +103,15 @@ export class DocsService {
     }
   }
 
-  public async getAllDocuments(project_id: string): Promise<ServiceType> {
+  public async getAllDocuments(user: UserModelType, project_id: string): Promise<ServiceType> {
     try {
-      const documents = await this.documentRepository.getAllDocumentsAndAttachment(project_id);
+      const queryData: Partial<DocumentsModelType> = {};
+
+      if (user.role.toLowerCase() === 'client') {
+        queryData.is_visible_to_client = true;
+      }
+
+      const documents = await this.documentRepository.getAllDocumentsAndAttachment(project_id, queryData);
 
       return { status: true, message: 'Project documents fetched successfully', data: documents };
     } catch (error) {

@@ -386,8 +386,13 @@ export class TaskService {
     }
   }
 
-  async getAllTask(company_id: string, project_id: string | null, query: ObjectLiteral = {}): Promise<ServiceType> {
+  async getAllTask(user: UserModelType, project_id: string | null, query: ObjectLiteral = {}): Promise<ServiceType> {
+    const company_id = user.company_id;
     try {
+      if (user.role.toLowerCase() === 'client') {
+        query.is_visible_to_client = true;
+      }
+
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
 
       const remappedTasks = tasks.map((task) => {

@@ -36,8 +36,6 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
     (req as any).user = { ...decoded, ...user };
 
-    console.log(`[AuthGuard] ===> ${JSON.stringify({ user: req.user, decoded })}`);
-
     return next();
   } catch (error: any) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {

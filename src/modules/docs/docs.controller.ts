@@ -62,7 +62,9 @@ export class DocsController {
 
   getAllDocuments = async (req: AuthenticatedRequest, res: Response) => {
     const { project_id } = req.params;
-    const { statusCode = null, ...others } = await this.docService.getAllDocuments(project_id);
+    const user = req.user as UserModelType;
+
+    const { statusCode = null, ...others } = await this.docService.getAllDocuments(user, project_id);
     return genericResponse({ res, data: others, statusCode });
   };
 
