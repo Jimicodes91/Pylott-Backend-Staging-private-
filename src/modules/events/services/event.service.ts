@@ -273,7 +273,7 @@ export class EventService {
     }
   }
 
-  public async deleteEvent(event_id: string, project_id: string): Promise<ServiceType> {
+  public async deleteEvent(user: UserModelType, event_id: string, project_id: string): Promise<ServiceType> {
     try {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
 
@@ -284,6 +284,20 @@ export class EventService {
       // if (!result) return { status: false, message: 'Could not complete sync action, please try again later' };
 
       await this.eventRepository.delete({ id: event_id, project_id }, true);
+
+      const trailPrefix = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.EVENT_CREATED,
+        {
+          user_id: user.id,
+          company_id: user.company_id,
+          description: 'Event deleted',
+          entity_description: `${trailPrefix} deleted event (${record.name})`,
+          entity_id: event_id,
+        },
+        project_id,
+      );
 
       return { status: true, message: 'Event deleted successfully' };
     } catch (error) {
