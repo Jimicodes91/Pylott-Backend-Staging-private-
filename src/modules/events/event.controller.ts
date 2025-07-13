@@ -30,7 +30,8 @@ export class EventController {
 
   deleteEvent = async (req: Request, res: Response) => {
     const { project_id, event_id } = req.params;
-    const { statusCode = null, ...others } = await this.eventService.deleteEvent(event_id, project_id);
+    const user = req.user as UserModelType;
+    const { statusCode = null, ...others } = await this.eventService.deleteEvent(user, event_id, project_id);
     return genericResponse({ res, data: others, statusCode });
   };
 
