@@ -3,7 +3,7 @@ import { body, param } from 'express-validator';
 export const createEventValidationRules = [
   param('project_id').isUUID().withMessage('Project Id must be a valid UUID'),
 
-  body('event_type_id').isUUID().withMessage('Event Type Id must be a valid UUID'),
+  body('event_type_id').isUUID().optional().withMessage('Event Type Id must be a valid UUID'),
 
   body('name').notEmpty().withMessage('Name is required').isString().withMessage('Name must be a string').isLength({ min: 2 }).withMessage('Name must be at least 2 characters').trim(),
 
@@ -58,7 +58,7 @@ export const updateEventValidationRules = [
 
   param('project_id').isUUID().withMessage('Project Id must be a valid UUID'),
 
-  body('event_type_id').optional().isUUID().withMessage('Event Type Id must be a valid UUID'),
+  body('event_type_id').optional().isUUID().optional().withMessage('Event Type Id must be a valid UUID'),
 
   body('name').optional().isString().withMessage('Name must be a string').isLength({ min: 2 }).withMessage('Name must be at least 2 characters').trim(),
 
