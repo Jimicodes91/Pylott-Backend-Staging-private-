@@ -301,6 +301,7 @@ export class TaskService {
               if (!fileData.includes('http')) {
                 const fileName = `${project_id}/${payload.name.replace(' ', '_').toLowerCase()}`;
                 const { data } = await this.cloudinary.upload(DocumentsDirectory.TASKS, fileData, fileName);
+                console.log('CLOUDINARY DATA', data);
                 if (data) await this.attachmentRepository.create({ ...documentAttachmentData, media_url: data }, trx);
               }
             });
