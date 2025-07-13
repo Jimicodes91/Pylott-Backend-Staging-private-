@@ -430,10 +430,11 @@ export class TaskService {
     try {
       await Objection.Model.transaction(async (trx) => {
         await this.projectTaskRepository.delete({ project_id, id: task_id }, false, trx);
+        await this.projectTaskAssigneesRepository.delete({ task_id, project_id, deleted_at: null }, false, trx);
         const document = await this.documentRepository.findOne({ task_id, deleted_at: null });
-        console.log('DELETE TASK', JSON.stringify({ document }));
         if (document) {
           await this.attachmentRepository.delete({ document_id: document.id, deleted_at: null }, false, trx);
+          await this.documentRepository.delete({ id: document.id }, false, trx);
         }
       });
 
