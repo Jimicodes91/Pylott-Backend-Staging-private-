@@ -203,5 +203,20 @@ export class AuthController {
     }
   };
 
+  public logout = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+
+      if (!userId) {
+        return errorResponse(res, 'User ID is required');
+      }
+
+      const result = await this.authService.logout(userId);
+      return successResponse(res, 'Logged out successfully', result);
+    } catch (error: any) {
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  };
+
   //public signup = async (req: Request, res: Response) => successResponse(res, 'Sample response', {});
 }
