@@ -135,8 +135,9 @@ export class ProjectController {
   getProjectMembers = async (req: AuthenticatedRequest, res: Response) => {
     const company_id = (req.user as UserModelType)?.company_id;
     const { project_id } = req.params;
+    const qs = req.query;
 
-    const { statusCode = null, ...others } = await this.memberService.getProjectMembers(company_id, project_id);
+    const { statusCode = null, ...others } = await this.memberService.getProjectMembers(company_id, project_id, qs);
     return genericResponse({ res, data: others, statusCode });
   };
 
