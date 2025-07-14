@@ -4,6 +4,7 @@ import { Project, ProjectModelType } from '@/models';
 import BaseRepository from './base.repository';
 import { ObjectLiteral } from '@/shared/types/general.type';
 import { ClientAnalytics, ProjectAnalyticsResult } from '@/shared/interface/model';
+import { ProjectStatus } from '@/shared/enums';
 
 @injectable()
 export class ProjectRepository extends BaseRepository<ProjectModelType, Project> {
@@ -120,6 +121,13 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
       .limit(size)
       .select('id', 'name', 'status', 'form_data', 'start_date', 'project_type_id', 'milestone_id')
       .withGraphFetched({ milestone: true, project_type: { milestones: true } });
+  }
+
+  async getInProgressProjectsAndEntities() {
+    return await this.model
+      .query()
+      .where({ deleted_at: null, status: ProjectStatus.IN_PROGRESS })
+      .withGraphFetched({ members: { user: true } });
   }
 
   async getTopClients(companyId: string, limit: number = 5): Promise<ClientAnalytics[]> {

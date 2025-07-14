@@ -40,10 +40,7 @@ export class MilestoneTrackerService {
 
   private async processGlobalCheck(): Promise<void> {
     try {
-      const projects = await this.projectRepository.findMany({
-        status: ProjectStatus.IN_PROGRESS,
-        deleted_at: null,
-      });
+      const projects = await this.projectRepository.getInProgressProjectsAndEntities();
 
       console.log(`${this.traceId} Found ${projects.length} projects for global check`);
 
