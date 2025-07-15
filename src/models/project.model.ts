@@ -10,6 +10,7 @@ import { ProjectTask } from './project_task.model';
 import { ProjectNotes } from './project_notes.model';
 import { Documents } from './documents.model';
 import { ProjectMembers } from './project_members.model';
+import { ProjectSettings } from './project_settings.model';
 
 export class Project extends BaseModel {
   static tableName = 'projects';
@@ -36,6 +37,7 @@ export class Project extends BaseModel {
   project_type: ProjectType;
   milestone: Milestones;
   members: Array<ProjectMembers>;
+  setting: ProjectSettings;
 
   static relationMappings = (): ModelsRelationMapping => ({
     client: {
@@ -108,6 +110,14 @@ export class Project extends BaseModel {
       join: {
         from: 'projects.id',
         to: 'documents.project_id',
+      },
+    },
+    setting: {
+      relation: BaseModel.HasManyRelation,
+      modelClass: ProjectSettings,
+      join: {
+        from: 'projects.id',
+        to: 'project_settings.project_id',
       },
     },
   });

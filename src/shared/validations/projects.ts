@@ -286,6 +286,10 @@ export const toggleProjectSettingsValidationRules = [
   body('client_can_view_documents').notEmpty().withMessage('Documents visibility setting is required').isBoolean().withMessage('Documents visibility must be a boolean').toBoolean(),
 
   body('client_can_view_activity').notEmpty().withMessage('Activity visibility setting is required').isBoolean().withMessage('Activity visibility must be a boolean').toBoolean(),
+
+  body('client_can_view_event').notEmpty().isBoolean().toBoolean(),
+
+  body('client_can_view_project_members').notEmpty().isBoolean().toBoolean(),
 ];
 
 export const createProjectValidationRules = [

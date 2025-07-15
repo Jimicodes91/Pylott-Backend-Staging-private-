@@ -78,6 +78,8 @@ export type ToggleProjectSettings = {
   client_can_view_notes: boolean;
   client_can_view_documents: boolean;
   client_can_view_activity: boolean;
+  client_can_view_event: boolean;
+  client_can_view_project_members: boolean;
 };
 
 export type CreateNote = {
