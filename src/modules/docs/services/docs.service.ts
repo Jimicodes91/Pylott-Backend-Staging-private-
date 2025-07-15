@@ -23,10 +23,14 @@ export class DocsService {
     private readonly cloudinary: Cloudinary,
   ) {}
 
-  public async uploadDocument(project_id: string, company_id: string, payload: UploadDocumentType): Promise<ServiceType> {
+  public async uploadDocument(project_id: string, user: UserModelType, payload: UploadDocumentType): Promise<ServiceType> {
+    const company_id = user.company_id;
+
     const { attachment, ...others } = payload;
 
     try {
+      const isClient = user.role.toLowerCase() === 'client';
+
       if (payload.document_type_id) {
         const metadataQuery = {
           company_id,
@@ -58,6 +62,7 @@ export class DocsService {
         document_type_id: others?.document_type_id ?? null,
         name: others.file_name,
         is_visible_to_client: others?.is_visible_to_client,
+        is_document_request: isClient,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
         const fileName = `${project_id}/${docFileName}`.toLowerCase();
