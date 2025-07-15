@@ -19,8 +19,8 @@ export class DocsController {
   uploadDocument = async (req: AuthenticatedRequest, res: Response) => {
     const { project_id } = req.params;
     const payload = req.body as UploadDocumentType;
-    const user = req.user;
-    const { statusCode = null, ...others } = await this.docService.uploadDocument(project_id, user.company_id, payload);
+    const user = req.user as UserModelType;
+    const { statusCode = null, ...others } = await this.docService.uploadDocument(project_id, user, payload);
     return genericResponse({ res, data: others, statusCode });
   };
 
