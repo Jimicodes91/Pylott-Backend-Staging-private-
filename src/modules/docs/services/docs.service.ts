@@ -53,6 +53,11 @@ export class DocsService {
 
       const docFileName = others.file_name.trim().replaceAll(' ', '-');
 
+      let isVisibleToClient = null;
+
+      if (others.is_visible_to_client) isVisibleToClient = others.is_visible_to_client;
+      if (isClient) isVisibleToClient = true;
+
       const documentData: Partial<DocumentsModelType> = {
         id: document_id,
         company_id,
@@ -61,7 +66,7 @@ export class DocsService {
         type: MetadataType.DOCUMENT,
         document_type_id: others?.document_type_id ?? null,
         name: others.file_name,
-        is_visible_to_client: others?.is_visible_to_client,
+        is_visible_to_client: isVisibleToClient,
         is_document_request: isClient,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
