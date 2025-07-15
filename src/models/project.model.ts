@@ -113,7 +113,7 @@ export class Project extends BaseModel {
       },
     },
     setting: {
-      relation: BaseModel.HasManyRelation,
+      relation: BaseModel.BelongsToOneRelation,
       modelClass: ProjectSettings,
       join: {
         from: 'projects.id',
