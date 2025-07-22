@@ -45,23 +45,11 @@ export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, Or
     return await this.model.query().insert(orgFinance);
   }
 
-  public async searchOrgFinance(query: string, companyId?: string, page: number = 1, pageSize: number = 10) {
+  public async searchOrgFinance(query: string, companyId: string, page: number = 1, pageSize: number = 10) {
     try {
-      //   const results = await this.model
-      //     .query()
-      //     .where({ organization_id: companyId })
-      //     .where((builder) => {
-      //       builder
-      //         .where('client_name', 'ilike', `%${query}%`)
-      //         .orWhere('project_title', 'ilike', `%${query}%`);
-      //     })
-      //     .page(page - 1, pageSize) // Objection.js uses 0-based page index
-      //     .orderBy('created_at');
       const searchTerm = `%${query.toLowerCase()}%`;
-      let queryBuilder = this.model.query().whereRaw('LOWER(client_name) LIKE ?', [searchTerm]).orWhereRaw('LOWER(project_title) LIKE ?', [searchTerm]);
-      if (companyId) {
-        queryBuilder = queryBuilder.where('organization_id', companyId);
-      }
+      const queryBuilder = this.model.query().where('organization_id', companyId).whereRaw('LOWER(client_name) LIKE ?', [searchTerm]).orWhereRaw('LOWER(project_title) LIKE ?', [searchTerm]);
+
       const results = await queryBuilder.page(page - 1, pageSize).orderBy('created_at');
 
       return {
