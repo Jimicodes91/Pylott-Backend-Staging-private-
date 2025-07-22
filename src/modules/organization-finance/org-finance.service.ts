@@ -17,10 +17,14 @@ export class OrgFinanceService {
     private readonly auditTrailService: AuditTrailService,
   ) {}
 
-  public async getAllOrgFinance(page: number = 1, pageSize: number = 10, companyId: string) {
+  public async getAllOrgFinance(page: number = 1, pageSize: number = 10, companyId?: string) {
     try {
       if (page < 1) throw new HttpError('Page must be greater than 0', 400);
       if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
+
+      if (!companyId) {
+        throw new HttpError('Company ID is required', 400);
+      }
 
       return await this.orgFinanceRepository.getAllOrganizationFinanceRecord(page, pageSize, companyId);
     } catch (error: any) {
@@ -57,20 +61,29 @@ export class OrgFinanceService {
 
   public async createOrgFinance(orgFinance: OrgFinanceDTO, user: any) {
     try {
-      const createdOrgFinance = await this.orgFinanceRepository.createOrgFinance(orgFinance);
+      // Convert date string to Date object if it's a string and hardcode amount_paid to 0
+      const orgFinanceData = {
+        ...orgFinance,
+        amount_paid: '0', // Hardcode amount_paid to 0
+        next_payment_due_date: typeof orgFinance.next_payment_due_date === 'string' ? new Date(orgFinance.next_payment_due_date) : orgFinance.next_payment_due_date,
+      };
 
-      // Log org finance creation activity
-      this.auditTrailService.createEvent(
-        AUDIT_TRAIL_ACTION.ORG_FINANCE_CREATED,
-        {
-          user_id: user.id,
-          company_id: user.company_id,
-          description: 'Organization finance record created',
-          entity_description: `${user.name} created organization finance record`,
-          entity_id: createdOrgFinance.id,
-        },
-        '',
-      );
+      const createdOrgFinance = await this.orgFinanceRepository.createOrgFinance(orgFinanceData);
+
+      // Log org finance creation activity only if user is provided
+      if (user && user.id) {
+        this.auditTrailService.createEvent(
+          AUDIT_TRAIL_ACTION.ORG_FINANCE_CREATED,
+          {
+            user_id: user.id,
+            company_id: user.company_id,
+            description: 'Organization finance record created',
+            entity_description: `${user.name} created organization finance record`,
+            entity_id: createdOrgFinance.id,
+          },
+          '',
+        );
+      }
 
       return createdOrgFinance;
     } catch (error: any) {
@@ -82,6 +95,10 @@ export class OrgFinanceService {
       if (page < 1) throw new HttpError('Page must be greater than 0', 400);
       if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
 
+      if (!companyId) {
+        throw new HttpError('Company ID is required', 400);
+      }
+
       return await this.orgFinanceRepository.searchOrgFinance(query, companyId, page, pageSize);
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to search org_finance records', error.statusCode || 500);
@@ -90,23 +107,33 @@ export class OrgFinanceService {
 
   public async updateOrgFinance(id: string, updateData: Partial<OrgFinanceDTO>, user: any) {
     try {
-      const updatedOrgFinance = await this.orgFinanceRepository.updateOrgFinance(id, updateData);
+      // Convert date string to Date object if it's a string
+      const updateDataWithDate = {
+        ...updateData,
+        ...(updateData.next_payment_due_date && {
+          next_payment_due_date: typeof updateData.next_payment_due_date === 'string' ? new Date(updateData.next_payment_due_date) : updateData.next_payment_due_date,
+        }),
+      };
+
+      const updatedOrgFinance = await this.orgFinanceRepository.updateOrgFinance(id, updateDataWithDate);
       if (!updatedOrgFinance) {
         throw new HttpError('OrgFinance not found', 404);
       }
 
-      // Log org finance update activity
-      this.auditTrailService.createEvent(
-        AUDIT_TRAIL_ACTION.ORG_FINANCE_UPDATED,
-        {
-          user_id: user.id,
-          company_id: user.company_id,
-          description: 'Organization finance record updated',
-          entity_description: `${user.name} updated organization finance record`,
-          entity_id: id,
-        },
-        '',
-      );
+      // Log org finance update activity only if user is provided
+      if (user && user.id) {
+        this.auditTrailService.createEvent(
+          AUDIT_TRAIL_ACTION.ORG_FINANCE_UPDATED,
+          {
+            user_id: user.id,
+            company_id: user.company_id,
+            description: 'Organization finance record updated',
+            entity_description: `${user.name} updated organization finance record`,
+            entity_id: id,
+          },
+          '',
+        );
+      }
 
       return updatedOrgFinance;
     } catch (error: any) {

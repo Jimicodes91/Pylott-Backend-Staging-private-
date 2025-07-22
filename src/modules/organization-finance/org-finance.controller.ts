@@ -13,7 +13,12 @@ export class OrgFinanceController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = parseInt(req.query.pageSize as string) || 10;
-      const companyId = (req.query.companyId as string) || undefined;
+      const user = (req as any).user;
+      const companyId = (req.query.companyId as string) || user?.company_id;
+
+      if (!companyId) {
+        return errorResponse(res, 'Company ID is required', {}, StatusCodes.BAD_REQUEST);
+      }
 
       const result = await this.orgFinanceService.getAllOrgFinance(page, pageSize, companyId);
 
@@ -47,9 +52,14 @@ export class OrgFinanceController {
   public searchOrgFinance = async (req: Request, res: Response) => {
     try {
       const query = req.query.query as string;
-      const companyId = (req.query.companyId as string) || undefined;
+      const user = (req as any).user;
+      const companyId = (req.query.companyId as string) || user?.company_id;
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = parseInt(req.query.pageSize as string) || 10;
+
+      if (!companyId) {
+        return errorResponse(res, 'Company ID is required', {}, StatusCodes.BAD_REQUEST);
+      }
 
       const result = await this.orgFinanceService.searchOrgFinance(query, companyId, page, pageSize);
 
