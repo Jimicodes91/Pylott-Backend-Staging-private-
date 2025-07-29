@@ -9,7 +9,7 @@ import { toggleProjectSettingsValidationRules } from '@/shared/validations/proje
 const projectSettingController = container.resolve(ProjectSettingController);
 
 export const projectSettingRoutes = (prefix: string, server: Server) => {
-  server.patch(`${prefix}/projects/:project_id`, authGuard, schemaValidator(toggleProjectSettingsValidationRules), projectSettingController.toggleProjectSettings);
+  server.patch(`${prefix}/projects`, authGuard, schemaValidator(toggleProjectSettingsValidationRules), projectSettingController.toggleProjectSettings);
 
-  server.get(`${prefix}/projects/:project_id`, authGuard, projectSettingController.getProjectSettingDetails);
+  server.get(`${prefix}/projects`, authGuard, projectSettingController.getProjectSettingDetails);
 };

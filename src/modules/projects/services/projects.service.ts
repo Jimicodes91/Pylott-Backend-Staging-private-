@@ -351,6 +351,9 @@ export class ProjectService {
       }
 
       let project;
+
+      const projectSettings = await this.projectSettingsRepository.findOne({ company_id });
+
       await Objection.Model.transaction(async (trx) => {
         project = await this.projectRepository.create(
           {
@@ -398,13 +401,9 @@ export class ProjectService {
           }
         }
 
-        await this.projectSettingsRepository.create(
-          {
-            company_id,
-            project_id: project.id,
-          },
-          trx,
-        );
+        if (!projectSettings) {
+          await this.projectSettingsRepository.create({ company_id }, trx);
+        }
 
         await this.projectMembersRepository.createMultiple(existentClients, trx);
 
