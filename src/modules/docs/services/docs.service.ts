@@ -53,7 +53,7 @@ export class DocsService {
 
       const docFileName = others.file_name.trim().replaceAll(' ', '-');
 
-      let isVisibleToClient = null;
+      let isVisibleToClient = false;
 
       if (others.is_visible_to_client) isVisibleToClient = others.is_visible_to_client;
       if (isClient) isVisibleToClient = true;
