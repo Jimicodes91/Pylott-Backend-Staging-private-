@@ -62,9 +62,15 @@ export class OrgFinanceService {
   public async createOrgFinance(orgFinance: OrgFinanceDTO, user: any) {
     try {
       // Convert date string to Date object if it's a string and hardcode amount_paid to 0
+      //check if the outstanding balance is greater than the total project cost
+      if (orgFinance.outstanding_balance > orgFinance.total_project_cost) {
+        throw new HttpError('Outstanding balance cannot be greater than total project cost', 400);
+      }
+
       const orgFinanceData = {
         ...orgFinance,
         amount_paid: '0', // Hardcode amount_paid to 0
+        outstanding_balance: orgFinance.total_project_cost, // Set outstanding balance to total project cost
         next_payment_due_date: typeof orgFinance.next_payment_due_date === 'string' ? new Date(orgFinance.next_payment_due_date) : orgFinance.next_payment_due_date,
       };
 
@@ -177,14 +183,23 @@ export class OrgFinanceService {
         );
       }
 
-      // Get the updated payment history
-      const paymentHistory = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
+      // Get the updated payment history with payment proof URLs
+      const paymentHistoryRaw = await this.orgFinancePaymentRepository.getPaymentsByOrgFinanceId(id);
+      const paymentHistory = paymentHistoryRaw.map((payment: any) => ({
+        ...payment,
+        payment_proof_url: payment.payment_proof_url || null,
+      }));
 
       return {
         ...updatedOrgFinance,
         paymentHistory,
+        lastPaymentDate: paymentHistory.length > 0 ? paymentHistory[0].payment_date : null,
       };
     } catch (error: any) {
+      // Handle overpayment error specifically
+      if (error.message && error.message.includes('cannot exceed outstanding balance')) {
+        throw new HttpError(error.message, 400);
+      }
       throw new HttpError(error.message || 'Failed to mark org_finance as paid', error.statusCode || 500);
     }
   }

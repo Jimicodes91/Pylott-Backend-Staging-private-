@@ -83,10 +83,16 @@ export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, Or
     // Convert string amounts to numbers for calculations
     const currentOutstandingBalance = parseFloat(currentRecord.outstanding_balance || '0');
     const paymentAmount = parseFloat(amountPaid);
+    const totalProjectCost = parseFloat(currentRecord.total_project_cost);
 
     // Check if there's an outstanding balance to pay
     if (currentOutstandingBalance <= 0) {
       throw new Error('No outstanding balance to pay');
+    }
+
+    // Check if payment amount exceeds outstanding balance
+    if (paymentAmount > currentOutstandingBalance) {
+      throw new Error(`Payment amount (${amountPaid}) cannot exceed outstanding balance (${currentOutstandingBalance})`);
     }
 
     // Create a new payment record
@@ -97,11 +103,12 @@ export class OrgFinanceRepository extends BaseRepository<OrgFinanceModelType, Or
       payment_date: new Date(),
     });
 
-    // Calculate new outstanding balance
-    const newOutstandingBalance = Math.max(0, currentOutstandingBalance - paymentAmount);
-
-    // Get total amount paid from all payment records
+    // Get total amount paid from all payment records (including this new payment)
     const totalAmountPaid = await this.orgFinancePaymentRepository.getTotalAmountPaid(id);
+    const totalAmountPaidNum = parseFloat(totalAmountPaid);
+
+    // Calculate new outstanding balance: total project cost - total amount paid
+    const newOutstandingBalance = Math.max(0, totalProjectCost - totalAmountPaidNum);
 
     // Determine if the payment is complete (outstanding balance is zero)
     const isPaymentComplete = newOutstandingBalance === 0;

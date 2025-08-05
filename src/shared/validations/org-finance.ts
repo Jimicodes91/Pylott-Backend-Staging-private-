@@ -29,8 +29,7 @@ export const createOrgFinanceValidationRules = [
     .withMessage('Total project cost must be a valid number with up to 2 decimal places'),
 
   body('outstanding_balance')
-    .notEmpty()
-    .withMessage('Outstanding balance is required')
+    .optional()
     .isString()
     .withMessage('Outstanding balance must be a string')
     .matches(/^\d+(\.\d{1,2})?$/)
@@ -126,5 +125,12 @@ export const markAsPaidValidationRules = [
     .isString()
     .withMessage('Amount paid must be a string')
     .matches(/^\d+(\.\d{1,2})?$/)
-    .withMessage('Amount paid must be a valid number with up to 2 decimal places'),
+    .withMessage('Amount paid must be a valid number with up to 2 decimal places')
+    .custom((value) => {
+      const amount = parseFloat(value);
+      if (amount <= 0) {
+        throw new Error('Amount paid must be greater than 0');
+      }
+      return true;
+    }),
 ];

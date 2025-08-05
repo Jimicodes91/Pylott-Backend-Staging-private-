@@ -30,8 +30,9 @@ export class OrgFinancePaymentRepository extends BaseRepository<OrgFinancePaymen
     try {
       const result = await this.model.query().where({ org_finance_id: orgFinanceId }).sum('amount_paid as total').first();
 
-      //total does not exist in the model declare it or something
-      return result?.total || 0;
+      // Convert the sum result to string, handling different database return types
+      const total = result?.total || 0;
+      return typeof total === 'string' ? total : total.toString();
     } catch (error) {
       console.error('Error calculating total amount paid:', error);
       throw new Error('Failed to calculate total amount paid');
