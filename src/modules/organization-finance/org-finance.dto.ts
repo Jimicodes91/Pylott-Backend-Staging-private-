@@ -8,7 +8,7 @@ export interface OrgFinanceDTO {
   project_title: string;
   total_project_cost: string;
   amount_paid?: string; // Made optional since it will be hardcoded to "0"
-  outstanding_balance: string;
+  outstanding_balance?: string; // Made optional since it will be set to total_project_cost
   next_payment_due_date: Date;
   hasPaid?: boolean;
   payment_status?: string;
