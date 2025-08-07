@@ -41,3 +41,9 @@ export function toTitleCase(str) {
     ?.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     ?.join(' ');
 }
+
+export const sleep = (ms) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};

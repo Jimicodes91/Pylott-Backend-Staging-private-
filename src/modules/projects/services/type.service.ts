@@ -6,6 +6,7 @@ import { MilestonesModelType } from '@/models';
 import { FieldTypeEnum } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { _ProjectType, PhaseProgress } from '@/shared/types/projects.type';
+import { sleep } from '@/shared/utils/any';
 
 @injectable()
 export class TypeService {
@@ -100,6 +101,8 @@ export class TypeService {
           };
 
           await this.milestonesRepository.create(milestoneData);
+
+          await sleep(2000);
         });
       }
 
