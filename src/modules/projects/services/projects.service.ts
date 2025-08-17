@@ -373,6 +373,8 @@ export class ProjectService {
             package: payload?.package,
             milestone_start_date: payload.milestone_id ? payload['start_date'] : null,
             milestone_status: payload.milestone_id ? ProjectStatus.ON_TRACK : null,
+            country: payload?.country ?? null,
+            currency: payload?.currency ?? null,
           },
           trx,
         );

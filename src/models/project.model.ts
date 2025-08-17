@@ -32,6 +32,8 @@ export class Project extends BaseModel {
   visa_required?: string;
   package?: string;
   form_data: any;
+  currency?: string;
+  country?: string;
 
   documents: Array<Documents>;
   project_type: ProjectType;
