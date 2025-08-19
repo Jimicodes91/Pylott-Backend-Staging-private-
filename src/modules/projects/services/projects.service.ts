@@ -485,7 +485,7 @@ export class ProjectService {
     }
   }
 
-  async updateProject(user: UserModelType, project_id: string, payload: Partial<CreateProjectType>): Promise<ServiceType> {
+  async updateProjectV0(user: UserModelType, project_id: string, payload: Partial<CreateProjectType>): Promise<ServiceType> {
     try {
       const company_id = user.company_id;
 
@@ -667,7 +667,218 @@ export class ProjectService {
       const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
 
       this.auditTrailService.createEvent(
-        AUDIT_TRAIL_ACTION.PROJECT_CREATED,
+        AUDIT_TRAIL_ACTION.PROJECT_UPDATED,
+        {
+          user_id: user.id,
+          company_id,
+          description: 'Project updated',
+          entity_description: `${author} updated project (${project.name})`,
+          entity_id: project_id,
+        },
+        project_id,
+      );
+
+      return {
+        status: true,
+        message: 'Project updated successfully',
+      };
+    } catch (error) {
+      console.error(`${this.traceId} Error updating project:`, error);
+      return {
+        status: false,
+        message: 'Failed to update project',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      };
+    }
+  }
+
+  async updateProject(user: UserModelType, project_id: string, payload: Partial<CreateProjectType>): Promise<ServiceType> {
+    try {
+      const company_id = user.company_id;
+
+      const project = await this.projectRepository.findOne({
+        id: project_id,
+        company_id,
+      });
+      if (!project) {
+        return {
+          status: false,
+          message: 'Project not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      if (payload.project_type_id) {
+        const projectType = await this.projectTypeRepository.findOne({
+          id: payload.project_type_id,
+          company_id,
+        });
+        if (!projectType) {
+          return {
+            status: false,
+            message: 'Invalid project type (pipeline)',
+            statusCode: StatusCodes.NOT_FOUND,
+          };
+        }
+
+        // Reset milestone if it doesn’t belong to new project type
+        if (project.milestone_id) {
+          const milestone = await this.milestonesRepository.findOne({
+            id: project.milestone_id,
+            company_id,
+          });
+          if (milestone && milestone.project_type_id !== payload.project_type_id) {
+            payload.milestone_id = null;
+          }
+        }
+      }
+
+      if (payload.client_id && payload.client_id !== project.client_id) {
+        const client = await this.contactRepository.findOne({
+          id: payload.client_id,
+          company_id,
+        });
+        if (!client) {
+          return {
+            status: false,
+            message: 'Client not found',
+            statusCode: StatusCodes.NOT_FOUND,
+          };
+        }
+      }
+
+      if (payload.milestone_id && payload.milestone_id !== project.milestone_id) {
+        const milestone = await this.milestonesRepository.findOne({
+          id: payload.milestone_id,
+          company_id,
+        });
+        if (!milestone) {
+          return {
+            status: false,
+            message: 'Milestone not found',
+            statusCode: StatusCodes.NOT_FOUND,
+          };
+        }
+        const projectTypeId = payload.project_type_id || project.project_type_id;
+        if (projectTypeId && milestone.project_type_id !== projectTypeId) {
+          return {
+            status: false,
+            message: 'Milestone does not belong to this project type',
+            statusCode: StatusCodes.BAD_REQUEST,
+          };
+        }
+        payload['milestone_start_date'] = dayjs().format('YYYY-MM-DD HH:mm:ss');
+        payload['milestone_status'] = ProjectStatus.ON_TRACK;
+      }
+
+      if (payload['project_client']) {
+        const updateClientsPayload = Array.from(new Set(payload['project_client']));
+        for (const client of updateClientsPayload as Array<string>) {
+          const clientRecord = await this.contactRepository.findOne({
+            id: client,
+            company_id,
+            deleted_at: null,
+          });
+          if (!clientRecord) {
+            return {
+              status: false,
+              message: 'Client not found',
+              statusCode: StatusCodes.NOT_FOUND,
+            };
+          }
+        }
+        payload['project_client'] = updateClientsPayload;
+      }
+
+      const form = await this.projectFormRepository.getCompanyForm(company_id);
+      if (!form) {
+        return {
+          status: false,
+          message: 'Project form not configured',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      const formFields = await this.projectFormFieldRepository.findMany({
+        form_id: form.id,
+      });
+      const updatedFormData = { ...project.form_data, ...payload };
+      const errors = this.validateFormFields(updatedFormData, formFields);
+      if (errors.length > 0) {
+        return {
+          status: false,
+          message: 'Validation failed',
+          data: { errors },
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+
+      const documentFields = formFields.filter((f) => f.type === 'document');
+
+      const documentUploads = await this.processDocumentUploads(payload, documentFields, company_id);
+      if (!documentUploads.success) {
+        return documentUploads.errorResponse;
+      }
+
+      let completedAt = project.completed_at;
+      if (payload.status) {
+        if (payload.status === ProjectStatus.COMPLETED && project.status !== ProjectStatus.COMPLETED) {
+          completedAt = dayjs().format();
+          const lastMilestone = await this.milestonesRepository.getLastCreatedMilestone(company_id, project.project_type_id);
+          if (lastMilestone) {
+            payload['milestone_id'] = lastMilestone.id;
+          }
+        } else if (payload.status !== ProjectStatus.COMPLETED && project.status === ProjectStatus.COMPLETED) {
+          completedAt = null;
+        }
+      }
+
+      await Objection.Model.transaction(async (trx) => {
+        const updateData = {
+          ...payload,
+          form_data: updatedFormData,
+          completed_at: completedAt,
+        };
+
+        await this.projectRepository.update({ id: project_id, company_id }, updateData, trx);
+
+        for (const doc of documentUploads.data) {
+          let document = await this.documentsRepository.findOne({
+            company_id,
+            project_id,
+            document_type_id: doc.fieldId,
+          });
+
+          if (!document) {
+            document = await this.documentsRepository.create(
+              {
+                company_id,
+                project_id,
+                name: `Project ${doc.fieldName}`,
+                type: MetadataType.FORM_FIELD,
+                document_type_id: doc.fieldId,
+              },
+              trx,
+            );
+          }
+
+          for (const url of doc.urls) {
+            await this.attachmentsRepository.create(
+              {
+                document_id: document.id,
+                media_url: url,
+                field_id: doc.fieldId,
+              },
+              trx,
+            );
+          }
+        }
+      });
+
+      const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.PROJECT_UPDATED,
         {
           user_id: user.id,
           company_id,
