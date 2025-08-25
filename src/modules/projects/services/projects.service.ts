@@ -832,7 +832,7 @@ export class ProjectService {
           milestone_status: data['milestone_status'] ?? project.milestone_status,
           country: data.country ?? project.country,
           currency: data.currency ?? project.currency,
-          form_data: updatedFormData,
+          form_data: JSON.stringify(updatedFormData),
           completed_at: completedAt,
         };
 
