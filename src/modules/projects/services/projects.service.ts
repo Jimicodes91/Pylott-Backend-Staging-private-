@@ -692,7 +692,7 @@ export class ProjectService {
     }
   }
 
-  async updateProject(user: UserModelType, project_id: string, payload: Partial<CreateProjectType>): Promise<ServiceType> {
+  async updateProject(user: UserModelType, project_id: string, data: Partial<CreateProjectType>): Promise<ServiceType> {
     try {
       const company_id = user.company_id;
 
@@ -708,11 +708,12 @@ export class ProjectService {
         };
       }
 
-      if (payload.project_type_id) {
-        const projectType = await this.projectTypeRepository.findOne({
-          id: payload.project_type_id,
-          company_id,
-        });
+      let milestone: MilestonesModelType | null = null;
+      let projectType;
+
+      // Validate project type (journey)
+      if (data['journey']) {
+        projectType = await this.projectTypeRepository.getProjectType(company_id, data['journey']);
         if (!projectType) {
           return {
             status: false,
@@ -720,23 +721,14 @@ export class ProjectService {
             statusCode: StatusCodes.NOT_FOUND,
           };
         }
-
-        // Reset milestone if it doesn’t belong to new project type
-        if (project.milestone_id) {
-          const milestone = await this.milestonesRepository.findOne({
-            id: project.milestone_id,
-            company_id,
-          });
-          if (milestone && milestone.project_type_id !== payload.project_type_id) {
-            payload.milestone_id = null;
-          }
-        }
       }
 
-      if (payload.client_id && payload.client_id !== project.client_id) {
+      // Validate client
+      if (data.client_id && data.client_id !== project.client_id) {
         const client = await this.contactRepository.findOne({
-          id: payload.client_id,
+          id: data.client_id,
           company_id,
+          deleted_at: null,
         });
         if (!client) {
           return {
@@ -747,10 +739,12 @@ export class ProjectService {
         }
       }
 
-      if (payload.milestone_id && payload.milestone_id !== project.milestone_id) {
-        const milestone = await this.milestonesRepository.findOne({
-          id: payload.milestone_id,
+      // Validate milestone
+      if (data.milestone_id && data.milestone_id !== project.milestone_id) {
+        milestone = await this.milestonesRepository.findOne({
+          id: data.milestone_id,
           company_id,
+          deleted_at: null,
         });
         if (!milestone) {
           return {
@@ -759,7 +753,7 @@ export class ProjectService {
             statusCode: StatusCodes.NOT_FOUND,
           };
         }
-        const projectTypeId = payload.project_type_id || project.project_type_id;
+        const projectTypeId = data['journey'] || project.project_type_id;
         if (projectTypeId && milestone.project_type_id !== projectTypeId) {
           return {
             status: false,
@@ -767,27 +761,11 @@ export class ProjectService {
             statusCode: StatusCodes.BAD_REQUEST,
           };
         }
-        payload['milestone_start_date'] = dayjs().format('YYYY-MM-DD HH:mm:ss');
-        payload['milestone_status'] = ProjectStatus.ON_TRACK;
-      }
-
-      if (payload['project_client']) {
-        const updateClientsPayload = Array.from(new Set(payload['project_client']));
-        for (const client of updateClientsPayload as Array<string>) {
-          const clientRecord = await this.contactRepository.findOne({
-            id: client,
-            company_id,
-            deleted_at: null,
-          });
-          if (!clientRecord) {
-            return {
-              status: false,
-              message: 'Client not found',
-              statusCode: StatusCodes.NOT_FOUND,
-            };
-          }
-        }
-        payload['project_client'] = updateClientsPayload;
+        data['milestone_start_date'] = dayjs().format('YYYY-MM-DD HH:mm:ss');
+        data['milestone_status'] = ProjectStatus.ON_TRACK;
+      } else if (data['journey'] && !data.milestone_id) {
+        milestone = await this.milestonesRepository.getFirstCreatedMilestone(company_id, data['journey']);
+        data.milestone_id = milestone?.id ?? null;
       }
 
       const form = await this.projectFormRepository.getCompanyForm(company_id);
@@ -802,7 +780,8 @@ export class ProjectService {
       const formFields = await this.projectFormFieldRepository.findMany({
         form_id: form.id,
       });
-      const updatedFormData = { ...project.form_data, ...payload };
+
+      const updatedFormData = { ...project.form_data, ...data };
       const errors = this.validateFormFields(updatedFormData, formFields);
       if (errors.length > 0) {
         return {
@@ -814,28 +793,45 @@ export class ProjectService {
       }
 
       const documentFields = formFields.filter((f) => f.type === 'document');
-
-      const documentUploads = await this.processDocumentUploads(payload, documentFields, company_id);
+      const documentUploads = await this.processDocumentUploads(data, documentFields, company_id);
       if (!documentUploads.success) {
         return documentUploads.errorResponse;
       }
 
       let completedAt = project.completed_at;
-      if (payload.status) {
-        if (payload.status === ProjectStatus.COMPLETED && project.status !== ProjectStatus.COMPLETED) {
+      if (data.status) {
+        if (data.status === ProjectStatus.COMPLETED && project.status !== ProjectStatus.COMPLETED) {
           completedAt = dayjs().format();
           const lastMilestone = await this.milestonesRepository.getLastCreatedMilestone(company_id, project.project_type_id);
           if (lastMilestone) {
-            payload['milestone_id'] = lastMilestone.id;
+            data.milestone_id = lastMilestone.id;
           }
-        } else if (payload.status !== ProjectStatus.COMPLETED && project.status === ProjectStatus.COMPLETED) {
+        } else if (data.status !== ProjectStatus.COMPLETED && project.status === ProjectStatus.COMPLETED) {
           completedAt = null;
         }
       }
 
+      const projectSettings = await this.projectSettingsRepository.findOne({
+        company_id,
+      });
+
       await Objection.Model.transaction(async (trx) => {
         const updateData = {
-          ...payload,
+          name: data['project_name'] ?? project.name,
+          client_id: data.client_id ?? project.client_id,
+          consultant_id: data.consultant_id ?? project.consultant_id,
+          project_type_id: data['journey'] ?? project.project_type_id,
+          milestone_id: data.milestone_id ?? project.milestone_id,
+          start_date: data.start_date ?? project.start_date,
+          end_date: data.end_date?.length ? data.end_date : project.end_date,
+          status: data.status ?? project.status,
+          jurisdiction: data.jurisdiction ?? project.jurisdiction,
+          visa_required: data.visa_required ?? project.visa_required,
+          package: data.package ?? project.package,
+          milestone_start_date: data['milestone_start_date '] ?? project.milestone_start_date,
+          milestone_status: data['milestone_status'] ?? project.milestone_status,
+          country: data.country ?? project.country,
+          currency: data.currency ?? project.currency,
           form_data: updatedFormData,
           completed_at: completedAt,
         };
@@ -873,9 +869,13 @@ export class ProjectService {
             );
           }
         }
+
+        if (!projectSettings) {
+          await this.projectSettingsRepository.create({ company_id }, trx);
+        }
       });
 
-      const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
+      const author = user?.name?.length > 0 ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;
 
       this.auditTrailService.createEvent(
         AUDIT_TRAIL_ACTION.PROJECT_UPDATED,
