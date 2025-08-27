@@ -8,6 +8,8 @@ import {
   DocumentAttachmentsRepository,
   DocumentsRepository,
   MetadataRepository,
+  ProjectFormFieldRepository,
+  ProjectFormsRepository,
   ProjectRepository,
   ProjectTaskAssigneesRepository,
   ProjectTaskRepository,
@@ -23,6 +25,7 @@ import { CreateTask } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { newTaskAssignedEmail, taskCompletedEmail } from '@/shared/utils/email';
 import sendEmail from '@/shared/utils/nodemailer';
+import { ContactRespository } from '@/repositories/contact.repository';
 
 @injectable()
 export class TaskService {
@@ -34,7 +37,10 @@ export class TaskService {
     private readonly projectRepository: ProjectRepository,
     private readonly metadataRepository: MetadataRepository,
     private readonly documentRepository: DocumentsRepository,
+    private readonly contactRepository: ContactRespository,
     private readonly projectTaskRepository: ProjectTaskRepository,
+    private readonly projectFormRepository: ProjectFormsRepository,
+    private readonly projectFormFieldRepository: ProjectFormFieldRepository,
     private readonly projectTaskAssigneesRepository: ProjectTaskAssigneesRepository,
     private readonly projectTypeRepository: ProjectTypeRepository,
     private readonly attachmentRepository: DocumentAttachmentsRepository,
@@ -395,19 +401,29 @@ export class TaskService {
 
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
 
-      const remappedTasks = tasks.map((task) => {
-        const today = dayjs().startOf('day');
-        const endDate = dayjs(task.end_date).startOf('day');
+      const remappedTasks = await Promise.all(
+        tasks.map(async (taskData) => {
+          const { project_id, ...task } = taskData;
 
-        const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && endDate.isBefore(today);
-        return {
-          ...task,
-          start_date: dayjs(task.start_date).format('DD MMM, YYYY'),
-          end_date: dayjs(task.end_date).format('DD MMM, YYYY'),
-          assignees: task.assignees.map((assignee) => assignee.user).flat(),
-          is_over_due: isOverdue,
-        };
-      });
+          const today = dayjs().startOf('day');
+
+          const endDate = dayjs(task.end_date).startOf('day');
+
+          const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && endDate.isBefore(today);
+
+          const projectClientsData = await this.getProjectClients(company_id, project_id);
+
+          return {
+            ...task,
+            start_date: dayjs(task.start_date).format('DD MMM, YYYY'),
+            end_date: dayjs(task.end_date).format('DD MMM, YYYY'),
+            assignees: task.assignees.map((assignee) => assignee.user).flat(),
+            is_over_due: isOverdue,
+            project_id,
+            project: projectClientsData,
+          };
+        }),
+      );
 
       return {
         status: true,
@@ -537,5 +553,27 @@ export class TaskService {
     if (assigneesToRemove.length > 0) {
       await this.projectTaskAssigneesRepository.query().where('task_id', task_id).whereIn('assignee_id', assigneesToRemove).delete();
     }
+  }
+
+  private async getProjectClients(company_id: string, project_id: string) {
+    let projectClients = {};
+
+    if (!project_id) return projectClients;
+
+    const project = await this.projectRepository.getProjectDetails(company_id, project_id);
+
+    const form = await this.projectFormRepository.getCompanyForm(company_id);
+
+    const formFields = form ? await this.projectFormFieldRepository.findMany({ form_id: form.id }) : [];
+
+    for (const formField of formFields) {
+      const formSlug = formField.slug;
+
+      if (formField.slug === 'project_client' && project.form_data?.[formSlug] && Array.isArray(project.form_data?.[formSlug])) {
+        projectClients = await this.contactRepository.getClientsWhereIn(project.form_data?.[formSlug]);
+      }
+    }
+
+    return { id: project_id, name: project.name, clients: projectClients };
   }
 }

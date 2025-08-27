@@ -8,6 +8,7 @@ import { ProjectTaskAssignees } from './project_task_asignees.model';
 import { ProjectType } from './project_type.model';
 import { Metadata } from './metadata.model';
 import { Company } from './company.model';
+import { Project } from './project.model';
 
 export class ProjectTask extends BaseModel {
   static tableName = 'project_tasks';
@@ -25,6 +26,7 @@ export class ProjectTask extends BaseModel {
   is_visible_to_client: boolean;
 
   assignees: Array<ProjectTaskAssignees>;
+  project: Project;
 
   static relationMappings = (): ModelsRelationMapping => ({
     document: {
@@ -66,6 +68,14 @@ export class ProjectTask extends BaseModel {
       join: {
         from: 'project_tasks.project_type_id',
         to: 'project_types.id',
+      },
+    },
+    project: {
+      relation: BaseModel.BelongsToOneRelation,
+      modelClass: Project,
+      join: {
+        from: 'project_tasks.project_id',
+        to: 'projects.id',
       },
     },
   });
