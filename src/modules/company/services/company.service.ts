@@ -104,4 +104,48 @@ export class CompanyService {
       throw new HttpError(error.message || 'Failed to get company subscription', error.statusCode || 500);
     }
   }
+
+  public async updateCompany(companyId: string, updateData: any, userId: string) {
+    try {
+      // Check if company exists
+      const existingCompany = await this.companyRepository.getById(companyId);
+      if (!existingCompany) {
+        throw new HttpError('Company not found', 404);
+      }
+
+      // Check if user has permission to update this company
+      const user = await this.userRepository.getById(userId);
+      if (!user) {
+        throw new HttpError('User not found', 404);
+      }
+
+      // Only company admin or system admin can update company details
+      if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.company_id !== companyId) {
+        throw new HttpError('You do not have permission to update this company', 403);
+      }
+
+      // Update the company
+      await this.companyRepository.update({ id: companyId }, updateData);
+
+      // Get the updated company
+      const updatedCompany = await this.companyRepository.getById(companyId);
+
+      // Log company update activity
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.COMPANY_UPDATED,
+        {
+          user_id: userId,
+          company_id: companyId,
+          description: 'Company details updated',
+          entity_description: `${user.name} updated company details`,
+          entity_id: companyId,
+        },
+        '',
+      );
+
+      return updatedCompany;
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to update company', error.statusCode || 500);
+    }
+  }
 }
