@@ -44,4 +44,27 @@ export class CompanyController {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
+
+  public updateCompany = async (req: Request, res: Response) => {
+    try {
+      const companyId = req.params.id;
+      const updateData = req.body;
+      const user = (req as any).user;
+
+      if (!companyId) {
+        return errorResponse(res, 'Company ID is required');
+      }
+
+      if (!user || !user.id) {
+        return errorResponse(res, 'User authentication required');
+      }
+
+      const updatedCompany = await this.companyService.updateCompany(companyId, updateData, user.id);
+
+      return successResponse(res, 'Company updated successfully', updatedCompany);
+    } catch (error: any) {
+      console.error('UPDATE_COMPANY_ERROR:', error);
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  };
 }
