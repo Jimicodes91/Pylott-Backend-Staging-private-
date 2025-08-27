@@ -574,6 +574,8 @@ export class TaskService {
       }
     }
 
-    return { id: project_id, name: project.name, clients: projectClients };
+    const company = project.form_data['client_organization'] ?? '';
+
+    return { id: project_id, name: project.name, clients: projectClients, client_organization: company };
   }
 }
