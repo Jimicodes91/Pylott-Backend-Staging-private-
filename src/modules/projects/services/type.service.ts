@@ -142,7 +142,7 @@ export class TypeService {
         }
       }
 
-      const updatedType = await this.projectTypeRepository.update({ id: project_type_id, company_id }, updateData);
+      const updatedType = await this.projectTypeRepository.update({ id: project_type_id }, { ...updateData, company_id });
 
       return {
         status: true,
