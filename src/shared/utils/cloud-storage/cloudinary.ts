@@ -4,18 +4,21 @@ import { Readable } from 'stream';
 import slugify from 'slugify';
 
 import { IStorage } from '@/shared/interface/storage';
-import { app, storage } from '@config/env';
+import { app, CLOUDINARY_CONFIG } from '@config/env';
 import { DocumentsDirectory } from '@/shared/enums';
 
 const { env } = app;
-const { cloudinary: cfg } = storage;
 
 @singleton()
 export class Cloudinary implements IStorage {
   private readonly traceId = '[Cloudinary]';
 
   constructor() {
-    cloudinary.config(cfg);
+    cloudinary.config({
+      cloud_name: CLOUDINARY_CONFIG.CLOUD_NAME,
+      api_key: CLOUDINARY_CONFIG.API_KEY,
+      api_secret: CLOUDINARY_CONFIG.API_SECRET,
+    });
   }
 
   public async upload(mediaDirectory: DocumentsDirectory, media: string, fileName: string): Promise<{ status: boolean; data: string | null }> {
