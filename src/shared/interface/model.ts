@@ -9,6 +9,7 @@ export interface ProjectAnalyticsResult {
 export interface TaskStatusCounts {
   completed: number;
   in_progress: number;
+  pending: number;
   overdue: number;
   total: number;
 }

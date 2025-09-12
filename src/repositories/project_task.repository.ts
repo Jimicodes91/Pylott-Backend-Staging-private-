@@ -78,6 +78,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
         this.model.raw('COUNT(id) as total'),
         this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed']),
         this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as in_progress', ['in_progress']),
+        this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending', ['pending']),
         this.model.raw(
           `
             SUM(CASE WHEN 
@@ -96,6 +97,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
       total: Number(result?.total) || 0,
       completed: Number(result?.completed) || 0,
       in_progress: Number(result?.in_progress) || 0,
+      pending: Number(result?.pending) || 0,
       overdue: Number(result?.overdue) || 0,
     };
   }
