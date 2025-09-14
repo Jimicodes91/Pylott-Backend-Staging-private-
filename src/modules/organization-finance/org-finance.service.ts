@@ -152,8 +152,23 @@ export class OrgFinanceService {
 
       // Upload payment proof if provided
       if (paymentProofFile) {
-        const base64Data = paymentProofFile.buffer.toString('base64');
-        const uploadResult = await this.cloudinary.upload(DocumentsDirectory.PAYMENT_PROOF, `data:${paymentProofFile.mimetype};base64,${base64Data}`, `${id}-${Date.now()}`);
+        let dataUrl: string;
+
+        // Check if it's a base64 data URL string (new format from frontend)
+        if (typeof paymentProofFile === 'string' && paymentProofFile.startsWith('data:')) {
+          dataUrl = paymentProofFile;
+        }
+        // Check if it's a file buffer object (old format)
+        else if (paymentProofFile.buffer && paymentProofFile.mimetype) {
+          const base64Data = paymentProofFile.buffer.toString('base64');
+          dataUrl = `data:${paymentProofFile.mimetype};base64,${base64Data}`;
+        }
+        // If neither format, throw error
+        else {
+          throw new HttpError('Invalid payment proof format', 400);
+        }
+
+        const uploadResult = await this.cloudinary.upload(DocumentsDirectory.PAYMENT_PROOF, dataUrl, `${id}-${Date.now()}`);
 
         if (!uploadResult.status || !uploadResult.data) {
           throw new HttpError('Failed to upload payment proof', 500);
