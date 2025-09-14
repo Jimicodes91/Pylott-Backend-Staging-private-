@@ -115,13 +115,9 @@ export class DocsService {
 
   public async getAllDocuments(user: UserModelType, project_id: string): Promise<ServiceType> {
     try {
-      const queryData: Partial<DocumentsModelType> = {};
+      const is_client = user.role.toLowerCase() === 'client';
 
-      if (user.role.toLowerCase() === 'client') {
-        queryData.is_visible_to_client = true;
-      }
-
-      const documents = await this.documentRepository.getAllDocumentsAndAttachment(project_id, queryData);
+      const documents = await this.documentRepository.getAllDocumentsAndAttachment(project_id, {}, is_client);
 
       return { status: true, message: 'Project documents fetched successfully', data: documents };
     } catch (error) {
