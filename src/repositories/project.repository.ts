@@ -22,24 +22,35 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
     }
 
     if (client_email) {
-      qb.whereExists(
-        this.model
-          .knex()
-          .select(1)
-          .from('contacts')
-          .whereRaw(
-            `
-                  JSON_CONTAINS(
-                      JSON_EXTRACT(projects.form_data, '$.project_client'),
-                      CAST(CONCAT('"', contacts.id, '"') AS JSON)
-                  )
-                  AND contacts.email = ?
-                  AND contacts.company_id = ?
-                  AND contacts.deleted_at IS NULL
-              `,
-            [client_email, otherQueries.company_id],
-          ),
-      );
+      qb.where((builder) => {
+        builder
+          .whereExists(
+            this.model
+              .knex()
+              .select(1)
+              .from('contacts')
+              .where('email', client_email)
+              .andWhere('company_id', otherQueries.company_id)
+              .whereNull('deleted_at')
+              .whereRaw(
+                `JSON_CONTAINS(
+                JSON_EXTRACT(projects.form_data, '$.project_client'),
+                CAST(CONCAT('"', contacts.id, '"') AS JSON)
+              )`,
+              ),
+          )
+          .orWhereExists(
+            this.model
+              .knex()
+              .select(1)
+              .from('project_members')
+              .join('users', 'users.id', 'project_members.user_id')
+              .where('project_members.project_id', this.model.knex().raw('projects.id'))
+              .andWhere('project_members.company_id', otherQueries.company_id)
+              .whereNull('project_members.deleted_at')
+              .andWhere('users.email', client_email),
+          );
+      });
     }
 
     return await qb
