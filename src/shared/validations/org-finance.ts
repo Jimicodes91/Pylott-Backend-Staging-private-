@@ -133,4 +133,21 @@ export const markAsPaidValidationRules = [
       }
       return true;
     }),
+
+  body('payment_proof')
+    .optional()
+    .custom((value) => {
+      // If payment_proof is provided, it should be a valid base64 data URL
+      if (value && typeof value === 'string') {
+        if (!value.startsWith('data:')) {
+          throw new Error('Payment proof must be a valid base64 data URL');
+        }
+        // Basic validation for data URL format
+        const dataUrlPattern = /^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/;
+        if (!dataUrlPattern.test(value)) {
+          throw new Error('Payment proof must be a valid base64 data URL');
+        }
+      }
+      return true;
+    }),
 ];

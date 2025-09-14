@@ -84,13 +84,17 @@ export class OrgFinanceController {
 
   public markAsPaid = async (req: JwtPayload, res: Response) => {
     try {
-      const { amount_paid } = req.body;
-      const paymentProof = req.file; // From multer
+      const { amount_paid, payment_proof } = req.body;
+      const paymentProofFile = req.file; // From multer (for file uploads)
+      const paymentProofBase64 = payment_proof; // From JSON body (for base64 data)
       const user = (req as any).user;
 
       if (!amount_paid) {
         return errorResponse(res, 'error amount is required');
       }
+
+      // Use file upload if available, otherwise use base64 data from JSON
+      const paymentProof = paymentProofFile || paymentProofBase64;
 
       const updatedOrgFinance = await this.orgFinanceService.markAsPaid(req.params.id, amount_paid, paymentProof, user);
 

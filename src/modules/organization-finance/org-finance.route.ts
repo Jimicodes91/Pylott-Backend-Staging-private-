@@ -25,8 +25,8 @@ export const orgFinanceRoutes = (prefix: string, server: Server) => {
   server.patch(
     `${prefix}/:id/mark-as-paid`,
     authenticateUser,
-    uploadPaymentProof.single('payment_proof'), // Handle file upload first
-    schemaValidator(markAsPaidValidationRules), // Then validate form data
+    uploadPaymentProof.single('payment_proof'), // Handle file upload (optional)
+    schemaValidator(markAsPaidValidationRules), // Validate both form data and JSON
     orgFinanceController.markAsPaid,
   );
 };
