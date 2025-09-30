@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
 
-import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository, ProjectRepository } from '@/repositories';
+import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository, ProjectRepository, ProjectSettingsRepository } from '@/repositories';
 
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { ServiceType } from '@/shared/types/general.type';
@@ -20,6 +20,7 @@ export class DocsService {
     private readonly metadataRepository: MetadataRepository,
     private readonly documentRepository: DocumentsRepository,
     private readonly documentAttachmentRepository: DocumentAttachmentsRepository,
+    private readonly projectSettingsRepository: ProjectSettingsRepository,
     private readonly cloudinary: Cloudinary,
   ) {}
 
@@ -115,9 +116,13 @@ export class DocsService {
 
   public async getAllDocuments(user: UserModelType, project_id: string): Promise<ServiceType> {
     try {
-      const is_client = user.role.toLowerCase() === 'client';
+      const isClient = user.role.toLowerCase() === 'client';
 
-      const documents = await this.documentRepository.getAllDocumentsAndAttachment(project_id, {}, is_client);
+      const projectSettings = await this.projectSettingsRepository.findOne({ company_id: user.company_id, deleted_at: null });
+
+      const isVisibleToClient = projectSettings?.client_can_view_task;
+
+      const documents = await this.documentRepository.getAllDocumentsAndAttachment(project_id, {}, isVisibleToClient, isClient);
 
       return { status: true, message: 'Project documents fetched successfully', data: documents };
     } catch (error) {

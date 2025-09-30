@@ -21,10 +21,10 @@ export class DocumentsRepository extends BaseRepository<DocumentsModelType, Docu
       });
   }
 
-  async getAllDocumentsAndAttachment(project_id: string, others: Partial<DocumentsModelType> = {}, is_client = false) {
+  async getAllDocumentsAndAttachment(project_id: string, others: Partial<DocumentsModelType> = {}, is_visible_to_client: boolean, is_client = false) {
     let qb = this.model.query().where({ project_id, deleted_at: null, ...others });
 
-    if (is_client) {
+    if (is_client && is_visible_to_client) {
       qb = qb.where((builder) => {
         builder.where('is_document_request', false).orWhere((builder) => {
           builder.where('is_document_request', true).andWhere('is_visible_to_client', true);
