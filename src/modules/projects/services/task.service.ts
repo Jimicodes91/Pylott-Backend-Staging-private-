@@ -11,6 +11,7 @@ import {
   ProjectFormFieldRepository,
   ProjectFormsRepository,
   ProjectRepository,
+  ProjectSettingsRepository,
   ProjectTaskAssigneesRepository,
   ProjectTaskRepository,
   ProjectTypeRepository,
@@ -45,6 +46,7 @@ export class TaskService {
     private readonly projectTypeRepository: ProjectTypeRepository,
     private readonly attachmentRepository: DocumentAttachmentsRepository,
     private readonly auditTrailService: AuditTrailService,
+    private readonly projectSettingsRepository: ProjectSettingsRepository,
   ) {}
 
   async createTask(user: UserModelType, project_id: string, payload: CreateTask): Promise<ServiceType> {
@@ -395,10 +397,16 @@ export class TaskService {
   async getAllTask(user: UserModelType, project_id: string | null, query: ObjectLiteral = {}): Promise<ServiceType> {
     const company_id = user.company_id;
     try {
-      if (user.role.toLowerCase() === 'client') {
+      const isClient = user.role.toLowerCase() === 'client';
+
+      if (isClient) {
         query.is_visible_to_client = true;
         query.assignee_id = user.id;
       }
+
+      const projectSettings = await this.projectSettingsRepository.findOne({ company_id, deleted_at: null });
+
+      query['is_visible_to_client'] = projectSettings?.client_can_view_task ?? query.is_visible_to_client;
 
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
 

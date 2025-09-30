@@ -45,7 +45,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
 
     if (query.assignee_id) {
       qb.where((builder) => {
-        builder.whereIn('id', assignedTaskIds).orWhere('is_visible_to_client', true);
+        builder.whereIn('id', assignedTaskIds).orWhere('is_visible_to_client', query.is_visible_to_client);
       });
     }
 
