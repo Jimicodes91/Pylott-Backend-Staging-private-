@@ -120,7 +120,7 @@ export class DocsService {
 
       const projectSettings = await this.projectSettingsRepository.findOne({ company_id: user.company_id, deleted_at: null });
 
-      const isVisibleToClient = projectSettings?.client_can_view_task;
+      const isVisibleToClient = projectSettings?.client_can_view_documents;
 
       const documents = await this.documentRepository.getAllDocumentsAndAttachment(project_id, {}, isVisibleToClient, isClient);
 
