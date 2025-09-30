@@ -397,6 +397,7 @@ export class TaskService {
     try {
       if (user.role.toLowerCase() === 'client') {
         query.is_visible_to_client = true;
+        query.assignee_id = user.id;
       }
 
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
