@@ -118,8 +118,8 @@ export class Project extends BaseModel {
       relation: BaseModel.BelongsToOneRelation,
       modelClass: ProjectSettings,
       join: {
-        from: 'projects.id',
-        to: 'project_settings.project_id',
+        from: 'projects.company_id',
+        to: 'project_settings.company_id',
       },
     },
   });

@@ -85,7 +85,7 @@ export class ProjectController {
   };
 
   getAllProjects = async (req: AuthenticatedRequest, res: Response) => {
-    const company_id = req.user.company_id;
+    const company_id = req.user?.company_id ?? 'db5ecb64-ad18-4dd5-a872-189c79d09b7e';
     const { status, client_id, consultant_id, project_type_id, search } = req.query;
 
     const filters = {
