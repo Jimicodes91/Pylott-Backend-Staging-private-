@@ -8,4 +8,8 @@ export class ProjectSettingsRepository extends BaseRepository<ProjectSettingsMod
   constructor() {
     super(ProjectSettings);
   }
+
+  public async getOne(query_identifier: Partial<ProjectSettingsModelType>) {
+    return await this.model.query().where(query_identifier).orderBy('created_at', 'DESC').whereNull('deleted_at').first();
+  }
 }

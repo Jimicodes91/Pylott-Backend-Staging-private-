@@ -13,7 +13,7 @@ export class ProjectSettingService {
 
   async toggleProjectSettings(company_id: string, payload: ToggleProjectSettings): Promise<ServiceType> {
     try {
-      let projectSettings = await this.projectSettingsRepository.findOne({ company_id });
+      let projectSettings = await this.projectSettingsRepository.getOne({ company_id });
 
       if (!projectSettings) projectSettings = await this.projectSettingsRepository.create({ company_id });
 
@@ -38,7 +38,7 @@ export class ProjectSettingService {
 
   async getProjectSettingDetails(company_id: string): Promise<ServiceType> {
     try {
-      const projectSettings = await this.projectSettingsRepository.findOne({ company_id });
+      const projectSettings = await this.projectSettingsRepository.getOne({ company_id });
 
       return { status: true, message: 'Project settings fetched successfully', data: projectSettings };
     } catch (error) {

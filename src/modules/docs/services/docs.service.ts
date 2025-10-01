@@ -118,7 +118,7 @@ export class DocsService {
     try {
       const isClient = user.role.toLowerCase() === 'client';
 
-      const projectSettings = await this.projectSettingsRepository.findOne({ company_id: user.company_id, deleted_at: null });
+      const projectSettings = await this.projectSettingsRepository.getOne({ company_id: user.company_id, deleted_at: null });
 
       const isVisibleToClient = projectSettings?.client_can_view_documents;
 

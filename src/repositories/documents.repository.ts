@@ -31,6 +31,7 @@ export class DocumentsRepository extends BaseRepository<DocumentsModelType, Docu
         });
       });
     }
+
     return await qb.withGraphFetched('attachments').modifyGraph('attachments', (qb) => {
       qb.whereNull('attachments.deleted_at');
     });

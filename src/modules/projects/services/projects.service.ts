@@ -352,7 +352,7 @@ export class ProjectService {
 
       let project;
 
-      const projectSettings = await this.projectSettingsRepository.findOne({ company_id });
+      const projectSettings = await this.projectSettingsRepository.getOne({ company_id });
 
       await Objection.Model.transaction(async (trx) => {
         project = await this.projectRepository.create(
@@ -811,7 +811,7 @@ export class ProjectService {
         }
       }
 
-      const projectSettings = await this.projectSettingsRepository.findOne({
+      const projectSettings = await this.projectSettingsRepository.getOne({
         company_id,
       });
 

@@ -404,7 +404,7 @@ export class TaskService {
         query.assignee_id = user.id;
       }
 
-      const projectSettings = await this.projectSettingsRepository.findOne({ company_id, deleted_at: null });
+      const projectSettings = await this.projectSettingsRepository.getOne({ company_id, deleted_at: null });
 
       query['is_visible_to_client'] = projectSettings?.client_can_view_task ?? query.is_visible_to_client;
 
