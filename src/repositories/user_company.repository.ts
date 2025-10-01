@@ -21,6 +21,11 @@ export class UserCompanyRepository extends BaseRepository<UserCompanyModelType, 
 
     return !!userCompany;
   }
+  // Check if user is in any company
+  async isUserInAnyCompany(userId: string) {
+    const userCompany = await this.model.query().where('user_id', userId).where('is_active', true).whereNull('deleted_at').first();
+    return !!userCompany;
+  }
 
   // Get user's role in a specific company
   async getUserRoleInCompany(userId: string, companyId: string) {

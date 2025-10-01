@@ -480,6 +480,11 @@ export class AuthService {
           throw new HttpError('User is already a member of this company', 400);
         }
       }
+      //check if the user is in any other company
+      const isUserInAnyCompany = await this.userCompanyRepository.isUserInAnyCompany(existingUser.id);
+      if (isUserInAnyCompany) {
+        throw new HttpError('User is already a member of another company', 400);
+      }
 
       const company = await this.companyRepository.getCompanyNameById(admin.company_id);
       const companyName = company.name;
@@ -521,9 +526,14 @@ export class AuthService {
 
   public async completeRegistration(email: string, password: string, companyId: string, role: UserRoles, name: string) {
     try {
+      //check if the user is already in the company
       const existingUser = await this.userRepository.findOne({ email });
-      if (existingUser) {
-        throw new HttpError('Email is already registered', 400);
+      // if (existingUser) {
+      //   throw new HttpError('Email is already registered', 400);
+      // }
+      const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, companyId);
+      if (isUserInCompany) {
+        throw new HttpError('User is already a member of this company', 400);
       }
 
       const hashedPassword = await this.hashPassword(password);
