@@ -46,9 +46,9 @@ export const resetPasswordValidationRule = [
 ];
 
 export const completeRegistrationValidationRule = [
-  body('email', 'Email is required').not().isEmpty(),
+  body('token', 'Token is required').not().isEmpty(),
   body('password', 'Password is required').not().isEmpty(),
-  body('companyId', 'companyId is required').not().isEmpty(),
+  body('name', 'Name is required').not().isEmpty(),
 ];
 
 export const addClientValidator = [body('name', 'Name is required').not().isEmpty(), body('email', 'Email is required').not().isEmpty(), body('password', 'Password is required').not().isEmpty()];

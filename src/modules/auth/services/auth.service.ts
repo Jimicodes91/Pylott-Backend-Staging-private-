@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { RedisClientType } from 'redis';
 
-import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembersRepository, UserRepository, UserCompanyRepository } from '@/repositories';
+import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembersRepository, UserRepository, UserCompanyRepository, InvitationRepository } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { strongPassword } from '@/shared/utils/any';
@@ -36,6 +36,7 @@ export class AuthService {
     @inject(ConsultantRepository) private consultantRepository: ConsultantRepository,
     @inject(ContactRespository) private contactRepository: ContactRespository,
     @inject(UserCompanyRepository) private userCompanyRepository: UserCompanyRepository,
+    @inject(InvitationRepository) private invitationRepository: InvitationRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     private readonly auditTrailService: AuditTrailService,
     _redis: Redis,
@@ -255,7 +256,6 @@ export class AuthService {
       if (!user) {
         throw new HttpError('Invalid email or password', 401);
       }
-      console.log(user.password);
       if (!user.is_verified) {
         const verificationToken = crypto.randomBytes(32).toString('hex');
         await this.userRepository.update(
@@ -270,7 +270,6 @@ export class AuthService {
       }
 
       const isPasswordValid = await bcrypt.compare(data.password, user.password);
-      console.log(isPasswordValid);
       if (!isPasswordValid) {
         throw new HttpError('Invalid email or password', 401);
       }
@@ -438,7 +437,7 @@ export class AuthService {
 
   public async resetPassword(token: string, newPassword: string) {
     try {
-      const user = await this.userRepository.findOne({ email: token });
+      const user = await this.userRepository.findOne({ email: token }); //leave as it is
       if (!user) {
         throw new HttpError('Invalid or expired token', 400);
       }
@@ -463,43 +462,60 @@ export class AuthService {
   public async sendInvitation(adminId: string, email: string, role: UserRoles) {
     try {
       const admin = await this.userRepository.getById(adminId);
-      // if (!admin || admin.role !== UserRoles.ADMIN) {
-      //   throw new HttpError('Only company admins can send invitations', 403);
-      // }
+      if (!admin || admin.role !== UserRoles.ADMIN) {
+        throw new HttpError('Only company admins can send invitations', 403);
+      }
 
       if (!admin.company_id) {
         throw new HttpError('Admin is not associated with a company', 400);
       }
 
-      const existingUser = await this.userRepository.findOne({ email });
+      const existingUser = await this.userRepository.findByEmail(email);
 
       // Check if user exists and is already in this company
       if (existingUser) {
-        const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, admin.company_id);
-        if (isUserInCompany) {
-          throw new HttpError('User is already a member of this company', 400);
-        }
+        throw new HttpError('Email already used by another user, please use a different email', 400);
+
+        // const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, admin.company_id);
+        // if (isUserInCompany) {
+        //   throw new HttpError('User is already a member of this company', 400);
+        // }
+        // // Check if the user is in any other company
+        // const isUserInAnyCompany = await this.userCompanyRepository.isUserInAnyCompany(existingUser.id);
+        // if (isUserInAnyCompany) {
+        //   throw new HttpError('User is already a member of another company', 400);
+        // }
       }
-      //check if the user is in any other company
-      const isUserInAnyCompany = await this.userCompanyRepository.isUserInAnyCompany(existingUser.id);
-      if (isUserInAnyCompany) {
-        throw new HttpError('User is already a member of another company', 400);
+
+      // Check if there's already a pending invitation for this email/company
+      const existingInvitation = await this.invitationRepository.findByEmailAndCompany(email, admin.company_id);
+      if (existingInvitation) {
+        throw new HttpError('An invitation has already been sent to this email for this company', 400);
       }
 
       const company = await this.companyRepository.getCompanyNameById(admin.company_id);
       const companyName = company.name;
-      //console.log(companyName);
 
       const invitationToken = crypto.randomBytes(32).toString('hex');
-      const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}&email=${email}&role=${role}&companyId=${admin.company_id}`;
+      const tokenExpires = Date.now() + TOKEN_EXPIRATION_MS; // 24 hours
+      const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}`;
+
+      // Store invitation data in invitations table
+      await this.invitationRepository.create({
+        email: email,
+        role: role,
+        company_id: admin.company_id,
+        invited_by: adminId,
+        invitation_token: invitationToken,
+        token_expires: tokenExpires,
+        status: 'PENDING',
+      });
 
       await this.sendEmailTemplate(
         email,
         `Welcome to Pylott`,
-
         `Invitation to join ${companyName}`,
         `You have been invited to join ${companyName} as a ${role}. Click the button below to complete your registration:`,
-
         registrationLink,
         'Complete Registration',
         `Pylott ${role}`,
@@ -515,7 +531,7 @@ export class AuthService {
           entity_description: `${admin.name} sent invitation to ${email} as ${role}`,
           entity_id: adminId,
         },
-        '123',
+        adminId, // Use actual admin ID instead of hardcoded '123'
       );
 
       return { message: 'Invitation sent successfully' };
@@ -524,26 +540,42 @@ export class AuthService {
     }
   }
 
-  public async completeRegistration(email: string, password: string, companyId: string, role: UserRoles, name: string) {
+  public async completeRegistration(token: string, password: string, name: string) {
     try {
-      //check if the user is already in the company
-      const existingUser = await this.userRepository.findOne({ email });
-      // if (existingUser) {
-      //   throw new HttpError('Email is already registered', 400);
-      // }
-      const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, companyId);
-      if (isUserInCompany) {
-        throw new HttpError('User is already a member of this company', 400);
+      // Find the invitation by token
+      const invitation = await this.invitationRepository.findByToken(token);
+      if (!invitation) {
+        throw new HttpError('Invalid or expired invitation token', 400);
       }
 
+      // Check if invitation is expired
+      if (invitation.token_expires < Date.now()) {
+        await this.invitationRepository.markAsExpired(invitation.id);
+        throw new HttpError('Invitation has expired', 400);
+      }
+
+      // Check if invitation is already accepted
+      if (invitation.status !== 'PENDING') {
+        throw new HttpError('Invitation has already been used', 400);
+      }
+
+      // Check if user already exists
+      const existingUser = await this.userRepository.findOne({ email: invitation.email });
+      if (existingUser) {
+        throw new HttpError('User with this email already exists', 400);
+      }
+
+      await this.validatePasswordStrength(password);
       const hashedPassword = await this.hashPassword(password);
 
+      // Create the user
       const newUser = await this.userRepository.create({
         name: name,
-        email: email,
+        email: invitation.email,
         password: hashedPassword,
-        role: role,
+        role: invitation.role,
         is_verified: true,
+        company_id: invitation.company_id,
       });
 
       if (!newUser) {
@@ -551,61 +583,62 @@ export class AuthService {
       }
 
       // Add user to the company using the new user_companies table
-      await this.userCompanyRepository.addUserToCompany(newUser.id, companyId, role);
-
-      // For backward compatibility, set the primary company_id
-      await this.userRepository.update({ id: newUser.id }, { company_id: companyId });
+      await this.userCompanyRepository.addUserToCompany(newUser.id, invitation.company_id, invitation.role, invitation.invited_by);
 
       // Create role-specific records for backward compatibility
       try {
-        if (role === UserRoles.CLIENT) {
+        if (invitation.role === UserRoles.CLIENT) {
           await this.clientRepository.create({
             user_id: newUser.id,
-            company_id: companyId,
+            company_id: invitation.company_id,
             is_active: true,
           });
 
           // Add client to company contacts
           const contactData = {
             name,
-            email,
+            email: invitation.email,
             phone: newUser.phone_number || '',
-            company_id: companyId,
+            company_id: invitation.company_id,
             assigned_to: [], // Empty array or default assignments
           };
 
           await this.contactRepository.create(contactData);
 
-          const isProjectClient = await this.redis.get(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${email}`);
+          const isProjectClient = await this.redis.get(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${invitation.email}`);
+
           const parsedCache = JSON.parse((isProjectClient as string) || '{}');
 
           if (Object.keys(parsedCache).length) {
             await this.projectMemberRepository.create({ ...parsedCache, user_id: newUser.id });
           }
-        } else if (role === UserRoles.CONSULTANT) {
+        } else if (invitation.role === UserRoles.CONSULTANT) {
           await this.consultantRepository.create({
             user_id: newUser.id,
-            company_id: companyId,
+            company_id: invitation.company_id,
           });
-        } else if (role === UserRoles.ADMIN) {
-          await this.companyRepository.update({ id: companyId }, { admin_id: newUser.id });
+        } else if (invitation.role === UserRoles.ADMIN) {
+          await this.companyRepository.update({ id: invitation.company_id }, { admin_id: newUser.id });
         }
       } catch (roleError) {
         console.error('Failed to create role-specific record:', roleError);
         throw new HttpError('Failed to create role-specific profile', 500);
       }
 
+      // Mark invitation as accepted
+      await this.invitationRepository.markAsAccepted(invitation.id);
+
       // Log registration completed activity
       this.auditTrailService.createEvent(
         AUDIT_TRAIL_ACTION.USER_REGISTRATION_COMPLETED,
         {
           user_id: newUser.id,
-          company_id: companyId,
+          company_id: invitation.company_id,
           description: 'User registration completed',
-          entity_description: `${newUser.name} completed registration as ${role}`,
+          entity_description: `${newUser.name} completed registration as ${invitation.role}`,
           entity_id: newUser.id,
         },
-        '123',
+        invitation.invited_by, // Use actual inviter ID instead of hardcoded '123'
       );
 
       return newUser;

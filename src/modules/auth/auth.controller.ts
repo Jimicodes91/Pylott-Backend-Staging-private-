@@ -96,6 +96,7 @@ export class AuthController {
     try {
       //console.log(req)
       const adminId = (req as any).user.id;
+      console.log('adminid', adminId);
 
       if (!adminId) {
         return errorResponse(res, 'Admin Id is required');
@@ -113,16 +114,15 @@ export class AuthController {
 
   public completeRegistration = async (req: Request, res: Response) => {
     try {
-      const { email, password, companyId, name, role } = req.body;
-      if (!email || !password || !companyId || !role || !name) {
-        return errorResponse(res, 'Email, name, role, password, and company ID are required');
+      const { token, password, name } = req.body;
+      if (!token || !password || !name) {
+        return errorResponse(res, 'Token, password, and name are required');
       }
 
-      const result = await this.authService.completeRegistration(email, password, companyId, role, name);
+      const result = await this.authService.completeRegistration(token, password, name);
 
       return successResponse(res, 'Registration completed successfully', result);
     } catch (error: any) {
-      console.log(error);
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
