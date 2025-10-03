@@ -96,7 +96,6 @@ export class AuthController {
     try {
       //console.log(req)
       const adminId = (req as any).user.id;
-      console.log('adminid', adminId);
 
       if (!adminId) {
         return errorResponse(res, 'Admin Id is required');
