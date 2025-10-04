@@ -8,7 +8,7 @@ import { RedisClientType } from 'redis';
 import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembersRepository, UserRepository, UserCompanyRepository, InvitationRepository } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
-import { strongPassword } from '@/shared/utils/any';
+import { generateOTP, strongPassword } from '@/shared/utils/any';
 import { AUDIT_TRAIL_ACTION, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
 import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
@@ -18,7 +18,7 @@ import { StatusCodes } from 'http-status-codes';
 import { Redis } from '@/shared/utils/redis/redis';
 import { AddContactDto } from '@/modules/contact/contact.dto';
 import { ContactRespository } from '@/repositories/contact.repository';
-import { authEmailTemplate } from '../../../shared/utils/email';
+import { authEmailTemplate, otpEmailTemplate } from '../../../shared/utils/email';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -121,7 +121,7 @@ export class AuthService {
     }
   }
 
-  private async sendEmailTemplate(email: string, subject: string, title: string, content: string, actionLink: string, actionText: string, name: string) {
+  private async sendEmailTemplate(email: string, subject: string, title: string, content: string, actionLink: string, actionText: string, name: string, otp?: string) {
     await sendEmail(
       email,
       subject,
@@ -131,19 +131,33 @@ export class AuthService {
         message: content,
         actionText,
         actionLink,
+        otp,
         // You can add more params if needed
       }),
     );
   }
 
-  private async sendVerificationEmail(email: string, token: string, name: string) {
-    const verificationLink = `${this.FRONTEND_URL}/verify-account?token=${token}`;
-    await this.sendEmailTemplate(email, 'Pylott Email Verification', 'Welcome to Pylott', 'Please verify your email by clicking the button below:', verificationLink, 'Verify Email', name);
+  private async sendVerificationEmail(email: string, otp: string, name: string) {
+    await sendEmail(
+      email,
+      'Pylott Email Verification',
+      otpEmailTemplate({
+        userName: name,
+        otp: otp,
+        mainTitle: 'Pylott Email Verification',
+        message: 'Please use the verification code below to complete your email verification.',
+        expiryMinutes: 10,
+        supportEmail: 'ava@pylott.io',
+        websiteLink: this.FRONTEND_URL,
+        logoUrl: 'https://www.pylott.io/assets/logo-DabAzhJ7.svg',
+        companyName: 'Pylott Team',
+        copyright: 'Copyright © 2025 Pylott Technologies, All rights reserved.',
+      }),
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async sendPasswordResetEmail(email: string, token: string, name: string) {
-    console.log(token);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const resetLink = `${this.FRONTEND_URL}/reset-password?token=${email}`;
     await this.sendEmailTemplate(email, 'Password Reset Request', 'Reset Your Password', 'You requested to reset your password. Click the button below to proceed:', resetLink, 'Reset Password', name);
@@ -194,22 +208,22 @@ export class AuthService {
 
       await this.validatePasswordStrength(password);
 
-      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const otp = generateOTP();
       const hashedPassword = await this.hashPassword(password);
 
       const newUser = await this.userRepository.create({
         email,
         name,
         password: hashedPassword,
-        verification_token: verificationToken,
-        token_expires: Date.now() + TOKEN_EXPIRATION_MS,
+        otp: otp,
+        otp_expires: Date.now() + TOKEN_EXPIRATION_MS,
         role: UserRoles.ADMIN,
       });
       if (!newUser) {
         throw new HttpError('Error creating user', 400);
       }
 
-      await this.sendVerificationEmail(email, verificationToken, newUser.name);
+      await this.sendVerificationEmail(email, otp, newUser.name);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userResponse } = newUser;
       return userResponse;
@@ -229,19 +243,20 @@ export class AuthService {
 
       await this.validatePasswordStrength(password);
 
-      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const otp = generateOTP();
+      const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
       const hashedPassword = await this.hashPassword(password);
 
       const newUser = await this.userRepository.create({
         name,
         email,
         password: hashedPassword,
-        verification_token: verificationToken,
-        token_expires: Date.now() + TOKEN_EXPIRATION_MS,
+        otp: otp,
+        otp_expires: otpExpires,
         role: UserRoles.ADMIN,
       });
 
-      await this.sendVerificationEmail(email, verificationToken, newUser.name);
+      await this.sendVerificationEmail(email, otp, newUser.name);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userResponse } = newUser;
       return userResponse;
@@ -348,9 +363,9 @@ export class AuthService {
     return { accessToken: newAccessToken };
   }
 
-  public async verifyEmail(token: string) {
+  public async verifyEmail(otp: string) {
     try {
-      const user = await this.userRepository.findOne({ verification_token: token });
+      const user = await this.userRepository.findOne({ otp: otp });
 
       if (!user) {
         throw new HttpError('Invalid or expired token', 400);
@@ -364,7 +379,7 @@ export class AuthService {
         { id: user.id },
         {
           is_verified: true,
-          verification_token: null,
+          otp: null,
           token_expires: null,
         },
       );
@@ -402,16 +417,16 @@ export class AuthService {
         throw new HttpError('Email is already verified', 400);
       }
 
-      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const otp = generateOTP();
       await this.userRepository.update(
         { id: user.id },
         {
-          verification_token: verificationToken,
-          token_expires: Date.now() + TOKEN_EXPIRATION_MS,
+          otp: otp,
+          otp_expires: Date.now() + TOKEN_EXPIRATION_MS,
         },
       );
 
-      await this.sendVerificationEmail(email, verificationToken, user.name);
+      await this.sendVerificationEmail(email, otp, user.name);
       return { message: 'Verification email sent successfully' };
     } catch (error) {
       throw new HttpError(error.message || 'Error failure in sending Verification message', 500);

@@ -38,12 +38,12 @@ export class AuthController {
 
   public verifyEmail = async (req: Request, res: Response) => {
     try {
-      const { token } = req.query;
-      if (!token || typeof token !== 'string') {
-        return errorResponse(res, 'Token is required');
+      const { otp } = req.body;
+      if (!otp || typeof otp !== 'string') {
+        return errorResponse(res, 'OTP is required');
       }
 
-      const result = await this.authService.verifyEmail(token);
+      const result = await this.authService.verifyEmail(otp);
       return successResponse(res, 'Email verified successfully', result);
     } catch (error: any) {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
