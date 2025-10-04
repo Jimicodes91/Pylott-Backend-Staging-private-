@@ -265,7 +265,7 @@ export class AuthService {
             token_expires: Date.now() + TOKEN_EXPIRATION_MS,
           },
         );
-        await this.sendVerificationEmail(user.email, verificationToken, user.name);
+
         throw new HttpError('Verify your email first. A new link has been sent.', 403);
       }
 
