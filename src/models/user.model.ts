@@ -14,6 +14,8 @@ export class User extends BaseModel {
   password: string;
   name?: string;
   phone_number?: string;
+  otp?: string;
+  otp_expires?: number;
   role?: UserRoles;
   company_id?: string;
   is_blocked?: boolean;

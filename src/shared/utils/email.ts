@@ -569,6 +569,7 @@ export function authEmailTemplate({
   logoUrl?: string;
   companyName?: string;
   copyright?: string;
+  otp?: string;
 }) {
   return `
 <!DOCTYPE html>
@@ -940,6 +941,326 @@ export function authEmailTemplate({
                   <tr>
                     <td align="center" style="color: #fff; font-weight: 300;">
                       <span>${copyright}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
+  `;
+}
+
+export function otpEmailTemplate({
+  userName,
+  otp,
+  mainTitle = 'Email Verification',
+  message = 'Please use the verification code below to complete your email verification.',
+  expiryMinutes = 10,
+  supportEmail = 'ava@pylott.io',
+  websiteLink = 'https://pylott.io',
+  logoUrl = 'https://www.pylott.io/assets/logo-DabAzhJ7.svg',
+
+  copyright = 'Copyright © 2025 Pylott Technologies, All rights reserved.',
+}: {
+  userName: string;
+  otp: string;
+  mainTitle?: string;
+  message?: string;
+  expiryMinutes?: number;
+  supportEmail?: string;
+  websiteLink?: string;
+  logoUrl?: string;
+  companyName?: string;
+  copyright?: string;
+}) {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>${mainTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    style="
+      font-family: 'DM Sans', sans-serif;
+      font-optical-sizing: auto;
+      font-style: normal;
+    "
+  >
+    <div>
+      <table
+        width="100%"
+        border="0"
+        cellpadding="0"
+        cellspacing="0"
+        style="background-color: #092327; padding-top: 20px; position: relative"
+        bgcolor="#092327"
+      >
+        <tbody>
+          <tr>
+            <td
+              align="center"
+              style="background-color: #092327; margin-top: 0"
+              bgcolor="#092327"
+            >
+              <a
+                href="${websiteLink}"
+                style="color: inherit"
+                target="_blank"
+                ><table width="100%" cellpadding="0" cellspacing="0">
+                  <tbody>
+                    <tr>
+                      <td
+                        align="center"
+                        style="
+                          padding-left: 20px;
+                          padding-right: 20px;
+                          padding-top: 40px;
+                          padding-bottom: 60px;
+                          color: #fff;
+                        "
+                      >
+                        <img
+                          src="${logoUrl}"
+                          alt="Pylott"
+                          width="100"
+                          border="0"
+                          style="
+                            border: none;
+                            outline: none;
+                            border-collapse: collapse;
+                            display: block;
+                            border-style: none;
+                          "
+                        />
+                      </td>
+                    </tr>
+                  </tbody></table
+              ></a>
+            </td>
+          </tr>
+          <tr>
+            <td
+              align="center"
+              style="margin-top: 0; padding-bottom: 20px"
+              bgcolor="#092327"
+            >
+              <table
+                align="center"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                style="
+                  background-color: #ffffff;
+                  width: 600px;
+                  position: relative;
+                  border-radius: 16px;
+                "
+                width="600"
+                bgcolor="#ffffff"
+              >
+                <tbody>
+                  <tr>
+                    <td align="center">
+                      <table>
+                        <tr>
+                          <td align="center">
+                            <table
+                              align="left"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      font-family: DM Sans, Roboto, Segoe UI,
+                                        sans-serif;
+                                      font-weight: 700;
+                                      font-size: 22px;
+                                      line-height: 22px;
+                                      letter-spacing: -0.35px;
+                                      padding-top: 32px;
+                                      padding-bottom: 32px;
+                                      color: #383838;
+                                    "
+                                  >
+                                    ${mainTitle}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      font-family: DM Sans, Roboto, Segoe UI,
+                                        sans-serif;
+                                      font-weight: 400;
+                                      font-size: 16px;
+                                      line-height: 24px;
+                                      letter-spacing: -0.25px;
+                                      color: #383838;
+                                      padding-bottom: 24px;
+                                    "
+                                  >
+                                    Hi ${userName},
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      font-family: DM Sans, Roboto, Segoe UI,
+                                        sans-serif;
+                                      font-weight: 400;
+                                      font-size: 16px;
+                                      line-height: 24px;
+                                      letter-spacing: -0.25px;
+                                      color: #383838;
+                                      padding-bottom: 32px;
+                                    "
+                                  >
+                                    ${message}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td align="center" style="padding-bottom: 32px;">
+                                    <div
+                                      style="
+                                        background-color: #f8f9fa;
+                                        border: 2px dashed #e9ecef;
+                                        border-radius: 12px;
+                                        padding: 24px;
+                                        margin: 0 20px;
+                                        text-align: center;
+                                      "
+                                    >
+                                      <div
+                                        style="
+                                          font-family: DM Sans, Roboto, Segoe UI, sans-serif;
+                                          font-weight: 700;
+                                          font-size: 32px;
+                                          line-height: 1;
+                                          letter-spacing: 8px;
+                                          color: #092327;
+                                          margin-bottom: 8px;
+                                        "
+                                      >
+                                        ${otp}
+                                      </div>
+                                      <div
+                                        style="
+                                          font-family: DM Sans, Roboto, Segoe UI, sans-serif;
+                                          font-weight: 400;
+                                          font-size: 14px;
+                                          line-height: 1.4;
+                                          color: #6c757d;
+                                        "
+                                      >
+                                        This code expires in ${expiryMinutes} minutes
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    align="left"
+                                    style="
+                                      padding-left: 20px;
+                                      padding-right: 20px;
+                                      font-family: DM Sans, Roboto, Segoe UI,
+                                        sans-serif;
+                                      font-weight: 400;
+                                      font-size: 14px;
+                                      line-height: 20px;
+                                      letter-spacing: -0.2px;
+                                      color: #6c757d;
+                                      padding-bottom: 32px;
+                                    "
+                                  >
+                                    If you didn't request this verification code, please ignore this email or contact our support team if you have concerns.
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td
+              align="center"
+              style="padding-bottom: 40px; padding-left: 20px; padding-right: 20px"
+              bgcolor="#092327"
+            >
+              <table
+                align="center"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                style="width: 600px"
+                width="600"
+              >
+                <tbody>
+                  <tr>
+                    <td
+                      align="center"
+                      style="
+                        font-family: DM Sans, Roboto, Segoe UI, sans-serif;
+                        font-weight: 400;
+                        font-size: 14px;
+                        line-height: 20px;
+                        letter-spacing: -0.2px;
+                        color: #ffffff;
+                        padding-bottom: 16px;
+                      "
+                    >
+                      Need help? Contact us at
+                      <a
+                        href="mailto:${supportEmail}"
+                        style="color: #ffffff; text-decoration: underline"
+                        >${supportEmail}</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      align="center"
+                      style="
+                        font-family: DM Sans, Roboto, Segoe UI, sans-serif;
+                        font-weight: 400;
+                        font-size: 12px;
+                        line-height: 16px;
+                        letter-spacing: -0.15px;
+                        color: #ffffff;
+                        opacity: 0.7;
+                      "
+                    >
+                      ${copyright}
                     </td>
                   </tr>
                 </tbody>

@@ -46,7 +46,7 @@ export const resetPasswordValidationRule = [
 ];
 
 export const completeRegistrationValidationRule = [
-  body('token', 'Token is required').not().isEmpty(),
+  body('token', 'token is required').not().isEmpty(),
   body('password', 'Password is required').not().isEmpty(),
   body('name', 'Name is required').not().isEmpty(),
 ];
