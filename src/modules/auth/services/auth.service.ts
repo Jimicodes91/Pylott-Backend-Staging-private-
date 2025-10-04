@@ -266,7 +266,7 @@ export class AuthService {
           },
         );
 
-        throw new HttpError('Verify your email first. A new link has been sent.', 403);
+        throw new HttpError('You are not verified, please check your email for verification link.', 403);
       }
 
       const isPasswordValid = await bcrypt.compare(data.password, user.password);
