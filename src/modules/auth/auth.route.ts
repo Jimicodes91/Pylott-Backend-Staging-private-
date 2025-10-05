@@ -24,7 +24,7 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/login`, schemaValidator(loginValidationRule), authController.signIn);
 
-  server.get(`${prefix}/verify`, authController.verifyEmail);
+  server.post(`${prefix}/verify`, authController.verifyEmail);
 
   server.post(`${prefix}/resend-verification`, schemaValidator(emailValidationRule), authController.resendVerificationEmail);
 
