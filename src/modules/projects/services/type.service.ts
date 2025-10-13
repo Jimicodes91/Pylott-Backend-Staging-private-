@@ -6,7 +6,6 @@ import { MilestonesModelType } from '@/models';
 import { FieldTypeEnum } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { _ProjectType, PhaseProgress } from '@/shared/types/projects.type';
-import { sleep } from '@/shared/utils/any';
 
 @injectable()
 export class TypeService {
@@ -90,7 +89,7 @@ export class TypeService {
       const createdType = await this.projectTypeRepository.create(projectTypeCreateData);
 
       if (payload.stages && payload.stages.length > 0) {
-        payload.stages.forEach(async (stage) => {
+        for (const stage of payload.stages) {
           const milestoneData = {
             project_type_id: createdType.id,
             company_id,
@@ -101,9 +100,7 @@ export class TypeService {
           };
 
           await this.milestonesRepository.create(milestoneData);
-
-          await sleep(2000);
-        });
+        }
       }
 
       return {
