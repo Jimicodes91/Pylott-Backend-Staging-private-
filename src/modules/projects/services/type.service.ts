@@ -98,7 +98,7 @@ export class TypeService {
             completed_at: null,
             name: stage.name,
             duration: stage.duration,
-            order: i,
+            order: i + 1,
           };
 
           await this.milestonesRepository.create(milestoneData);
@@ -251,7 +251,7 @@ export class TypeService {
       }
 
       for (let i = 0; i < milestoneIds.length; i++) {
-        await this.milestonesRepository.update({ id: milestoneIds[i], company_id, project_type_id }, { order: i });
+        await this.milestonesRepository.update({ id: milestoneIds[i], company_id, project_type_id }, { order: i + 1 });
       }
 
       return {

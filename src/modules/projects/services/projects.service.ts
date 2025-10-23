@@ -426,7 +426,7 @@ export class ProjectService {
                   company_id,
                   is_system: false,
                   completed_at: null,
-                  order: i,
+                  order: i + 1,
                 },
                 trx,
               );
