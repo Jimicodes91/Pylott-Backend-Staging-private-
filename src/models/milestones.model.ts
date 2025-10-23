@@ -13,6 +13,7 @@ export class Milestones extends BaseModel {
   completed_at: string;
   name: string;
   is_system: boolean;
+  order: number;
 
   projects: [Project];
 

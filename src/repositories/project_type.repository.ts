@@ -21,7 +21,7 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
       .orderBy('created_at', 'desc')
       .withGraphFetched({ milestones: true })
       .modifyGraph('milestones', (builder) => {
-        builder.orderBy('created_at', 'asc');
+        builder.orderBy('order', 'asc');
       });
   }
 
@@ -31,7 +31,7 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
       .where({ company_id, id: project_type_id, deleted_at: null })
       .withGraphFetched({ milestones: true })
       .modifyGraph('milestones', (builder) => {
-        builder.orderBy('created_at', 'asc');
+        builder.orderBy('order', 'asc');
       })
       .first();
   }

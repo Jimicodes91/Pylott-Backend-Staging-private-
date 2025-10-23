@@ -410,7 +410,8 @@ export class ProjectService {
         await this.projectMembersRepository.createMultiple(existentClients, trx);
 
         if (payload.milestones && payload.milestones.length) {
-          for (const milestoneRecord of payload.milestones) {
+          for (let i = 0; i < payload.milestones.length; i++) {
+            const milestoneRecord = payload.milestones[i];
             const existingMilestone = await this.milestonesRepository.findOne({
               company_id,
               project_type_id: milestoneRecord.project_type_id,
@@ -425,6 +426,7 @@ export class ProjectService {
                   company_id,
                   is_system: false,
                   completed_at: null,
+                  order: i,
                 },
                 trx,
               );

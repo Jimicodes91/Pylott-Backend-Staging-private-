@@ -89,7 +89,8 @@ export class TypeService {
       const createdType = await this.projectTypeRepository.create(projectTypeCreateData);
 
       if (payload.stages && payload.stages.length > 0) {
-        for (const stage of payload.stages) {
+        for (let i = 0; i < payload.stages.length; i++) {
+          const stage = payload.stages[i];
           const milestoneData = {
             project_type_id: createdType.id,
             company_id,
@@ -97,6 +98,7 @@ export class TypeService {
             completed_at: null,
             name: stage.name,
             duration: stage.duration,
+            order: i,
           };
 
           await this.milestonesRepository.create(milestoneData);
@@ -207,6 +209,64 @@ export class TypeService {
     }
 
     return null;
+  }
+
+  async reorderMilestones(company_id: string, project_type_id: string, milestoneIds: string[]): Promise<ServiceType> {
+    try {
+      const projectType = await this.projectTypeRepository.findOne({
+        company_id,
+        id: project_type_id,
+        deleted_at: null,
+      });
+
+      if (!projectType) {
+        return { status: false, message: 'Project type not found', statusCode: 404 };
+      }
+
+      if (projectType.is_system) {
+        return { status: false, message: 'Cannot reorder milestones for system-defined project types', statusCode: 400 };
+      }
+
+      const milestones = await this.milestonesRepository.getAllMilestones(company_id, project_type_id);
+
+      if (milestones.length !== milestoneIds.length) {
+        return {
+          status: false,
+          message: 'All milestones must be included in the reorder request',
+          statusCode: 400,
+        };
+      }
+
+      const milestoneIdsSet = new Set(milestoneIds);
+      const existingMilestoneIds = milestones.map((m) => m.id);
+
+      for (const id of milestoneIdsSet) {
+        if (!existingMilestoneIds.includes(id)) {
+          return {
+            status: false,
+            message: `Milestone with ID ${id} not found for this project type`,
+            statusCode: 400,
+          };
+        }
+      }
+
+      for (let i = 0; i < milestoneIds.length; i++) {
+        await this.milestonesRepository.update({ id: milestoneIds[i], company_id, project_type_id }, { order: i });
+      }
+
+      return {
+        status: true,
+        message: 'Milestones reordered successfully',
+        data: { reordered_milestones: milestoneIds },
+      };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred reordering milestones ===> ${JSON.stringify({ company_id, project_type_id, milestoneIds, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+        data: null,
+      };
+    }
   }
 
   private calculatePhaseProgress(milestones: MilestonesModelType[]): PhaseProgress {

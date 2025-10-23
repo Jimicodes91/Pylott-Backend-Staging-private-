@@ -18,6 +18,7 @@ import {
   // createProjectValidationRules,
   createTaskValidationRules,
   documentRequestValidationRules,
+  reorderMilestonesValidationRules,
   toggleNotePinValidationRules,
   updateFieldRequirementValidationRules,
   updateMilestoneValidationRules,
@@ -82,6 +83,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/types/:project_type_id`, authGuard, projectController.getProjectTypeDetails);
   server.post(`${prefix}/types`, authGuard, schemaValidator(createProjectTypeValidationRules), projectController.createProjectType);
   server.patch(`${prefix}/types/:project_type_id`, authGuard, schemaValidator(updateProjectTypeValidationRules), projectController.updateProjectTypeDetails);
+  server.patch(`${prefix}/types/:project_type_id/milestones/reorder`, authGuard, schemaValidator(reorderMilestonesValidationRules), projectController.reorderMilestones);
 
   /**
    * Milestones

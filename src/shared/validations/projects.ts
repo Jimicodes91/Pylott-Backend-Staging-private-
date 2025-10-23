@@ -671,3 +671,20 @@ export const addCustomFieldValidationRules = [
 ];
 
 export const updateFieldRequirementValidationRules = [body('is_required').isBoolean().withMessage('is_required must be a boolean')];
+
+export const reorderMilestonesValidationRules = [
+  body('milestone_ids')
+    .notEmpty()
+    .withMessage('Milestone IDs are required')
+    .isArray()
+    .withMessage('Milestone IDs must be an array')
+    .custom((value) => {
+      if (value.length === 0) {
+        throw new Error('At least one milestone ID is required');
+      }
+      if (!value.every((id: any) => typeof id === 'string' && id.trim().length > 0)) {
+        throw new Error('All milestone IDs must be non-empty strings');
+      }
+      return true;
+    }),
+];

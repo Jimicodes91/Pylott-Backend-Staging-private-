@@ -54,6 +54,14 @@ export class ProjectController {
     return genericResponse({ res, data: others, statusCode });
   };
 
+  reorderMilestones = async (req: AuthenticatedRequest, res: Response) => {
+    const company_id = req.user.company_id;
+    const { project_type_id } = req.params;
+    const { milestone_ids } = req.body as { milestone_ids: string[] };
+    const { statusCode = null, ...others } = await this.typeService.reorderMilestones(company_id, project_type_id, milestone_ids);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
   // Milestone endpoints
   getAllMilestones = async (req: AuthenticatedRequest, res: Response) => {
     const company_id = req.user?.company_id;

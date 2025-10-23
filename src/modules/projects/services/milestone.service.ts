@@ -115,11 +115,16 @@ export class MilestoneService {
         };
       }
 
+      const maxOrder = await this.milestonesRepository.findMaxOrder(payload.project_type_id, company_id);
+
+      const newOrder = maxOrder + 1;
+
       await this.milestonesRepository.create({
         ...payload,
         company_id,
         is_system,
         completed_at: null,
+        order: newOrder,
       });
 
       return {
