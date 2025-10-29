@@ -202,6 +202,26 @@ export class AuthController {
     }
   };
 
+  public switchOrganization = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const { companyId } = req.body;
+
+      if (!userId) {
+        return errorResponse(res, 'User ID is required');
+      }
+
+      if (!companyId) {
+        return errorResponse(res, 'Company ID is required');
+      }
+
+      const result = await this.authService.switchOrganization(userId, companyId);
+      return successResponse(res, 'Organization switched successfully', result);
+    } catch (error: any) {
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  };
+
   public logout = async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user.id;

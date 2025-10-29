@@ -42,6 +42,8 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/update-password`, schemaValidator(updatePasswordValidatorRule), authController.updatePassword);
 
+  server.post(`${prefix}/switch-organization`, authenticateUser, authController.switchOrganization);
+
   server.post(`${prefix}/logout`, authenticateUser, authController.logout);
 
   server.get(`${prefix}/auth/google`, authController.getGoogleAuthURL);
