@@ -318,6 +318,26 @@ export class AuthService {
       // Get all companies the user belongs to
       const userCompanies = await this.userCompanyRepository.getUserCompanies(user.id);
 
+      // Format companies list
+      const companiesList = userCompanies.map((uc) => ({
+        id: uc.company.id,
+        name: uc.company.name,
+        role: uc.role,
+        joined_at: uc.joined_at,
+        is_active: uc.is_active,
+      }));
+
+      // Sort companies so the last viewed/switched company appears first
+      // The last viewed company is stored in user.company_id
+      if (user.company_id && companiesList.length > 1) {
+        const lastViewedIndex = companiesList.findIndex((c) => c.id === user.company_id);
+        if (lastViewedIndex > 0) {
+          // Move last viewed company to the front
+          const lastViewedCompany = companiesList.splice(lastViewedIndex, 1)[0];
+          companiesList.unshift(lastViewedCompany);
+        }
+      }
+
       // Log user login activity
       this.auditTrailService.createEvent(AUDIT_TRAIL_ACTION.USER_LOGIN, {
         user_id: user.id,
@@ -332,13 +352,7 @@ export class AuthService {
       return {
         user: {
           ...userData,
-          companies: userCompanies.map((uc) => ({
-            id: uc.company.id,
-            name: uc.company.name,
-            role: uc.role,
-            joined_at: uc.joined_at,
-            is_active: uc.is_active,
-          })),
+          companies: companiesList,
         },
         token: accessToken,
       };
@@ -512,7 +526,7 @@ export class AuthService {
       const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}`;
 
       // Store invitation data in invitations table
-      await this.invitationRepository.create({
+      const invitation = await this.invitationRepository.create({
         email: email,
         role: role,
         company_id: admin.company_id,
@@ -545,7 +559,7 @@ export class AuthService {
         adminId, // Use actual admin ID instead of hardcoded '123'
       );
 
-      return { message: 'Invitation sent successfully' };
+      return { message: 'Invitation sent successfully', invitationId: invitation.id };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to send invitation', 500);
     }
@@ -868,11 +882,31 @@ export class AuthService {
         throw new HttpError('Company not found', 404);
       }
 
-      // Update user's primary company_id for backward compatibility
+      // Update user's primary company_id to track last viewed company
+      // This will be used on next login to show the last viewed company first
       await this.userRepository.update({ id: userId }, { company_id: companyId });
 
       // Get all companies the user belongs to
       const userCompanies = await this.userCompanyRepository.getUserCompanies(userId);
+
+      // Format companies list
+      const companiesList = userCompanies.map((uc) => ({
+        id: uc.company.id,
+        name: uc.company.name,
+        role: uc.role,
+        joined_at: uc.joined_at,
+        is_active: uc.is_active,
+      }));
+
+      // Sort companies so the currently switched company appears first
+      if (companiesList.length > 1) {
+        const currentCompanyIndex = companiesList.findIndex((c) => c.id === companyId);
+        if (currentCompanyIndex > 0) {
+          // Move current company to the front
+          const currentCompany = companiesList.splice(currentCompanyIndex, 1)[0];
+          companiesList.unshift(currentCompany);
+        }
+      }
 
       // Generate new token with updated company context
       const accessToken = jwt.sign({ userId: user.id, email: user.email, role: userRole || user.role, companyId: companyId }, JWT_SECRET_KEY, { expiresIn: '7d' });
@@ -885,13 +919,7 @@ export class AuthService {
           ...userData,
           company_id: companyId,
           role: userRole || user.role,
-          companies: userCompanies.map((uc) => ({
-            id: uc.company.id,
-            name: uc.company.name,
-            role: uc.role,
-            joined_at: uc.joined_at,
-            is_active: uc.is_active,
-          })),
+          companies: companiesList,
           currentCompany: {
             id: company.id,
             name: company.name,
@@ -902,6 +930,193 @@ export class AuthService {
       };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to switch organization', error.statusCode || 500);
+    }
+  }
+
+  public async getCompanyUsersWithStatus(adminId: string, companyId: string) {
+    try {
+      const admin = await this.userRepository.getById(adminId);
+      if (!admin || admin.role !== UserRoles.ADMIN) {
+        throw new HttpError('Only company admins can view users', 403);
+      }
+
+      // Verify admin belongs to the requested company
+      const adminBelongsToOneCompany = await this.userCompanyRepository.isUserInCompany(adminId, companyId);
+      if (!adminBelongsToOneCompany && admin.company_id !== companyId) {
+        throw new HttpError('Admin does not belong to this company', 403);
+      }
+
+      // Get all active users in the company (onboarded users)
+      const activeUsers = await this.userCompanyRepository.getCompanyUsers(companyId);
+
+      // Get all pending invitations for the company (not yet onboarded)
+      const pendingInvitations = await this.invitationRepository.getPendingInvitationsByCompany(companyId);
+
+      // Get all disabled users (is_active = false in user_companies)
+      const disabledUserCompanies = await this.userCompanyRepository.getDisabledCompanyUsers(companyId);
+
+      // Format active users - fetch inviter details
+      const activeUsersList = await Promise.all(
+        activeUsers.map(async (uc: any) => {
+          let inviterName = null;
+          if (uc.invited_by) {
+            const inviter = await this.userRepository.getById(uc.invited_by);
+            inviterName = inviter?.name || null;
+          }
+          return {
+            id: uc.user.id,
+            email: uc.user.email,
+            name: uc.user.name,
+            role: uc.role,
+            status: 'ACTIVE',
+            invited_at: uc.joined_at,
+            invited_by: uc.invited_by,
+            inviter_name: inviterName,
+            is_active: true,
+            is_blocked: uc.user.is_blocked || false,
+          };
+        }),
+      );
+
+      // Format inactive users (pending invitations) - fetch inviter details
+      const inactiveUsersList = await Promise.all(
+        pendingInvitations.map(async (invitation: any) => {
+          let inviterName = null;
+          if (invitation.invited_by) {
+            const inviter = await this.userRepository.getById(invitation.invited_by);
+            inviterName = inviter?.name || null;
+          }
+          return {
+            id: invitation.id,
+            email: invitation.email,
+            name: null, // Name not available until they complete registration
+            role: invitation.role,
+            status: 'INACTIVE',
+            invited_at: invitation.created_at,
+            invited_by: invitation.invited_by,
+            inviter_name: inviterName,
+            invitation_token: invitation.invitation_token,
+            invitation_expires: invitation.token_expires,
+            is_invitation_expired: invitation.token_expires < Date.now(),
+          };
+        }),
+      );
+
+      // Format disabled users - fetch inviter details
+      const disabledUsersList = await Promise.all(
+        disabledUserCompanies.map(async (uc: any) => {
+          let inviterName = null;
+          if (uc.invited_by) {
+            const inviter = await this.userRepository.getById(uc.invited_by);
+            inviterName = inviter?.name || null;
+          }
+          return {
+            id: uc.user.id,
+            email: uc.user.email,
+            name: uc.user.name,
+            role: uc.role,
+            status: 'DISABLED',
+            invited_at: uc.joined_at,
+            invited_by: uc.invited_by,
+            inviter_name: inviterName,
+            is_active: false,
+            is_blocked: uc.user.is_blocked || false,
+          };
+        }),
+      );
+
+      return {
+        active: activeUsersList,
+        inactive: inactiveUsersList,
+        disabled: disabledUsersList,
+        total: activeUsersList.length + inactiveUsersList.length + disabledUsersList.length,
+      };
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to fetch company users', error.statusCode || 500);
+    }
+  }
+
+  public async resendInvitation(adminId: string, invitationId: string) {
+    try {
+      const admin = await this.userRepository.getById(adminId);
+      if (!admin || admin.role !== UserRoles.ADMIN) {
+        throw new HttpError('Only company admins can resend invitations', 403);
+      }
+
+      if (!admin.company_id) {
+        throw new HttpError('Admin is not associated with a company', 400);
+      }
+
+      // Get the invitation
+      const invitation = await this.invitationRepository.getById(invitationId);
+      if (!invitation) {
+        throw new HttpError('Invitation not found', 404);
+      }
+
+      // Verify invitation belongs to admin's company
+      if (invitation.company_id !== admin.company_id) {
+        throw new HttpError('Invitation does not belong to your company', 403);
+      }
+
+      // Check if invitation is already accepted
+      if (invitation.status === 'ACCEPTED') {
+        throw new HttpError('Cannot resend invitation that has already been accepted', 400);
+      }
+
+      // Check if user is already in the company
+      const existingUser = await this.userRepository.findByEmail(invitation.email);
+      if (existingUser) {
+        const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, admin.company_id);
+        if (isUserInCompany) {
+          throw new HttpError('User is already a member of this company', 400);
+        }
+      }
+
+      // Generate new invitation token
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpires = Date.now() + TOKEN_EXPIRATION_MS; // 24 hours
+      const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}`;
+
+      // Update invitation with new token
+      await this.invitationRepository.update(
+        { id: invitationId },
+        {
+          invitation_token: invitationToken,
+          token_expires: tokenExpires,
+          status: 'PENDING', // Reset to pending if it was expired
+        },
+      );
+
+      const company = await this.companyRepository.getCompanyNameById(admin.company_id);
+      const companyName = company.name;
+
+      // Resend invitation email
+      await this.sendEmailTemplate(
+        invitation.email,
+        `Welcome to Pylott`,
+        `Invitation to join ${companyName}`,
+        `You have been invited to join ${companyName} as a ${invitation.role}. Click the button below to complete your registration:`,
+        registrationLink,
+        'Complete Registration',
+        `Pylott ${invitation.role}`,
+      );
+
+      // Log invitation resent activity
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.USER_INVITATION_SENT,
+        {
+          user_id: adminId,
+          company_id: admin.company_id,
+          description: 'Invitation resent',
+          entity_description: `${admin.name} resent invitation to ${invitation.email} as ${invitation.role}`,
+          entity_id: invitationId,
+        },
+        adminId,
+      );
+
+      return { message: 'Invitation resent successfully' };
+    } catch (error: any) {
+      throw new HttpError(error.message || 'Failed to resend invitation', error.statusCode || 500);
     }
   }
 

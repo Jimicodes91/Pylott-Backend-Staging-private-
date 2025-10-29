@@ -34,4 +34,20 @@ export class InvitationRepository extends BaseRepository<InvitationModelType, In
       token_expires: { '<': Date.now() } as any,
     });
   }
+
+  // Get all pending invitations for a company
+  async getPendingInvitationsByCompany(companyId: string): Promise<Invitation[]> {
+    return this.findMany({
+      company_id: companyId,
+      status: 'PENDING',
+    });
+  }
+
+  // Get invitation by email and company (including any status)
+  async findByEmailAndCompanyAnyStatus(email: string, companyId: string): Promise<Invitation | null> {
+    return this.findOne({
+      email,
+      company_id: companyId,
+    });
+  }
 }

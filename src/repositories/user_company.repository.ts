@@ -62,4 +62,9 @@ export class UserCompanyRepository extends BaseRepository<UserCompanyModelType, 
 
     return userCompany?.company || null;
   }
+
+  // Get disabled users in a company
+  async getDisabledCompanyUsers(companyId: string) {
+    return await this.model.query().where('company_id', companyId).where('is_active', false).whereNull('deleted_at').withGraphFetched('user').orderBy('joined_at', 'desc');
+  }
 }

@@ -44,6 +44,10 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/switch-organization`, authenticateUser, authController.switchOrganization);
 
+  server.get(`${prefix}/companies/:companyId/users`, authenticateUser, authController.getCompanyUsersWithStatus);
+
+  server.post(`${prefix}/resend-invitation`, authenticateUser, authController.resendInvitation);
+
   server.post(`${prefix}/logout`, authenticateUser, authController.logout);
 
   server.get(`${prefix}/auth/google`, authController.getGoogleAuthURL);

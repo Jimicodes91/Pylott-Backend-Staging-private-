@@ -222,6 +222,46 @@ export class AuthController {
     }
   };
 
+  public getCompanyUsersWithStatus = async (req: Request, res: Response) => {
+    try {
+      const adminId = (req as any).user.id;
+      const { companyId } = req.params;
+
+      if (!adminId) {
+        return errorResponse(res, 'Admin ID is required');
+      }
+
+      if (!companyId) {
+        return errorResponse(res, 'Company ID is required');
+      }
+
+      const result = await this.authService.getCompanyUsersWithStatus(adminId, companyId);
+      return successResponse(res, 'Company users fetched successfully', result);
+    } catch (error: any) {
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  };
+
+  public resendInvitation = async (req: Request, res: Response) => {
+    try {
+      const adminId = (req as any).user.id;
+      const { invitationId } = req.body;
+
+      if (!adminId) {
+        return errorResponse(res, 'Admin ID is required');
+      }
+
+      if (!invitationId) {
+        return errorResponse(res, 'Invitation ID is required');
+      }
+
+      const result = await this.authService.resendInvitation(adminId, invitationId);
+      return successResponse(res, 'Invitation resent successfully', result);
+    } catch (error: any) {
+      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  };
+
   public logout = async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user.id;
