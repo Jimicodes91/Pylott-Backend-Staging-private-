@@ -226,6 +226,8 @@ export class AuthController {
     try {
       const adminId = (req as any).user.id;
       const { companyId } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || parseInt(req.query.limit as string) || 10;
 
       if (!adminId) {
         return errorResponse(res, 'Admin ID is required');
@@ -235,7 +237,7 @@ export class AuthController {
         return errorResponse(res, 'Company ID is required');
       }
 
-      const result = await this.authService.getCompanyUsersWithStatus(adminId, companyId);
+      const result = await this.authService.getCompanyUsersWithStatus(adminId, companyId, page, pageSize);
       return successResponse(res, 'Company users fetched successfully', result);
     } catch (error: any) {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);

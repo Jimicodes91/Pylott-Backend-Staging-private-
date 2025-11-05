@@ -933,7 +933,7 @@ export class AuthService {
     }
   }
 
-  public async getCompanyUsersWithStatus(adminId: string, companyId: string) {
+  public async getCompanyUsersWithStatus(adminId: string, companyId: string, page: number = 1, pageSize: number = 10) {
     try {
       const admin = await this.userRepository.getById(adminId);
       if (!admin || admin.role !== UserRoles.ADMIN) {
@@ -945,6 +945,10 @@ export class AuthService {
       if (!adminBelongsToOneCompany && admin.company_id !== companyId) {
         throw new HttpError('Admin does not belong to this company', 403);
       }
+
+      // Validate pagination parameters
+      if (page < 1) throw new HttpError('Page must be greater than 0', 400);
+      if (pageSize < 1 || pageSize > 100) throw new HttpError('Page size must be between 1 and 100', 400);
 
       // Get all active users in the company (onboarded users)
       const activeUsers = await this.userCompanyRepository.getCompanyUsers(companyId);
@@ -1025,11 +1029,33 @@ export class AuthService {
         }),
       );
 
+      // Combine all users into a single flat list
+      const allUsers = [...activeUsersList, ...inactiveUsersList, ...disabledUsersList];
+
+      // Sort by invited_at (most recent first)
+      allUsers.sort((a, b) => {
+        const dateA = a.invited_at ? new Date(a.invited_at).getTime() : 0;
+        const dateB = b.invited_at ? new Date(b.invited_at).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      // Calculate pagination
+      const total = allUsers.length;
+      const totalPages = Math.ceil(total / pageSize);
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedUsers = allUsers.slice(startIndex, endIndex);
+
       return {
-        active: activeUsersList,
-        inactive: inactiveUsersList,
-        disabled: disabledUsersList,
-        total: activeUsersList.length + inactiveUsersList.length + disabledUsersList.length,
+        data: paginatedUsers,
+        pagination: {
+          total,
+          page,
+          pageSize,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
       };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to fetch company users', error.statusCode || 500);
