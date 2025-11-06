@@ -513,10 +513,10 @@ export class AuthService {
       }
 
       // Check if there's already a pending invitation for this email/company
-      const existingInvitation = await this.invitationRepository.findByEmailAndCompany(email, admin.company_id);
-      if (existingInvitation) {
-        throw new HttpError('An invitation has already been sent to this email for this company', 400);
-      }
+      // const existingInvitation = await this.invitationRepository.findByEmailAndCompany(email, admin.company_id);
+      // if (existingInvitation) {
+      //   throw new HttpError('An invitation has already been sent to this email for this company', 400);
+      // }
 
       const company = await this.companyRepository.getCompanyNameById(admin.company_id);
       const companyName = company.name;
