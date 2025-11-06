@@ -38,7 +38,7 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
   async getPipelineAnalyticsSingleQuery(companyId: string): Promise<PipelineAnalytics[]> {
     const result = await this.model.knex().raw(
       `
-          SELECT 
+          SELECT
             pt.id,
             pt.name,
             COUNT(p.id) as project_count,
@@ -62,5 +62,9 @@ export class ProjectTypeRepository extends BaseRepository<ProjectTypeModelType, 
       active_project_count: Number(row.active_project_count),
       completion_days: Number(row.completion_days),
     }));
+  }
+
+  async countActiveProjects(project_type_id: string): Promise<number> {
+    return await this.model.relatedQuery('projects').for(project_type_id).where('deleted_at', null).resultSize();
   }
 }

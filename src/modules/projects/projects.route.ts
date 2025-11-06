@@ -83,6 +83,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/types/:project_type_id`, authGuard, projectController.getProjectTypeDetails);
   server.post(`${prefix}/types`, authGuard, schemaValidator(createProjectTypeValidationRules), projectController.createProjectType);
   server.patch(`${prefix}/types/:project_type_id`, authGuard, schemaValidator(updateProjectTypeValidationRules), projectController.updateProjectTypeDetails);
+  server.delete(`${prefix}/types/:project_type_id`, authGuard, projectController.deleteProjectType);
   server.patch(`${prefix}/types/:project_type_id/milestones/reorder`, authGuard, schemaValidator(reorderMilestonesValidationRules), projectController.reorderMilestones);
 
   /**
@@ -92,6 +93,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.get(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, projectController.getMilestoneDetails);
   server.post(`${prefix}/types/milestones`, authGuard, schemaValidator(createMilestoneValidationRules), projectController.createMilestone);
   server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, schemaValidator(updateMilestoneValidationRules), projectController.updateMilestone);
+  server.delete(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, projectController.deleteMilestone);
 
   /**
    * Project Members

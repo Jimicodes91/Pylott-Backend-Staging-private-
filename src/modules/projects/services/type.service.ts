@@ -290,4 +290,53 @@ export class TypeService {
       percentage_complete: milestones.length > 0 ? Math.round((completedCount / milestones.length) * 100) : 0,
     };
   }
+
+  async deleteProjectType(company_id: string, project_type_id: string): Promise<ServiceType> {
+    try {
+      const projectType = await this.projectTypeRepository.getProjectType(company_id, project_type_id);
+
+      if (!projectType) {
+        return {
+          status: false,
+          message: 'Journey not found',
+          statusCode: 404,
+        };
+      }
+
+      if (projectType.is_system) {
+        return {
+          status: false,
+          message: 'Cannot delete system-defined journeys',
+          statusCode: 403,
+        };
+      }
+
+      const projectsCount = await this.projectTypeRepository.countActiveProjects(project_type_id);
+
+      if (projectsCount > 0) {
+        return {
+          status: false,
+          message: 'Cannot delete journey with active projects. Please reassign or complete all projects first',
+          statusCode: 400,
+        };
+      }
+
+      await this.milestonesRepository.delete({ project_type_id, company_id }, true);
+
+      await this.projectTypeRepository.delete({ id: project_type_id, company_id }, true);
+
+      return {
+        status: true,
+        message: 'Journey deleted successfully',
+        statusCode: 200,
+      };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred deleting journey ===> ${JSON.stringify({ company_id, project_type_id, err_msg: error?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+        data: null,
+      };
+    }
+  }
 }

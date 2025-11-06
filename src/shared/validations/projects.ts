@@ -688,3 +688,20 @@ export const reorderMilestonesValidationRules = [
       return true;
     }),
 ];
+
+export const reorderJourneysValidationRules = [
+  body('journey_ids')
+    .notEmpty()
+    .withMessage('Journey IDs are required')
+    .isArray()
+    .withMessage('Journey IDs must be an array')
+    .custom((value) => {
+      if (value.length === 0) {
+        throw new Error('At least one journey ID is required');
+      }
+      if (!value.every((id: any) => typeof id === 'string' && id.trim().length > 0)) {
+        throw new Error('All journey IDs must be non-empty strings');
+      }
+      return true;
+    }),
+];

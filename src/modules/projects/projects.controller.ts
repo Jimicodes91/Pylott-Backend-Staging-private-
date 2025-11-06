@@ -54,6 +54,13 @@ export class ProjectController {
     return genericResponse({ res, data: others, statusCode });
   };
 
+  deleteProjectType = async (req: AuthenticatedRequest, res: Response) => {
+    const company_id = req.user.company_id;
+    const { project_type_id } = req.params;
+    const { statusCode = null, ...others } = await this.typeService.deleteProjectType(company_id, project_type_id);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
   reorderMilestones = async (req: AuthenticatedRequest, res: Response) => {
     const company_id = req.user.company_id;
     const { project_type_id } = req.params;
@@ -89,6 +96,13 @@ export class ProjectController {
     const { milestone_id } = req.params;
     const updateData = req.body as Partial<CreateMilestoneType>;
     const { statusCode = null, ...others } = await this.milestoneService.updateMilestone(company_id, milestone_id, updateData);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
+  deleteMilestone = async (req: AuthenticatedRequest, res: Response) => {
+    const company_id = req.user.company_id;
+    const { milestone_id, project_type_id } = req.params;
+    const { statusCode = null, ...others } = await this.milestoneService.deleteMilestone(company_id, milestone_id, project_type_id);
     return genericResponse({ res, data: others, statusCode });
   };
 

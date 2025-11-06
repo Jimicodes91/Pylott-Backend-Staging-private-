@@ -243,4 +243,65 @@ export class MilestoneService {
 
     return val;
   }
+
+  async deleteMilestone(company_id: string, milestone_id: string, project_type_id: string): Promise<ServiceType> {
+    try {
+      const milestone = await this.milestonesRepository.getMilestone(company_id, milestone_id, project_type_id);
+
+      if (!milestone) {
+        return {
+          status: false,
+          message: 'Milestone not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      if (milestone.is_system) {
+        return {
+          status: false,
+          message: 'Cannot delete system-defined milestones',
+          statusCode: StatusCodes.FORBIDDEN,
+        };
+      }
+
+      if (milestone.projects && milestone.projects.length > 0) {
+        return {
+          status: false,
+          message: 'Cannot delete milestone with active projects. Please reassign projects to another milestone first',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+
+      const allMilestones = await this.milestonesRepository.getAllMilestones(company_id, project_type_id);
+      if (allMilestones.length <= 1) {
+        return {
+          status: false,
+          message: 'Cannot delete the only milestone in a journey. A journey must have at least one milestone',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+
+      await this.milestonesRepository.delete({ id: milestone_id, company_id }, true);
+
+      return {
+        status: true,
+        message: 'Milestone deleted successfully',
+        statusCode: StatusCodes.OK,
+      };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error occurred deleting milestone ===> ${JSON.stringify({
+          company_id,
+          milestone_id,
+          project_type_id,
+          err_msg: error?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
 }
