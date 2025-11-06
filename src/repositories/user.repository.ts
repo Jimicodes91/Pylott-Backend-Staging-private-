@@ -85,7 +85,11 @@ export class UserRepository extends BaseRepository<UserModelType, User> {
     if (!user) {
       return null;
     }
-    return this.model.query().where({ id }).patch({ is_active: !user.is_active });
+    if (user.is_active) {
+      return this.model.query().where({ id }).patch({ is_active: false }).returning('*').first();
+    } else {
+      return this.model.query().where({ id }).patch({ is_active: true }).returning('*').first();
+    }
   }
 
   // In user.repository.ts

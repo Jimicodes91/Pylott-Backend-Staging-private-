@@ -513,10 +513,10 @@ export class AuthService {
       }
 
       // Check if there's already a pending invitation for this email/company
-      // const existingInvitation = await this.invitationRepository.findByEmailAndCompany(email, admin.company_id);
-      // if (existingInvitation) {
-      //   throw new HttpError('An invitation has already been sent to this email for this company', 400);
-      // }
+      const existingInvitation = await this.invitationRepository.findByEmailAndCompany(email, admin.company_id);
+      if (existingInvitation) {
+        throw new HttpError('An invitation has already been sent to this email for this company', 400);
+      }
 
       const company = await this.companyRepository.getCompanyNameById(admin.company_id);
       const companyName = company.name;
@@ -1062,7 +1062,7 @@ export class AuthService {
     }
   }
 
-  public async resendInvitation(adminId: string, invitationId: string) {
+  public async resendInvitation(adminId: string, email: string, role: UserRoles) {
     try {
       const admin = await this.userRepository.getById(adminId);
       if (!admin || admin.role !== UserRoles.ADMIN) {
@@ -1073,15 +1073,15 @@ export class AuthService {
         throw new HttpError('Admin is not associated with a company', 400);
       }
 
-      // Get the invitation
-      const invitation = await this.invitationRepository.getById(invitationId);
+      // Get the invitation by email, company, and role
+      const invitation = await this.invitationRepository.findOne({
+        email,
+        company_id: admin.company_id,
+        role,
+      });
+
       if (!invitation) {
         throw new HttpError('Invitation not found', 404);
-      }
-
-      // Verify invitation belongs to admin's company
-      if (invitation.company_id !== admin.company_id) {
-        throw new HttpError('Invitation does not belong to your company', 403);
       }
 
       // Check if invitation is already accepted
@@ -1090,7 +1090,7 @@ export class AuthService {
       }
 
       // Check if user is already in the company
-      const existingUser = await this.userRepository.findByEmail(invitation.email);
+      const existingUser = await this.userRepository.findByEmail(email);
       if (existingUser) {
         const isUserInCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, admin.company_id);
         if (isUserInCompany) {
@@ -1105,7 +1105,7 @@ export class AuthService {
 
       // Update invitation with new token
       await this.invitationRepository.update(
-        { id: invitationId },
+        { id: invitation.id },
         {
           invitation_token: invitationToken,
           token_expires: tokenExpires,
@@ -1118,13 +1118,13 @@ export class AuthService {
 
       // Resend invitation email
       await this.sendEmailTemplate(
-        invitation.email,
+        email,
         `Welcome to Pylott`,
         `Invitation to join ${companyName}`,
-        `You have been invited to join ${companyName} as a ${invitation.role}. Click the button below to complete your registration:`,
+        `You have been invited to join ${companyName} as a ${role}. Click the button below to complete your registration:`,
         registrationLink,
         'Complete Registration',
-        `Pylott ${invitation.role}`,
+        `Pylott ${role}`,
       );
 
       // Log invitation resent activity
@@ -1134,8 +1134,8 @@ export class AuthService {
           user_id: adminId,
           company_id: admin.company_id,
           description: 'Invitation resent',
-          entity_description: `${admin.name} resent invitation to ${invitation.email} as ${invitation.role}`,
-          entity_id: invitationId,
+          entity_description: `${admin.name} resent invitation to ${email} as ${role}`,
+          entity_id: invitation.id,
         },
         adminId,
       );

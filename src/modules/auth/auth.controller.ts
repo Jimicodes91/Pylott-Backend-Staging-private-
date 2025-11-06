@@ -247,17 +247,17 @@ export class AuthController {
   public resendInvitation = async (req: Request, res: Response) => {
     try {
       const adminId = (req as any).user.id;
-      const { invitationId } = req.body;
+      const { email, role } = req.body;
 
       if (!adminId) {
         return errorResponse(res, 'Admin ID is required');
       }
 
-      if (!invitationId) {
-        return errorResponse(res, 'Invitation ID is required');
+      if (!email || !role) {
+        return errorResponse(res, 'Email and role are required');
       }
 
-      const result = await this.authService.resendInvitation(adminId, invitationId);
+      const result = await this.authService.resendInvitation(adminId, email, role);
       return successResponse(res, 'Invitation resent successfully', result);
     } catch (error: any) {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
