@@ -319,13 +319,29 @@ export class AuthService {
       const userCompanies = await this.userCompanyRepository.getUserCompanies(user.id);
 
       // Format companies list
-      const companiesList = userCompanies.map((uc) => ({
+      let companiesList = userCompanies.map((uc) => ({
         id: uc.company.id,
         name: uc.company.name,
         role: uc.role,
         joined_at: uc.joined_at,
         is_active: uc.is_active,
       }));
+
+      // If companies list is empty but user has a company_id, add it to the list
+      if (companiesList.length === 0 && user.company_id) {
+        const company = await this.companyRepository.getById(user.company_id);
+        if (company) {
+          companiesList = [
+            {
+              id: company.id,
+              name: company.name,
+              role: user.role || UserRoles.CLIENT,
+              joined_at: user.created_at || (new Date() as any),
+              is_active: 1 as any,
+            },
+          ];
+        }
+      }
 
       // Sort companies so the last viewed/switched company appears first
       // The last viewed company is stored in user.company_id
