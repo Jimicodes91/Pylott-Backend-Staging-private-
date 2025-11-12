@@ -102,7 +102,8 @@ export class ProjectController {
   deleteMilestone = async (req: AuthenticatedRequest, res: Response) => {
     const company_id = req.user.company_id;
     const { milestone_id, project_type_id } = req.params;
-    const { statusCode = null, ...others } = await this.milestoneService.deleteMilestone(company_id, milestone_id, project_type_id);
+    const { target_milestone_id } = req.body as { target_milestone_id: string };
+    const { statusCode = null, ...others } = await this.milestoneService.deleteMilestone(company_id, milestone_id, project_type_id, target_milestone_id);
     return genericResponse({ res, data: others, statusCode });
   };
 

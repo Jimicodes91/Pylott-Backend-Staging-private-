@@ -45,31 +45,6 @@ export class ProjectType extends BaseModel {
     });
   }
 
-  static jsonSchema = {
-    type: 'object',
-    required: ['company_id', 'name'],
-    properties: {
-      id: { type: 'string' },
-      company_id: { type: 'string' },
-      name: { type: 'string', minLength: 1, maxLength: 255 },
-      // custom_fields: {
-      //   type: 'array',
-      //   items: {
-      //     type: 'object',
-      //     properties: {
-      //       name: { type: 'string', minLength: 1 },
-      //       field_key: { type: 'string', minLength: 1 },
-      //       field_type: { enum: Object.values(FieldTypeEnum) },
-      //       is_required: { type: 'boolean' },
-      //       order: { type: 'number' },
-      //       options: { type: ['object', 'array', 'null'] },
-      //     },
-      //     required: ['name', 'field_key', 'field_type', 'order'],
-      //   },
-      // },
-    },
-  };
-
   static relationMappings = (): ModelsRelationMapping => ({
     projects: {
       relation: BaseModel.HasManyRelation,

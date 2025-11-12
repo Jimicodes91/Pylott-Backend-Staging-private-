@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
 
-import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
+import { MilestonesRepository, ProjectTypeRepository, ProjectRepository } from '@/repositories';
 
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateMilestoneType, UpdateMilestoneType } from '@/shared/types/projects.type';
@@ -16,6 +16,7 @@ export class MilestoneService {
   constructor(
     private readonly milestonesRepository: MilestonesRepository,
     private readonly projectTypeRepository: ProjectTypeRepository,
+    private readonly projectRepository: ProjectRepository,
   ) {}
 
   async getAllMilestones(company_id: string, project_type_id: string): Promise<ServiceType> {
@@ -244,7 +245,7 @@ export class MilestoneService {
     return val;
   }
 
-  async deleteMilestone(company_id: string, milestone_id: string, project_type_id: string): Promise<ServiceType> {
+  async deleteMilestone(company_id: string, milestone_id: string, project_type_id: string, target_milestone_id?: string): Promise<ServiceType> {
     try {
       const milestone = await this.milestonesRepository.getMilestone(company_id, milestone_id, project_type_id);
 
@@ -264,21 +265,57 @@ export class MilestoneService {
         };
       }
 
-      if (milestone.projects && milestone.projects.length > 0) {
-        return {
-          status: false,
-          message: 'Cannot delete milestone with active projects. Please reassign projects to another milestone first',
-          statusCode: StatusCodes.BAD_REQUEST,
-        };
-      }
+      // const allMilestones = await this.milestonesRepository.getAllMilestones(company_id, project_type_id);
+      // if (allMilestones.length <= 1) {
+      //   return {
+      //     status: false,
+      //     message: 'Cannot delete the only milestone in a journey. A journey must have at least one milestone',
+      //     statusCode: StatusCodes.BAD_REQUEST,
+      //   };
+      // }
 
-      const allMilestones = await this.milestonesRepository.getAllMilestones(company_id, project_type_id);
-      if (allMilestones.length <= 1) {
-        return {
-          status: false,
-          message: 'Cannot delete the only milestone in a journey. A journey must have at least one milestone',
-          statusCode: StatusCodes.BAD_REQUEST,
-        };
+      const projects = milestone.projects?.filter((project) => !project.deleted_at) || [];
+
+      if (projects.length > 0) {
+        if (!target_milestone_id) {
+          return {
+            status: false,
+            message: 'Target milestone ID is required when deleting a milestone with active projects',
+            statusCode: StatusCodes.BAD_REQUEST,
+          };
+        }
+
+        const targetMilestone = await this.milestonesRepository.findOne({
+          id: target_milestone_id,
+          company_id,
+          project_type_id,
+          deleted_at: null,
+        });
+
+        if (!targetMilestone) {
+          return {
+            status: false,
+            message: 'Target milestone not found or does not belong to this project type',
+            statusCode: StatusCodes.NOT_FOUND,
+          };
+        }
+
+        if (target_milestone_id === milestone_id) {
+          return {
+            status: false,
+            message: 'Cannot move projects to the same milestone being deleted',
+            statusCode: StatusCodes.BAD_REQUEST,
+          };
+        }
+
+        await this.projectRepository.update(
+          { milestone_id, company_id, deleted_at: null },
+          {
+            milestone_id: target_milestone_id,
+            milestone_start_date: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+            milestone_status: ProjectStatus.ON_TRACK,
+          },
+        );
       }
 
       await this.milestonesRepository.delete({ id: milestone_id, company_id }, true);
@@ -294,6 +331,7 @@ export class MilestoneService {
           company_id,
           milestone_id,
           project_type_id,
+          target_milestone_id,
           err_msg: error?.message,
         })}`,
       );

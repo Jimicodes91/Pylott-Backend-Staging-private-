@@ -321,7 +321,14 @@ export class TypeService {
         };
       }
 
-      await this.milestonesRepository.delete({ project_type_id, company_id }, true);
+      const milestones = projectType.milestones?.filter((milestone) => !milestone.deleted_at) || [];
+      if (milestones.length > 0) {
+        return {
+          status: false,
+          message: 'Cannot delete journey with milestones attached. Please delete all milestones first',
+          statusCode: 400,
+        };
+      }
 
       await this.projectTypeRepository.delete({ id: project_type_id, company_id }, true);
 
