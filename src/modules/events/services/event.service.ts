@@ -18,6 +18,7 @@ import { CreateCalenderEvent } from '@/shared/types/events.type';
 import sendEmail from '@/shared/utils/nodemailer';
 import { newEventScheduledEmail } from '@/shared/utils/email';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
+import { FRONTEND_URL } from '@/config/env';
 // import { dateTimeFormat } from '@/shared/constants/date.constants';
 
 @injectable()
@@ -90,12 +91,15 @@ export class EventService {
 
       const event = await this.eventRepository.create(insertData);
 
+      const projectLink = `${FRONTEND_URL}/projects/${project_id}`;
+      const formattedEventDate = dayjs(payload.start_datetime).format('MMMM DD, YYYY [at] h:mm A');
+
       if (payload.invites && payload.invites.length) {
         const users = await this.userRepository.findAllWhereEmailIn(payload.invites);
 
         users.forEach(async (user) => {
           const emailSubject = `${EmailSubject.EVENT_CREATED} - ${payload.name}`;
-          const email = newEventScheduledEmail(user.name, payload.name, payload.start_datetime, '');
+          const email = newEventScheduledEmail(user.name, payload.name, formattedEventDate, projectLink);
           await sendEmail(user.email, emailSubject, email);
         });
       }
@@ -105,7 +109,7 @@ export class EventService {
         await projectMembers.forEach(async (pm) => {
           const { user } = pm;
           const emailSubject = `${EmailSubject.EVENT_CREATED} - ${payload.name}`;
-          const email = newEventScheduledEmail(user.name, payload.name, payload.start_datetime, '');
+          const email = newEventScheduledEmail(user.name, payload.name, formattedEventDate, projectLink);
           await sendEmail(user.email, emailSubject, email);
         });
       }

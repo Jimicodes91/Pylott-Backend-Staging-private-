@@ -22,11 +22,17 @@ export class CompanyService {
         throw new HttpError('Admin Id is required', 500);
       }
 
-      const companyData = {
+      // Handle state field - convert empty string to null or remove it
+      const companyData: any = {
         ...data,
         admin_id: adminId,
         is_active: true, // Default to active
       };
+
+      // If state is an empty string, set it to null or remove it
+      if (companyData.state === '') {
+        delete companyData.state;
+      }
 
       // Create the company in the database
       const company = await this.companyRepository.create(companyData);
