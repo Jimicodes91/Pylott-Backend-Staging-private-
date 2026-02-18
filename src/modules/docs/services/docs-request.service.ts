@@ -14,6 +14,7 @@ import { AUDIT_TRAIL_ACTION, EmailSubject, MetadataType, ProjectTaskStatus } fro
 import sendEmail from '@/shared/utils/nodemailer';
 import { documentRequestEmail } from '@/shared/utils/email';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
+import { FRONTEND_URL } from '@/config/env';
 
 // @todo Ask frontend for all mailing destination urls
 
@@ -135,7 +136,8 @@ export class DocRequestService {
 
       const emailSubject = `${EmailSubject.DOCUMENT_REQUEST}: ${payload.name}`;
       const taskAuthor = await this.userRepository.findOne({ id: payload.assignee_id });
-      const email = documentRequestEmail(taskAuthor.name, user.name, project.name, payload.name, payload.description, '');
+      const projectLink = `${FRONTEND_URL}/projects/${project_id}`;
+      const email = documentRequestEmail(taskAuthor.name, user.name, project.name, payload.name, payload.description, projectLink);
       await sendEmail(taskAuthor.email, emailSubject, email);
 
       return { status: true, message: 'Document request created successfully' };

@@ -334,6 +334,24 @@ export class ProjectService {
       }
 
       const formFields = await this.projectFormFieldRepository.findMany({ form_id: form.id });
+
+      // Sanitize payload data types based on field definitions
+      formFields.forEach((field) => {
+        const value = payload[field.slug];
+        if (value !== undefined && value !== null && value !== '') {
+          // For multiple select fields, ensure it's an array
+          if (field.type === 'select' && field.is_multiple && !Array.isArray(value)) {
+            // If it's a string, try to convert it (though validation should catch this)
+            payload[field.slug] = typeof value === 'string' ? [value] : [];
+          }
+          // For text fields, ensure it's a string (not an array)
+          if (field.type === 'text' && Array.isArray(value)) {
+            // If it's an array, take the first element (though validation should catch this)
+            payload[field.slug] = value.length > 0 ? value[0] : '';
+          }
+        }
+      });
+
       const errors = this.validateFormFields(payload, formFields);
       if (errors.length > 0) {
         return {
@@ -595,6 +613,24 @@ export class ProjectService {
 
       const formFields = await this.projectFormFieldRepository.findMany({ form_id: form.id });
       const updatedFormData = { ...project.form_data, ...payload };
+
+      // Sanitize payload data types based on field definitions
+      formFields.forEach((field) => {
+        const value = updatedFormData[field.slug];
+        if (value !== undefined && value !== null && value !== '') {
+          // For multiple select fields, ensure it's an array
+          if (field.type === 'select' && field.is_multiple && !Array.isArray(value)) {
+            // If it's a string, try to convert it (though validation should catch this)
+            updatedFormData[field.slug] = typeof value === 'string' ? [value] : [];
+          }
+          // For text fields, ensure it's a string (not an array)
+          if (field.type === 'text' && Array.isArray(value)) {
+            // If it's an array, take the first element (though validation should catch this)
+            updatedFormData[field.slug] = value.length > 0 ? value[0] : '';
+          }
+        }
+      });
+
       const errors = this.validateFormFields(updatedFormData, formFields);
       if (errors.length > 0) {
         return {
@@ -784,6 +820,24 @@ export class ProjectService {
       });
 
       const updatedFormData = { ...project.form_data, ...data };
+
+      // Sanitize payload data types based on field definitions
+      formFields.forEach((field) => {
+        const value = updatedFormData[field.slug];
+        if (value !== undefined && value !== null && value !== '') {
+          // For multiple select fields, ensure it's an array
+          if (field.type === 'select' && field.is_multiple && !Array.isArray(value)) {
+            // If it's a string, try to convert it (though validation should catch this)
+            updatedFormData[field.slug] = typeof value === 'string' ? [value] : [];
+          }
+          // For text fields, ensure it's a string (not an array)
+          if (field.type === 'text' && Array.isArray(value)) {
+            // If it's an array, take the first element (though validation should catch this)
+            updatedFormData[field.slug] = value.length > 0 ? value[0] : '';
+          }
+        }
+      });
+
       const errors = this.validateFormFields(updatedFormData, formFields);
       if (errors.length > 0) {
         return {
@@ -910,33 +964,81 @@ export class ProjectService {
 
     formFields.forEach((field) => {
       const value = payload[field.slug];
+      const fieldName = field.name || field.slug;
 
-      if (field.is_required && (value === undefined || value === null || value === '')) {
-        errors.push(`${field.slug} is required`);
-        return;
+      // Check if field is required
+      if (field.is_required) {
+        if (value === undefined || value === null || value === '') {
+          // Use friendly field names for specific fields
+          if (field.slug === 'project_client') {
+            errors.push('Project client is required');
+          } else if (field.slug === 'nationality') {
+            errors.push('Nationality is required');
+          } else if (field.slug === 'resident_country' || field.slug === 'resident country') {
+            errors.push('Resident country is required');
+          } else {
+            errors.push(`${fieldName} is required`);
+          }
+          return;
+        }
       }
 
-      if (value === undefined || value === null) return;
+      if (value === undefined || value === null || value === '') return;
 
       switch (field.type) {
         case 'select':
-          if (field.options && !field.options.includes(value)) {
-            errors.push(`Invalid value for ${field.name}. Must be one of: ${field.options.join(', ')}`);
+          // Check if it's a multiple select field that expects an array
+          if (field.is_multiple) {
+            if (!Array.isArray(value)) {
+              // Use friendly field names for specific fields
+              if (field.slug === 'project_client') {
+                errors.push('Project client must be an array');
+              } else {
+                errors.push(`${fieldName} must be an array`);
+              }
+              return;
+            }
+            // Validate each value in the array if options are defined
+            if (field.options && Array.isArray(field.options)) {
+              value.forEach((val: any) => {
+                if (!field.options!.includes(val)) {
+                  errors.push(`Invalid value for ${fieldName}. Must be one of: ${field.options!.join(', ')}`);
+                }
+              });
+            }
+          } else {
+            // Single select - check if value is in options
+            if (field.options && !field.options.includes(value)) {
+              errors.push(`Invalid value for ${fieldName}. Must be one of: ${field.options.join(', ')}`);
+            }
           }
           break;
         case 'date':
           if (isNaN(new Date(value).getTime()) && field.is_required) {
-            errors.push(`Invalid date format for ${field.name}`);
+            errors.push(`Invalid date format for ${fieldName}`);
           }
           break;
         case 'number':
           if (isNaN(Number(value))) {
-            errors.push(`${field.slug} must be a number`);
+            errors.push(`${fieldName} must be a number`);
           }
           break;
         case 'document':
           if (field.is_required && (!Array.isArray(value) || value.length === 0)) {
-            errors.push(`At least one document is required for ${field.name}`);
+            errors.push(`At least one document is required for ${fieldName}`);
+          }
+          break;
+        case 'text':
+          // For text fields, ensure they're strings (not arrays)
+          if (Array.isArray(value)) {
+            // Use friendly field names for specific fields
+            if (field.slug === 'nationality') {
+              errors.push('Nationality must be a string');
+            } else if (field.slug === 'resident_country' || field.slug === 'resident country') {
+              errors.push('Resident country must be a string');
+            } else {
+              errors.push(`${fieldName} must be a string`);
+            }
           }
           break;
       }

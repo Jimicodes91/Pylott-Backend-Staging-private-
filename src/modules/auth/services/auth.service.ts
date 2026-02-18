@@ -184,6 +184,20 @@ export class AuthService {
     }
   }
 
+  private validateName(name: string) {
+    if (!name || typeof name !== 'string') {
+      throw new HttpError('Name is required and must be a string', 400);
+    }
+    // Check if name contains any numbers
+    if (/\d/.test(name)) {
+      throw new HttpError('Name cannot contain numbers', 400);
+    }
+    // Check if name contains only letters, spaces, hyphens, and apostrophes
+    if (!/^[a-zA-Z\s'-]+$/.test(name.trim())) {
+      throw new HttpError('Name can only contain letters, spaces, hyphens, and apostrophes', 400);
+    }
+  }
+
   private async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt(10);
     return bcrypt.hashSync(password, salt);
@@ -197,7 +211,9 @@ export class AuthService {
         throw new HttpError('Email, name and password are required', 400);
       }
 
-      const existingUser = await this.userRepository.findOne({ email });
+      this.validateName(name);
+
+      const existingUser = await this.userRepository.findOne({ email: email.toLowerCase() });
       if (existingUser) {
         return {
           status: false,
@@ -235,6 +251,12 @@ export class AuthService {
   public async companyAdminSignup(data: CompanyAdminSignpData) {
     try {
       const { email, password, name } = data;
+
+      if (!name) {
+        throw new HttpError('Name is required', 400);
+      }
+
+      this.validateName(name);
 
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
@@ -515,6 +537,11 @@ export class AuthService {
         throw new HttpError('Admin is not associated with a company', 400);
       }
 
+      // Prevent admin from inviting their own email address
+      if (admin.email.toLowerCase() === email.toLowerCase()) {
+        throw new HttpError('You cannot invite your own email address', 400);
+      }
+
       const existingUser = await this.userRepository.findByEmail(email);
 
       // If user already exists, check if they're already in this company
@@ -583,6 +610,12 @@ export class AuthService {
 
   public async completeRegistration(token: string, password: string, name: string) {
     try {
+      if (!name) {
+        throw new HttpError('Name is required', 400);
+      }
+
+      this.validateName(name);
+
       // Find the invitation by token
       const invitation = await this.invitationRepository.findByToken(token);
       if (!invitation) {
@@ -662,16 +695,23 @@ export class AuthService {
               is_active: true,
             });
 
-            // Add client to company contacts
-            const contactData = {
-              name: userToProcess.name || name,
-              email: invitation.email,
-              phone: userToProcess.phone_number || '',
+            // Add client to company contacts (only if contact doesn't already exist)
+            const existingContact = await this.contactRepository.findOne({
+              email: invitation.email.toLowerCase(),
               company_id: invitation.company_id,
-              assigned_to: [], // Empty array or default assignments
-            };
+            });
 
-            await this.contactRepository.create(contactData);
+            if (!existingContact) {
+              const contactData = {
+                name: userToProcess.name || name,
+                email: invitation.email.toLowerCase(),
+                phone: userToProcess.phone_number || '',
+                company_id: invitation.company_id,
+                assigned_to: [], // Empty array or default assignments
+              };
+
+              await this.contactRepository.create(contactData);
+            }
 
             const isProjectClient = await this.redis.get(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${invitation.email}`);
 
@@ -722,6 +762,12 @@ export class AuthService {
   }
   public async addClient(name: string, email: string, companyId: string) {
     try {
+      if (!name) {
+        throw new HttpError('Name is required', 400);
+      }
+
+      this.validateName(name);
+
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
         // Check if user is already in this company
@@ -764,16 +810,23 @@ export class AuthService {
 
       await this.companyRepository.update({ id: companyId }, { client_id: newUser.id });
 
-      // 6. Add client to company contacts
-      const contactData: AddContactDto = {
-        name,
-        email,
-        phone: newUser.phone_number || '',
+      // 6. Add client to company contacts (only if contact doesn't already exist)
+      const existingContact = await this.contactRepository.findOne({
+        email: email.toLowerCase(),
         company_id: companyId,
-        assigned_to: [], // Empty array or default assignments
-      };
+      });
 
-      await this.contactRepository.create(contactData);
+      if (!existingContact) {
+        const contactData: AddContactDto = {
+          name,
+          email: email.toLowerCase(),
+          phone: newUser.phone_number || '',
+          company_id: companyId,
+          assigned_to: [], // Empty array or default assignments
+        };
+
+        await this.contactRepository.create(contactData);
+      }
 
       await this.sendTemporaryPasswordEmail(email, temporaryPassword);
       return { message: 'Client added successfully. Temporary password sent via email.' };
@@ -827,6 +880,11 @@ export class AuthService {
       const admin = await this.userRepository.getById(adminId);
       if (!admin.company_id) {
         throw new HttpError('Admin is not associated with a company', 400);
+      }
+
+      // Prevent admin from inviting their own email address
+      if (admin.email.toLowerCase() === email.toLowerCase()) {
+        throw new HttpError('You cannot invite your own email address', 400);
       }
 
       const existingUser = await this.userRepository.findOne({ email });
@@ -1087,6 +1145,11 @@ export class AuthService {
 
       if (!admin.company_id) {
         throw new HttpError('Admin is not associated with a company', 400);
+      }
+
+      // Prevent admin from resending invitation to their own email address
+      if (admin.email.toLowerCase() === email.toLowerCase()) {
+        throw new HttpError('You cannot resend invitation to your own email address', 400);
       }
 
       // Get the invitation by email, company, and role

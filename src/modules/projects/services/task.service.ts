@@ -27,6 +27,7 @@ import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { newTaskAssignedEmail, taskCompletedEmail } from '@/shared/utils/email';
 import sendEmail from '@/shared/utils/nodemailer';
 import { ContactRespository } from '@/repositories/contact.repository';
+import { FRONTEND_URL } from '@/config/env';
 
 @injectable()
 export class TaskService {
@@ -190,7 +191,9 @@ export class TaskService {
       for (const assignee_id of payload.assignees ?? []) {
         const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
         const taskAuthor = await this.userRepository.findOne({ id: assignee_id });
-        const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, payload.end_date, '');
+        const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
+        const formattedDueDate = payload.end_date ? dayjs(payload.end_date).format('MMMM DD, YYYY') : 'Not set';
+        const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, formattedDueDate, taskLink);
         await sendEmail(taskAuthor.email, emailSubject, email);
       }
 
@@ -319,15 +322,19 @@ export class TaskService {
       if (payload.status && payload.status === ProjectTaskStatus.COMPLETED) {
         const emailSubject = `${EmailSubject.TASK_COMPLETED} - ${task.name}`;
         const taskAuthor = await this.userRepository.findOne({ id: task.author_id });
-        const email = taskCompletedEmail(taskAuthor.name, task.name, '');
+        const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
+        const email = taskCompletedEmail(taskAuthor.name, task.name, taskLink);
         await sendEmail(taskAuthor.email, emailSubject, email);
       }
 
       if (payload.assignees && payload.assignees.length) {
         for (const assignee_id of payload.assignees ?? []) {
-          const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
+          const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name || task.name}`;
           const taskAuthor = await this.userRepository.findOne({ id: assignee_id });
-          const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, payload.end_date, '');
+          const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
+          const dueDate = payload.end_date || task.end_date;
+          const formattedDueDate = dueDate ? dayjs(dueDate).format('MMMM DD, YYYY') : 'Not set';
+          const email = newTaskAssignedEmail(taskAuthor.name, payload.name || task.name, project.name, formattedDueDate, taskLink);
           await sendEmail(taskAuthor.email, emailSubject, email);
         }
       }

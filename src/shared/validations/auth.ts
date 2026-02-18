@@ -1,8 +1,21 @@
 import { body } from 'express-validator';
 
+// Helper function to validate name (no numbers allowed)
+const validateName = (fieldName: string = 'name') => {
+  return body(fieldName, 'Name is required')
+    .not()
+    .isEmpty()
+    .isString()
+    .withMessage('Name must be a string')
+    .trim()
+    .matches(/^[a-zA-Z\s'-]+$/)
+    .withMessage('Name cannot contain numbers. Only letters, spaces, hyphens, and apostrophes are allowed');
+};
+
 export const adminSignupValidationRule = [
   // body("first_name", "First name is required").not().isEmpty(),
   // body("last_name", "Last name is required").not().isEmpty(),
+  validateName('name'),
   body('email', 'Email is required').not().isEmpty(),
   body('password', 'Password cannot be empty').not().isEmpty(),
   body('password', 'The minimum password length is 6 characters').isLength({ min: 6 }),
@@ -29,7 +42,7 @@ export const signUpValidator = [
 
 export const signUpCompanyAdminValidator = [
   // body("firstname", "First name is required").not().isEmpty(),
-  body('name', 'Name is required').not().isEmpty(),
+  validateName('name'),
   body('email', 'Email is required').not().isEmpty(),
   body('password', 'Password cannot be empty').not().isEmpty(),
   body('password', 'The minimun password length is 6 characters').isLength({
@@ -45,13 +58,9 @@ export const resetPasswordValidationRule = [
   body('newPassword', 'The minimum password length is 8 characters').isLength({ min: 8 }),
 ];
 
-export const completeRegistrationValidationRule = [
-  body('token', 'token is required').not().isEmpty(),
-  body('password', 'Password is required').not().isEmpty(),
-  body('name', 'Name is required').not().isEmpty(),
-];
+export const completeRegistrationValidationRule = [body('token', 'token is required').not().isEmpty(), body('password', 'Password is required').not().isEmpty(), validateName('name')];
 
-export const addClientValidator = [body('name', 'Name is required').not().isEmpty(), body('email', 'Email is required').not().isEmpty(), body('password', 'Password is required').not().isEmpty()];
+export const addClientValidator = [validateName('name'), body('email', 'Email is required').not().isEmpty(), body('password', 'Password is required').not().isEmpty()];
 
 export const updatePasswordValidatorRule = [
   body('userId', 'userId is required').not().isEmpty(),

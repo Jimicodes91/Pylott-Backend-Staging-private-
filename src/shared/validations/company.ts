@@ -50,6 +50,21 @@ export const createCompanyValidationRule = [
   body('postal_code').optional().isString().withMessage('Postal code must be a string').trim().isLength({ min: 3, max: 20 }).withMessage('Postal code must be between 3 and 20 characters'),
 
   body('billing_email').optional().isEmail().withMessage('Billing email must be a valid email address').normalizeEmail(),
+
+  body('state')
+    .custom((value) => {
+      // If state is provided as empty string, return user-friendly error
+      if (value === '') {
+        throw new Error('State is required');
+      }
+      // If state is provided, it must be an object
+      if (value !== undefined && value !== null && (typeof value !== 'object' || Array.isArray(value))) {
+        throw new Error('State must be an object');
+      }
+      return true;
+    })
+    .optional({ nullable: true, checkFalsy: true })
+    .withMessage('State must be an object'),
 ];
 
 export const updateCompanyValidationRule = [

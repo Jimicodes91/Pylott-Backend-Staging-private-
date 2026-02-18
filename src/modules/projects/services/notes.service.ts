@@ -14,6 +14,7 @@ import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import sendEmail from '@/shared/utils/nodemailer';
 import { toTitleCase } from '@/shared/utils/any';
 import { newNoteAddedEmail } from '@/shared/utils/email';
+import { FRONTEND_URL } from '@/config/env';
 
 @injectable()
 export class NotesService {
@@ -90,9 +91,10 @@ export class NotesService {
 
       const projectMembers = await this.projectMemberRepository.getInternalProjectMembersVisibleClients(project.id, user.company_id);
       if (projectMembers.length) {
+        const projectLink = `${FRONTEND_URL}/projects/${project_id}`;
         await projectMembers.forEach(async (pm) => {
           const { user } = pm;
-          const email = newNoteAddedEmail(user.name, project?.name ?? '', '');
+          const email = newNoteAddedEmail(user.name, project?.name ?? '', projectLink);
           await sendEmail(user.email, `New Note Added to ${toTitleCase(project?.name ?? '')}`, email);
         });
       }
