@@ -15,7 +15,8 @@ export class AuthController {
       const newUser = await this.authService.adminSignup(req.body);
       return successResponse(res, 'Admin created successfully', newUser);
     } catch (error: any) {
-      return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+      const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, statusCode);
     }
   };
 

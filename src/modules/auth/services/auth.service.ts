@@ -205,21 +205,17 @@ export class AuthService {
 
   public async adminSignup(data: AdminSignupData) {
     try {
-      const { email, password, name } = data;
+      const { email, password } = data;
 
-      if (!email || !password || !name) {
-        throw new HttpError('Email, name and password are required', 400);
+      if (!email || !password) {
+        throw new HttpError('Email and password are required', 400);
       }
 
-      this.validateName(name);
+      // this.validateName(name);
 
       const existingUser = await this.userRepository.findOne({ email: email.toLowerCase() });
       if (existingUser) {
-        return {
-          status: false,
-          message: 'Email is already registered',
-          statusCode: StatusCodes.CONFLICT,
-        };
+        throw new HttpError('Email is already registered', StatusCodes.CONFLICT);
       }
 
       await this.validatePasswordStrength(password);
@@ -229,7 +225,7 @@ export class AuthService {
 
       const newUser = await this.userRepository.create({
         email,
-        name,
+        name: 'Admin',
         password: hashedPassword,
         otp: otp,
         otp_expires: Date.now() + TOKEN_EXPIRATION_MS,
@@ -250,13 +246,11 @@ export class AuthService {
 
   public async companyAdminSignup(data: CompanyAdminSignpData) {
     try {
-      const { email, password, name } = data;
+      const { email, password } = data;
 
-      if (!name) {
-        throw new HttpError('Name is required', 400);
+      if (!email || !password) {
+        throw new HttpError('Email and password are required', 400);
       }
-
-      this.validateName(name);
 
       const existingUser = await this.userRepository.findOne({ email });
       if (existingUser) {
@@ -270,7 +264,7 @@ export class AuthService {
       const hashedPassword = await this.hashPassword(password);
 
       const newUser = await this.userRepository.create({
-        name,
+        name: 'Admin',
         email,
         password: hashedPassword,
         otp: otp,

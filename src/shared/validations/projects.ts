@@ -2,30 +2,24 @@ import { isAfter, isValid, parseISO } from 'date-fns';
 import { body } from 'express-validator';
 
 import { FieldTypeEnum, ProjectMemberTypeEnum, ProjectStatus } from '@/shared/enums';
+import { validateName } from './common';
 
 export const createProjectTypeValidationRules = [
-  body('name')
-    .notEmpty()
-    .withMessage('Name is required')
-    .isString()
-    .withMessage('Name must be a string')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Name must be between 2 and 100 characters')
-    .customSanitizer((value) => value.replace(/\s+/g, ' ')),
+  validateName('name', false, {
+    minLength: 2,
+    maxLength: 100,
+    customSanitizer: (value) => value.replace(/\s+/g, ' '),
+  }),
 
   body('is_system').optional().isBoolean().withMessage('is_system must be a boolean').toBoolean(),
 
   body('stages').optional().isArray().withMessage('Stages must be an array'),
 
-  body('stages.*.name')
-    .notEmpty()
-    .withMessage('Milestone name is required')
-    .isString()
-    .withMessage('Milestone name must be a string')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Milestone name must be between 2 and 100 characters'),
+  validateName('stages.*.name', false, {
+    minLength: 2,
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in milestone name.',
+  }),
 
   body('stages.*.duration').notEmpty().withMessage('Duration is required').isInt({ min: 1 }).withMessage('Duration must be a positive integer').toInt(),
 
@@ -84,14 +78,11 @@ export const createProjectTypeValidationRules = [
 ];
 
 export const updateProjectTypeValidationRules = [
-  body('name')
-    .optional()
-    .isString()
-    .withMessage('Name must be a string')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Name must be between 2 and 100 characters')
-    .customSanitizer((value) => value.replace(/\s+/g, ' ')),
+  validateName('name', true, {
+    minLength: 2,
+    maxLength: 100,
+    customSanitizer: (value) => value.replace(/\s+/g, ' '),
+  }),
 
   body('is_system').optional().isBoolean().withMessage('is_system must be a boolean').toBoolean(),
 
@@ -186,15 +177,11 @@ export const updateCustomFieldsValidationRules = [
 ];
 
 export const createMilestoneValidationRules = [
-  body('name')
-    .notEmpty()
-    .withMessage('Name is required')
-    .isString()
-    .withMessage('Name must be a string')
-    .trim()
-    .escape()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Name must be between 2-100 characters'),
+  validateName('name', false, {
+    minLength: 2,
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in milestone name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('duration').notEmpty().isInt({ min: 1 }).withMessage('Duration must be a positive integer'),
 
@@ -236,7 +223,11 @@ export const createMilestoneValidationRules = [
 ];
 
 export const updateMilestoneValidationRules = [
-  body('name').optional().isString().withMessage('Name must be a string').trim().escape().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2-100 characters'),
+  validateName('name', true, {
+    minLength: 2,
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in milestone name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('duration').optional().isInt({ min: 1 }).withMessage('Duration must be a positive integer'),
 
@@ -293,14 +284,11 @@ export const toggleProjectSettingsValidationRules = [
 ];
 
 export const createProjectValidationRules = [
-  body('name')
-    .notEmpty()
-    .withMessage('Project name is required')
-    .isString()
-    .withMessage('Project name must be a string')
-    .trim()
-    .isLength({ min: 3, max: 100 })
-    .withMessage('Project name must be 3-100 characters'),
+  validateName('name', false, {
+    minLength: 3,
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in project name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('description').optional().isString().withMessage('Description must be a string').trim().isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
 
@@ -361,7 +349,11 @@ export const createProjectValidationRules = [
 ];
 
 export const updateProjectValidationRules = [
-  body('name').optional().isString().withMessage('Project name must be a string').trim().isLength({ min: 3, max: 100 }).withMessage('Project name must be 3-100 characters'),
+  validateName('name', true, {
+    minLength: 3,
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in project name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('description').optional().isString().withMessage('Description must be a string').trim().isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
 
@@ -420,14 +412,10 @@ export const updateProjectValidationRules = [
 ];
 
 export const createTaskValidationRules = [
-  body('name')
-    .trim()
-    .notEmpty()
-    .withMessage('Task name is required')
-    .isString()
-    .withMessage('Task name must be a string')
-    .isLength({ max: 100 })
-    .withMessage('Task name cannot be longer than 100 characters'),
+  validateName('name', false, {
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in task name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('description').trim().notEmpty().withMessage('Description is required').isString().withMessage('Description must be a string'),
 
@@ -478,15 +466,10 @@ export const createTaskValidationRules = [
 ];
 
 export const updateTaskValidationRules = [
-  body('name')
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage('Task name cannot be empty')
-    .isString()
-    .withMessage('Task name must be a string')
-    .isLength({ max: 100 })
-    .withMessage('Task name cannot be longer than 100 characters'),
+  validateName('name', true, {
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in task name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('description').optional().trim().notEmpty().withMessage('Description cannot be empty').isString().withMessage('Description must be a string'),
 
@@ -606,7 +589,10 @@ export const documentRequestValidationRules = [
 
   body('assignee_id').trim().notEmpty().withMessage('Assignee ID is required').isString().withMessage('Assignee ID must be a string'),
 
-  body('name').trim().notEmpty().withMessage('Name is required').isString().withMessage('Name must be a string').isLength({ max: 100 }).withMessage('Name cannot exceed 100 characters'),
+  validateName('name', false, {
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('description').trim().notEmpty().withMessage('Description is required').isString().withMessage('Description must be a string'),
 
@@ -627,7 +613,9 @@ export const documentRequestValidationRules = [
 ];
 
 export const addCustomFieldValidationRules = [
-  body('name').notEmpty().withMessage('Field name is required'),
+  validateName('name', false, {
+    customMessage: 'Numbers are not allowed in field name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
   body('type').notEmpty().withMessage('Field type is required').isIn(['text', 'number', 'date', 'select', 'document']).withMessage('Invalid field type'),
   body('is_required').optional().isBoolean().withMessage('is_required must be a boolean'),
   body('options')

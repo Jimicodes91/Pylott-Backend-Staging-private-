@@ -1,14 +1,8 @@
 import { body } from 'express-validator';
+import { validateName } from './common';
 
 export const createCompanyValidationRule = [
-  body('name')
-    .notEmpty()
-    .withMessage('Company name is required')
-    .isString()
-    .withMessage('Company name must be a string')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Company name must be between 2 and 100 characters'),
+  validateName('name', false, { minLength: 2, maxLength: 100, customMessage: 'Numbers are not allowed in company name.' }),
 
   body('industry_type')
     .notEmpty()
@@ -68,7 +62,7 @@ export const createCompanyValidationRule = [
 ];
 
 export const updateCompanyValidationRule = [
-  body('name').optional().isString().withMessage('Company name must be a string').trim().isLength({ min: 2, max: 100 }).withMessage('Company name must be between 2 and 100 characters'),
+  validateName('name', true, { minLength: 2, maxLength: 100, customMessage: 'Numbers are not allowed in company name. Only letters, spaces, hyphens, and apostrophes are allowed' }),
 
   body('industry_type').optional().isString().withMessage('Industry type must be a string').trim().isLength({ min: 2, max: 50 }).withMessage('Industry type must be between 2 and 50 characters'),
 

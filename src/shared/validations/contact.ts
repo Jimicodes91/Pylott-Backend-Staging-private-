@@ -1,16 +1,5 @@
 import { body } from 'express-validator';
-
-// Helper function to validate name (no numbers allowed)
-const validateName = (fieldName: string = 'name') => {
-  return body(fieldName, 'Name is required')
-    .not()
-    .isEmpty()
-    .isString()
-    .withMessage('Name must be a string')
-    .trim()
-    .matches(/^[a-zA-Z\s'-]+$/)
-    .withMessage('Name cannot contain numbers. Only letters, spaces, hyphens, and apostrophes are allowed');
-};
+import { validateName } from './common';
 
 export const addContactValidationRule = [
   validateName('name'),
@@ -25,7 +14,7 @@ export const addContactValidationRule = [
 ];
 
 export const updateContactValidationRule = [
-  validateName('name').optional(),
+  validateName('name', true),
   body('email').optional().isEmail().withMessage('Email must be a valid email address'),
   body('phone').optional().isString().withMessage('Phone must be a string'),
   body('organization').optional().isString().withMessage('Organization must be a string'),

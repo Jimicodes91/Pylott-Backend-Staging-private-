@@ -1,13 +1,22 @@
 import { body } from 'express-validator';
+import { validateName } from './common';
 
 export const createMetadataValidationRules = [
-  body('name').notEmpty().withMessage('Name is required').isString().withMessage('Name must be a string').isLength({ min: 2 }).withMessage('Name must be between 2 and 100 characters').trim(),
+  validateName('name', false, {
+    minLength: 2,
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in name.',
+  }),
 
   body('description').optional().isString().withMessage('Description must be a string').trim(),
 ];
 
 export const updateMetadataValidationRules = [
-  body('name').optional().isString().withMessage('Name must be a string').isLength({ min: 2 }).withMessage('Name must be between 2 and 100 characters').trim(),
+  validateName('name', true, {
+    minLength: 2,
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in name.',
+  }),
 
   body('description').optional().isString().withMessage('Description must be a string').trim(),
 ];

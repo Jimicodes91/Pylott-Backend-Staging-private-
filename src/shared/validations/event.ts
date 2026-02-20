@@ -1,11 +1,15 @@
 import { body, param } from 'express-validator';
+import { validateName } from './common';
 
 export const createEventValidationRules = [
   param('project_id').isUUID().withMessage('Project Id must be a valid UUID'),
 
   body('event_type_id').isUUID().optional().withMessage('Event Type Id must be a valid UUID'),
 
-  body('name').notEmpty().withMessage('Name is required').isString().withMessage('Name must be a string').isLength({ min: 2 }).withMessage('Name must be at least 2 characters').trim(),
+  validateName('name', false, {
+    minLength: 2,
+    customMessage: 'Numbers are not allowed in event name.',
+  }),
 
   body('start_datetime').notEmpty().withMessage('Start datetime is required').isISO8601().withMessage('Start datetime must be in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)').toDate(),
 
@@ -60,7 +64,10 @@ export const updateEventValidationRules = [
 
   body('event_type_id').optional().isUUID().optional().withMessage('Event Type Id must be a valid UUID'),
 
-  body('name').optional().isString().withMessage('Name must be a string').isLength({ min: 2 }).withMessage('Name must be at least 2 characters').trim(),
+  validateName('name', true, {
+    minLength: 2,
+    customMessage: 'Numbers are not allowed in event name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
 
   body('start_datetime').optional().isISO8601().withMessage('Start datetime must be in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)').toDate(),
 

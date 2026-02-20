@@ -1,16 +1,5 @@
 import { body } from 'express-validator';
-
-// Helper function to validate name (no numbers allowed)
-const validateName = (fieldName: string = 'name') => {
-  return body(fieldName, 'Name is required')
-    .not()
-    .isEmpty()
-    .isString()
-    .withMessage('Name must be a string')
-    .trim()
-    .matches(/^[a-zA-Z\s'-]+$/)
-    .withMessage('Name cannot contain numbers. Only letters, spaces, hyphens, and apostrophes are allowed');
-};
+import { validateName } from './common';
 
 export const adminSignupValidationRule = [
   // body("first_name", "First name is required").not().isEmpty(),
@@ -36,7 +25,7 @@ export const signUpValidator = [
   body('password', 'The minimum password length is 8 characters').isLength({
     min: 8,
   }),
-  body('name', 'Name can not be Empty').not().isEmpty(),
+  // validateName('name'),
   body('gender', 'Gender can not be Empty').not().isEmpty(),
 ];
 
