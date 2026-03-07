@@ -6,7 +6,8 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 
 import { ProjectRepository, MilestonesRepository } from '@/repositories';
 
-import { ProjectModelType, MilestonesModelType } from '@/models';
+import { ProjectModelType } from '@/models/project.model';
+import { MilestonesModelType } from '@/models/milestones.model';
 import { ProjectStatus } from '@/shared/enums';
 import { NotificationService } from './project_notification.service';
 

@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { User, UserModelType } from '@/models';
+import { User, UserModelType } from '@/models/user.model';
 import BaseRepository from './base.repository';
 import { UserRoles } from '@/shared/enums';
 

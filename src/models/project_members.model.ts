@@ -3,7 +3,6 @@ import { ModelObject } from 'objection';
 import { ModelsRelationMapping, RelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
 import { User } from './user.model';
-import { Project } from './project.model';
 
 export class ProjectMembers extends BaseModel {
   static tableName = 'project_members';
@@ -17,34 +16,36 @@ export class ProjectMembers extends BaseModel {
 
   user: User;
 
-  static relationMappings = (): ModelsRelationMapping => ({
-    user: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: User,
-      filter: (query) => query.select('id', 'name', 'role', 'email'),
-      join: {
-        from: 'project_members.user_id',
-        to: 'users.id',
+  static get relationMappings() {
+    return {
+      user: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./user.model').User,
+        filter: (query) => query.select('id', 'name', 'role', 'email'),
+        join: {
+          from: 'project_members.user_id',
+          to: 'users.id',
+        },
+      } as RelationMapping<User>,
+      project: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: __dirname + '/project.model',
+        join: {
+          from: 'project_members.project_id',
+          to: 'projects.id',
+        },
       },
-    } as RelationMapping<User>,
-    project: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: Project,
-      join: {
-        from: 'project_members.project_id',
-        to: 'projects.id',
-      },
-    },
-    creator: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: User,
-      filter: (query) => query.select('id', 'name', 'role', 'email'),
-      join: {
-        from: 'project_members.added_by',
-        to: 'users.id',
-      },
-    } as RelationMapping<User>,
-  });
+      creator: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./user.model').User,
+        filter: (query) => query.select('id', 'name', 'role', 'email'),
+        join: {
+          from: 'project_members.added_by',
+          to: 'users.id',
+        },
+      } as RelationMapping<User>,
+    };
+  }
 }
 
 export type ProjectMemebersModelType = ModelObject<ProjectMembers>;

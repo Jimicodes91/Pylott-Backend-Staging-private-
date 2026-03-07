@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { Milestones, MilestonesModelType } from '@/models';
+import { Milestones, MilestonesModelType } from '@/models/milestones.model';
 import BaseRepository from './base.repository';
 
 @injectable()

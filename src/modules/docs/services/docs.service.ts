@@ -7,7 +7,9 @@ import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository,
 
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { ServiceType } from '@/shared/types/general.type';
-import { AttachmentsModelType, DocumentsModelType, UserModelType } from '@/models';
+import { AttachmentsModelType } from '@/models/document_attachments.model';
+import { DocumentsModelType } from '@/models/documents.model';
+import { UserModelType } from '@/models/user.model';
 import { DocumentsDirectory, MetadataType } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 

@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { Company, CompanyModelType } from '@/models';
+import { Company, CompanyModelType } from '@/models/company.model';
 import BaseRepository from './base.repository';
 import { SubscriptionStatus } from '@/shared/utils/subscription.type';
 import { CompanyFilterOptions } from '@/shared/interface/company';
@@ -35,14 +35,16 @@ export class CompanyRepository extends BaseRepository<CompanyModelType, Company>
             .orWhereRaw('LOWER(city) LIKE ?', [`%${searchTerm}%`]);
         });
       }
+      // Use a manual subquery instead of relatedQuery to avoid triggering relationMappings
       query = query.select(
         'companies.*',
-        this.model
-          .relatedQuery('users')
-          .count()
-          .where('is_active', '1') // Active users
-          .whereNull('deleted_at')
-          .as('active_users_count'),
+        this.model.knex().raw(`(
+          SELECT COUNT(*) 
+          FROM users 
+          WHERE users.company_id = companies.id 
+            AND users.is_active = 1 
+            AND users.deleted_at IS NULL
+        ) as active_users_count`),
       );
 
       // Set default pagination if not provided

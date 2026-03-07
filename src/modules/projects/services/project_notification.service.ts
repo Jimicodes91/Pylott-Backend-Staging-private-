@@ -1,6 +1,7 @@
 import { injectable } from 'tsyringe';
 import dayjs from 'dayjs';
-import { ProjectModelType, MilestonesModelType } from '@/models';
+import { ProjectModelType } from '@/models/project.model';
+import { MilestonesModelType } from '@/models/milestones.model';
 import { createMilestoneDueEmail, createMilestoneTransitionEmail, createProjectDueEmail } from '@/shared/utils/email';
 import sendEmail from '@/shared/utils/nodemailer';
 import { app } from '@/config/env';

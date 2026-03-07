@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
-import { ProjectSettings, ProjectSettingsModelType } from '@/models';
+import { ProjectSettings, ProjectSettingsModelType } from '@/models/project_settings.model';
 
 @injectable()
 export class ProjectSettingsRepository extends BaseRepository<ProjectSettingsModelType, ProjectSettings> {

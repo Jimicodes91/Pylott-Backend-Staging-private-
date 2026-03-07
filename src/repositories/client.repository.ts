@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { Client, ClientModelType } from '@/models';
+import { Client, ClientModelType } from '@/models/client.model';
 import BaseRepository from './base.repository';
 
 @injectable()

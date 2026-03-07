@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 
 import { ProjectRepository, ProjectTaskRepository, ProjectTypeRepository } from '@/repositories';
-import { MilestonesModelType } from '@/models';
+import { MilestonesModelType } from '@/models/milestones.model';
 import { PhaseProgress } from '@/shared/types/projects.type';
 import { ServiceType } from '@/shared/types/general.type';
 

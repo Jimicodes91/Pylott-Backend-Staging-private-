@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
-import { ProjectType, ProjectTypeModelType } from '@/models';
+import { ProjectType, ProjectTypeModelType } from '@/models/project_type.model';
 import { PipelineAnalytics } from '@/shared/interface/model';
 
 @injectable()

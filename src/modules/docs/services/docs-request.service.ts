@@ -7,7 +7,8 @@ import { StatusCodes } from 'http-status-codes';
 import { DocumentRequestsRepository } from '@/repositories/document_request.repository';
 import { MetadataRepository, ProjectRepository, ProjectTaskRepository, ProjectMembersRepository, UserRepository, ProjectTaskAssigneesRepository } from '@/repositories';
 
-import { MetadataModelType, UserModelType } from '@/models';
+import { MetadataModelType } from '@/models/metadata.model';
+import { UserModelType } from '@/models/user.model';
 import { DocumentRequestType } from '@/shared/types/projects.type';
 import { ServiceType } from '@/shared/types/general.type';
 import { AUDIT_TRAIL_ACTION, EmailSubject, MetadataType, ProjectTaskStatus } from '@/shared/enums';

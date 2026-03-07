@@ -3,7 +3,6 @@ import { ModelObject } from 'objection';
 import { UserRoles } from '@/shared/enums';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
-import { Company } from './company.model';
 import { UserCompany } from './user_company.model';
 
 export class User extends BaseModel {
@@ -34,27 +33,29 @@ export class User extends BaseModel {
   login_count?: number;
   password_setup_token_expires?: number;
 
-  company: Company;
+  company: any;
   userCompanies: UserCompany[];
 
-  static relationMappings = (): ModelsRelationMapping => ({
-    company: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: Company,
-      join: {
-        from: 'users.company_id',
-        to: 'companies.id',
+  static get relationMappings() {
+    return {
+      company: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./company.model').Company,
+        join: {
+          from: 'users.company_id',
+          to: 'companies.id',
+        },
       },
-    },
-    userCompanies: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: UserCompany,
-      join: {
-        from: 'users.id',
-        to: 'user_companies.user_id',
+      userCompanies: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: require('./user_company.model').UserCompany,
+        join: {
+          from: 'users.id',
+          to: 'user_companies.user_id',
+        },
       },
-    },
-  });
+    };
+  }
 }
 
 export type UserModelType = ModelObject<User>;

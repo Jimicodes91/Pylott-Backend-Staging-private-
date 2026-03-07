@@ -7,7 +7,7 @@ import { genericResponse } from '@/shared/utils/api-response';
 import { AuthenticatedRequest } from '@/shared/types/express';
 import { DocRequestService } from './services/docs-request.service';
 import { DocumentRequestType } from '@/shared/types/projects.type';
-import { UserModelType } from '@/models';
+import { UserModelType } from '@/models/user.model';
 
 @injectable()
 export class DocsController {

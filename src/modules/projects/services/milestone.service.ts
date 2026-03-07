@@ -6,7 +6,7 @@ import { MilestonesRepository, ProjectTypeRepository, ProjectRepository } from '
 
 import { ServiceType } from '@/shared/types/general.type';
 import { CreateMilestoneType, UpdateMilestoneType } from '@/shared/types/projects.type';
-import { MilestonesModelType } from '@/models';
+import { MilestonesModelType } from '@/models/milestones.model';
 import { ProjectStatus } from '@/shared/enums';
 
 @injectable()

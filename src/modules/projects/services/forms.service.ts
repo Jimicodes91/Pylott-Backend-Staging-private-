@@ -3,7 +3,7 @@ import { ProjectFormFieldRepository, ProjectFormsRepository } from '@/repositori
 import { ServiceType } from '@/shared/types/general.type';
 import { Model } from 'objection';
 import { AddCustomField } from '@/shared/types/projects.type';
-import { ProjectFormFieldModelType } from '@/models';
+import { ProjectFormFieldModelType } from '@/models/project_form_fields.model';
 
 @injectable()
 export class ProjectFormService {

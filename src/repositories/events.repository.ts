@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
-import { Event, EventModelType } from '@/models';
+import { Event, EventModelType } from '@/models/events.model';
 
 @injectable()
 export class EventsRepository extends BaseRepository<EventModelType, Event> {

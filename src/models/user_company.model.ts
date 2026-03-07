@@ -3,8 +3,6 @@ import { ModelObject } from 'objection';
 import { UserRoles } from '@/shared/enums';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
-import { User } from './user.model';
-import { Company } from './company.model';
 
 export class UserCompany extends BaseModel {
   static tableName = 'user_companies';
@@ -17,36 +15,38 @@ export class UserCompany extends BaseModel {
   joined_at: Date;
 
   // Relations
-  user: User;
-  company: Company;
-  inviter: User;
+  user: any;
+  company: any;
+  inviter: any;
 
-  static relationMappings = (): ModelsRelationMapping => ({
-    user: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: User,
-      join: {
-        from: 'user_companies.user_id',
-        to: 'users.id',
+  static get relationMappings() {
+    return {
+      user: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./user.model').User,
+        join: {
+          from: 'user_companies.user_id',
+          to: 'users.id',
+        },
       },
-    },
-    company: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: Company,
-      join: {
-        from: 'user_companies.company_id',
-        to: 'companies.id',
+      company: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./company.model').Company,
+        join: {
+          from: 'user_companies.company_id',
+          to: 'companies.id',
+        },
       },
-    },
-    inviter: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: User,
-      join: {
-        from: 'user_companies.invited_by',
-        to: 'users.id',
+      inviter: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./user.model').User,
+        join: {
+          from: 'user_companies.invited_by',
+          to: 'users.id',
+        },
       },
-    },
-  });
+    };
+  }
 }
 
 export type UserCompanyModelType = ModelObject<UserCompany>;

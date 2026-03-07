@@ -1,4 +1,4 @@
-import { CommentsModelType } from '@/models';
+import { CommentsModelType } from '@/models/comments.model';
 import { ProjectMemberTypeEnum, ProjectStatus } from '../enums';
 
 export type CreateProjectType = {

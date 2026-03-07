@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import { CreateMetadataType } from '@/shared/types/dto/documents.dto';
-import { UserModelType } from '@/models';
+import { UserModelType } from '@/models/user.model';
 import { MetadataRepository } from '@/repositories';
 import { MetadataType } from '@/shared/enums';
 

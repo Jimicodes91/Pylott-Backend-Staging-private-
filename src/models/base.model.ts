@@ -2,11 +2,13 @@ import dayjs from 'dayjs';
 import Knex from 'knex';
 import { v4 as uuidv4 } from 'uuid';
 import Objection from 'objection';
+import path from 'path';
 
 import knexConfig from '../../knexfile';
 import { dateTimeFormat } from '@/shared/constants/date.constants';
 
-Objection.Model.knex(Knex(knexConfig));
+// Commented out to avoid early model initialization - knex is set in database/index.ts
+// Objection.Model.knex(Knex(knexConfig));
 
 export default abstract class BaseModel extends Objection.Model {
   id: string;
@@ -19,6 +21,11 @@ export default abstract class BaseModel extends Objection.Model {
 
   static get idColumn() {
     return ['id'];
+  }
+
+  // Helper method to resolve model paths for circular dependencies
+  static modelPath(modelFileName: string): string {
+    return path.join(__dirname, modelFileName);
   }
 
   $beforeInsert(): void | Promise<any> {

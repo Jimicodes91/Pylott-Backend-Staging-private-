@@ -3,7 +3,7 @@ import { NextFunction, Response, Request } from 'express';
 
 import { ProjectMembersRepository } from '@/repositories';
 import { ProjectMemberTypeEnum } from '../enums';
-import { ProjectMemebersModelType } from '@/models';
+import { ProjectMemebersModelType } from '@/models/project_members.model';
 import { errorResponse } from '../utils/api-response';
 import { StatusCodes } from 'http-status-codes';
 

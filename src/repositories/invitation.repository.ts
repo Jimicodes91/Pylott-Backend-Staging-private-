@@ -1,5 +1,5 @@
 import { injectable } from 'tsyringe';
-import { Invitation, InvitationModelType } from '@/models';
+import { Invitation, InvitationModelType } from '@/models/invitation.model';
 import BaseRepository from './base.repository';
 
 @injectable()

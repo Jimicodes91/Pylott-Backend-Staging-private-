@@ -2,7 +2,6 @@ import { ModelObject } from 'objection';
 
 import BaseModel from './base.model';
 import { ModelsRelationMapping } from '@/shared/types/models.type';
-import { Company } from './company.model';
 import { PaymentStatus } from '@/shared/utils/subscription.type';
 
 export class Payment extends BaseModel {
@@ -19,15 +18,17 @@ export class Payment extends BaseModel {
   failure_reason?: string;
   retry_count: number = 0;
 
-  static relationMappings = (): ModelsRelationMapping => ({
-    company: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: Company,
-      join: {
-        from: 'payments.company_id',
-        to: 'companies.id',
+  static get relationMappings() {
+    return {
+      company: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./company.model').Company,
+        join: {
+          from: 'payments.company_id',
+          to: 'companies.id',
+        },
       },
-    },
-  });
+    };
+  }
 }
 export type PaymentModelType = ModelObject<Payment>;

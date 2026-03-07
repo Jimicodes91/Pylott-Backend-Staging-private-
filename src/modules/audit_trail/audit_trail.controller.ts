@@ -4,7 +4,7 @@ import { injectable } from 'tsyringe';
 import { AuditTrailFilter } from '@/shared/types/projects.type';
 import { genericResponse } from '@/shared/utils/api-response';
 import { AuditTrailService } from './services/audit_trail.service';
-import { UserModelType } from '@/models';
+import { UserModelType } from '@/models/user.model';
 import { AuthenticatedRequest } from '@/shared/types/express';
 
 @injectable()

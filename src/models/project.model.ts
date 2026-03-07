@@ -2,15 +2,11 @@ import { ModelObject } from 'objection';
 
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
-import { Client } from './client.model';
 import { Consultant } from './consultant.model';
-import { Milestones } from './milestones.model';
-import { ProjectType } from './project_type.model';
-import { ProjectTask } from './project_task.model';
 import { ProjectNotes } from './project_notes.model';
 import { Documents } from './documents.model';
-import { ProjectMembers } from './project_members.model';
 import { ProjectSettings } from './project_settings.model';
+import { Event } from './events.model';
 
 export class Project extends BaseModel {
   static tableName = 'projects';
@@ -36,93 +32,96 @@ export class Project extends BaseModel {
   country?: string;
 
   documents: Array<Documents>;
-  project_type: ProjectType;
-  milestone: Milestones;
-  members: Array<ProjectMembers>;
+  project_type: any;
+  milestone: any;
+  members: Array<any>;
   setting: ProjectSettings;
 
-  static relationMappings = (): ModelsRelationMapping => ({
-    client: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: Client,
-      join: {
-        from: 'projects.client_id',
-        to: 'clients.id',
-      },
-    },
-    project_type: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: ProjectType,
-      join: {
-        from: 'projects.project_type_id',
-        to: 'project_types.id',
-      },
-    },
-    consultant: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: Consultant,
-      join: {
-        from: 'projects.consultant_id',
-        to: 'consultants.id',
-      },
-    },
-    milestone: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: Milestones,
-      join: {
-        from: 'projects.milestone_id',
-        to: 'milestones.id',
-      },
-    },
-    tasks: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: ProjectTask,
-      join: {
-        from: 'projects.id',
-        to: 'project_tasks.project_id',
-      },
-    },
-    notes: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: ProjectNotes,
-      join: {
-        from: 'projects.id',
-        to: 'project_notes.project_id',
-      },
-    },
-    events: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: Event,
-      join: {
-        from: 'projects.id',
-        to: 'events.project_id',
-      },
-    },
-    members: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: ProjectMembers,
-      join: {
-        from: 'projects.id',
-        to: 'project_members.project_id',
-      },
-    },
-    documents: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: Documents,
-      join: {
-        from: 'projects.id',
-        to: 'documents.project_id',
-      },
-    },
-    setting: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: ProjectSettings,
-      join: {
-        from: 'projects.company_id',
-        to: 'project_settings.company_id',
-      },
-    },
-  });
+  // Temporarily disabled to break circular dependencies
+  // static get relationMappings() {
+  //   return {
+  //     client: {
+  //       relation: BaseModel.BelongsToOneRelation,
+  //       modelClass: __dirname + '/client.model',
+  //       join: {
+  //         from: 'projects.client_id',
+  //         to: 'clients.id',
+  //       },
+  //     },
+  //     project_type: {
+  //       relation: BaseModel.BelongsToOneRelation,
+  //       modelClass: __dirname + '/project_type.model',
+  //       join: {
+  //         from: 'projects.project_type_id',
+  //         to: 'project_types.id',
+  //       },
+  //     },
+  //     consultant: {
+  //       relation: BaseModel.BelongsToOneRelation,
+  //       modelClass: Consultant,
+  //       join: {
+  //         from: 'projects.consultant_id',
+  //         to: 'consultants.id',
+  //       },
+  //     },
+  //     milestone: {
+  //       relation: BaseModel.BelongsToOneRelation,
+  //       modelClass: __dirname + '/milestones.model',
+  //       join: {
+  //         from: 'projects.milestone_id',
+  //         to: 'milestones.id',
+  //       },
+  //     },
+  //     tasks: {
+  //       relation: BaseModel.HasManyRelation,
+  //       modelClass: __dirname + '/project_task.model',
+  //       join: {
+  //         from: 'projects.id',
+  //         to: 'project_tasks.project_id',
+  //       },
+  //     },
+  //     notes: {
+  //       relation: BaseModel.HasManyRelation,
+  //       modelClass: ProjectNotes,
+  //       join: {
+  //         from: 'projects.id',
+  //         to: 'project_notes.project_id',
+  //       },
+  //     },
+  //     events: {
+  //       relation: BaseModel.HasManyRelation,
+  //       modelClass: Event,
+  //       join: {
+  //         from: 'projects.id',
+  //         to: 'events.project_id',
+  //         },
+  //     },
+  //     members: {
+  //       relation: BaseModel.HasManyRelation,
+  //       modelClass: __dirname + '/project_members.model',
+  //       join: {
+  //         from: 'projects.id',
+  //         to: 'project_members.project_id',
+  //       },
+  //     },
+  //     documents: {
+  //       relation: BaseModel.HasManyRelation,
+  //       modelClass: Documents,
+  //       join: {
+  //         from: 'projects.id',
+  //         to: 'documents.project_id',
+  //       },
+  //     },
+  //     setting: {
+  //       relation: BaseModel.BelongsToOneRelation,
+  //       modelClass: ProjectSettings,
+  //       join: {
+  //         from: 'projects.company_id',
+  //         to: 'project_settings.company_id',
+  //       },
+  //     },
+  //   };
+  // }
 }
 
 export type ProjectModelType = ModelObject<Project>;

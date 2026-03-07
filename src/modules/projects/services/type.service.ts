@@ -2,7 +2,7 @@ import { injectable } from 'tsyringe';
 
 import { MilestonesRepository, ProjectTypeRepository } from '@/repositories';
 
-import { MilestonesModelType } from '@/models';
+import { MilestonesModelType } from '@/models/milestones.model';
 import { FieldTypeEnum } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
 import { _ProjectType, PhaseProgress } from '@/shared/types/projects.type';

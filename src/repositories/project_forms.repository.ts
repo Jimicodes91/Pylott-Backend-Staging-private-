@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
-import { ProjectForm, ProjectFormModelType } from '@/models';
+import { ProjectForm, ProjectFormModelType } from '@/models/project_forms.model';
 
 @injectable()
 export class ProjectFormsRepository extends BaseRepository<ProjectFormModelType, ProjectForm> {

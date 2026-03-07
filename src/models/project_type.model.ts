@@ -3,7 +3,6 @@ import slugify from 'slugify';
 
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
-import { Project } from './project.model';
 import { Milestones } from './milestones.model';
 // import { FieldTypeEnum } from '@/shared/enums';
 
@@ -24,6 +23,7 @@ export class ProjectType extends BaseModel {
   // }>;
 
   milestones: Milestones[];
+  projects: Array<any>;
 
   async $beforeInsert() {
     super.$beforeInsert();
@@ -45,24 +45,26 @@ export class ProjectType extends BaseModel {
     });
   }
 
-  static relationMappings = (): ModelsRelationMapping => ({
-    projects: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: Project,
-      join: {
-        from: 'project_types.id',
-        to: 'projects.project_type_id',
+  static get relationMappings() {
+    return {
+      projects: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: __dirname + '/project.model',
+        join: {
+          from: 'project_types.id',
+          to: 'projects.project_type_id',
+        },
       },
-    },
-    milestones: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: Milestones,
-      join: {
-        from: 'project_types.id',
-        to: 'milestones.project_type_id',
+      milestones: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: require('./milestones.model').Milestones,
+        join: {
+          from: 'project_types.id',
+          to: 'milestones.project_type_id',
+        },
       },
-    },
-  });
+    };
+  }
 }
 
 export type ProjectTypeModelType = ModelObject<ProjectType>;

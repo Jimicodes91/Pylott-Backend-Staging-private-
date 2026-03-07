@@ -2,7 +2,7 @@ import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
 
-import { Documents, DocumentsModelType } from '@/models';
+import { Documents, DocumentsModelType } from '@/models/documents.model';
 
 @injectable()
 export class DocumentsRepository extends BaseRepository<DocumentsModelType, Documents> {

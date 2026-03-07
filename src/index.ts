@@ -7,17 +7,16 @@ import { app } from './config/env';
 const applicationInstance = container.resolve(Application);
 
 process.on('SIGINT', () => {
-	applicationInstance.close();
-	process.exit(1);
+  applicationInstance.close();
+  process.exit(1);
 });
 
 applicationInstance
-	.listen(Number(app.port))
-	.then(() => {
-		// TODO:: Remove
-		console.info(`🚀 Server is listening on port ${app.port} in '${app.env}' mode`);
-	})
-	.catch((error) => {
-		// TODO:: Log
-		process.exit(1);
-	});
+  .listen(Number(app.port))
+  .then(() => {
+    console.info(`🚀 Server is listening on port ${app.port} in '${app.env}' mode`);
+  })
+  .catch((error) => {
+    console.error('Error starting server:', error);
+    process.exit(1);
+  });

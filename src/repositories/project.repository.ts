@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { Project, ProjectModelType } from '@/models';
+import { Project, ProjectModelType } from '@/models/project.model';
 import BaseRepository from './base.repository';
 import { ObjectLiteral } from '@/shared/types/general.type';
 import { ClientAnalytics, ProjectAnalyticsResult } from '@/shared/interface/model';

@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
-import { ProjectMembers, ProjectMemebersModelType } from '@/models';
+import { ProjectMembers, ProjectMemebersModelType } from '@/models/project_members.model';
 import { ObjectLiteral } from '@/shared/types/general.type';
 import { ProjectMemberTypeEnum } from '@/shared/enums';
 

@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { ProjectMembersRepository, UserRepository, ProjectRepository } from '@/repositories';
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
-import { UserModelType } from '@/models';
+import { UserModelType } from '@/models/user.model';
 import { AddProjectMember } from '@/shared/types/projects.type';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 import { AUDIT_TRAIL_ACTION } from '@/shared/enums';

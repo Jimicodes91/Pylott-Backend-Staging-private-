@@ -2,7 +2,6 @@ import { ModelObject } from 'objection';
 
 import { ModelsRelationMapping } from '@/shared/types/models.type';
 import BaseModel from './base.model';
-import { Project } from './project.model';
 import { User } from './user.model';
 
 export type ClientPlan = 'Basic' | 'Premium';
@@ -19,27 +18,29 @@ export class Client extends BaseModel {
   is_active?: boolean;
 
   // Relations
-  projects?: Project[];
+  projects?: Array<any>;
   user?: User;
 
-  static relationMappings = (): ModelsRelationMapping => ({
-    projects: {
-      relation: BaseModel.HasManyRelation,
-      modelClass: Project,
-      join: {
-        from: 'clients.id',
-        to: 'projects.client_id',
+  static get relationMappings() {
+    return {
+      user: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: __dirname + '/user.model',
+        join: {
+          from: 'clients.user_id',
+          to: 'users.id',
+        },
       },
-    },
-    user: {
-      relation: BaseModel.BelongsToOneRelation,
-      modelClass: User,
-      join: {
-        from: 'clients.user_id',
-        to: 'users.id',
+      projects: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: __dirname + '/project.model',
+        join: {
+          from: 'clients.id',
+          to: 'projects.client_id',
+        },
       },
-    },
-  });
+    };
+  }
 }
 
 export type ClientModelType = ModelObject<Client>;

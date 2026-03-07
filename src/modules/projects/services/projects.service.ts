@@ -24,7 +24,11 @@ import {
 } from '@/repositories';
 
 import { ServiceType } from '@/shared/types/general.type';
-import { MilestonesModelType, ProjectFormFieldModelType, ProjectMemebersModelType, ProjectModelType, UserModelType } from '@/models';
+import { MilestonesModelType } from '@/models/milestones.model';
+import { ProjectFormFieldModelType } from '@/models/project_form_fields.model';
+import { ProjectMemebersModelType } from '@/models/project_members.model';
+import { ProjectModelType } from '@/models/project.model';
+import { UserModelType } from '@/models/user.model';
 import { CreateProjectType } from '@/shared/types/projects.type';
 import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType, ProjectMemberTypeEnum, ProjectStatus, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';

@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
-import { ActivityLogs, ActivityLogsModelType } from '@/models';
+import { ActivityLogs, ActivityLogsModelType } from '@/models/activity_log.model';
 import { AuditTrailFilter } from '@/shared/types/projects.type';
 
 @injectable()

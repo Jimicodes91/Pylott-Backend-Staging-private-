@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { Metadata, MetadataModelType } from '@/models';
+import { Metadata, MetadataModelType } from '@/models/metadata.model';
 import BaseRepository from './base.repository';
 import { MetadataType } from '@/shared/enums';
 

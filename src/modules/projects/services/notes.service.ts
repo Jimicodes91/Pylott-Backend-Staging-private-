@@ -5,7 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { CommentRepository, DocumentAttachmentsRepository, DocumentsRepository, ProjectMembersRepository, ProjectNotesRepository, ProjectRepository, UserRepository } from '@/repositories';
 
-import { CommentsModelType, DocumentsModelType, ProjectNotesModelType, UserModelType } from '@/models';
+import { CommentsModelType } from '@/models/comments.model';
+import { DocumentsModelType } from '@/models/documents.model';
+import { UserModelType } from '@/models/user.model';
+import { ProjectNotesModelType } from '@/models/project_notes.model';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 import { AUDIT_TRAIL_ACTION, DocumentsDirectory, MetadataType } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';

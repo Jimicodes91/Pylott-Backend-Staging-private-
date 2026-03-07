@@ -4,7 +4,7 @@ import { injectable } from 'tsyringe';
 import { EventService } from './services/event.service';
 import { EventDto } from '@/shared/types/dto/event.dto';
 import { genericResponse } from '@/shared/utils/api-response';
-import { UserModelType } from '@/models';
+import { UserModelType } from '@/models/user.model';
 import { EventStatus } from '@/shared/enums';
 import { AuthenticatedRequest } from '@/shared/types/express';
 

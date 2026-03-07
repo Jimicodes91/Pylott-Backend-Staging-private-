@@ -1,7 +1,7 @@
 import { container, injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
-import { ProjectTask, ProjectTaskModelType } from '@/models';
+import { ProjectTask, ProjectTaskModelType } from '@/models/project_task.model';
 import { TaskStatusCounts } from '@/shared/interface/model';
 import { ProjectTaskStatus } from '@/shared/enums';
 import { ObjectLiteral } from '@/shared/types/general.type';

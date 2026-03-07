@@ -12,6 +12,7 @@
 		"project": "./tsconfig.json"
 	},
 	"plugins": ["@typescript-eslint", "prettier"],
+	"ignorePatterns": ["migrations_backup/**", "scripts/**", "seeds/**", "dist/**", "node_modules/**"],
 	"rules": {
 		"no-useless-escape": "off",
 		"prefer-regex-literals": "off",
@@ -19,6 +20,8 @@
 		"@typescript-eslint/explicit-function-return-type": "off",
 		"@typescript-eslint/ban-ts-comment": "off",
 		"@typescript-eslint/no-explicit-any": "off",
+		"@typescript-eslint/no-unused-vars": "off",
+		"@typescript-eslint/no-require-imports": "off",
 		"prettier/prettier": [
 			"error",
 			{

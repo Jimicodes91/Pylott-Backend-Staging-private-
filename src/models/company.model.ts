@@ -3,7 +3,6 @@ import { Model, ModelObject } from 'objection';
 import BaseModel from './base.model';
 import { BillingCycle, PaymentMethod, SubscriptionPlan, SubscriptionStatus } from '@/shared/utils/subscription.type';
 import { User } from './user.model';
-import { Subscription } from './subscription.model';
 import { UserCompany } from './user_company.model';
 
 export class Company extends BaseModel {
@@ -34,7 +33,7 @@ export class Company extends BaseModel {
     return {
       users: {
         relation: Model.HasManyRelation,
-        modelClass: User,
+        modelClass: require('./user.model').User,
         join: {
           from: 'companies.id',
           to: 'users.company_id',
@@ -42,7 +41,7 @@ export class Company extends BaseModel {
       },
       userCompanies: {
         relation: Model.HasManyRelation,
-        modelClass: UserCompany,
+        modelClass: require('./user_company.model').UserCompany,
         join: {
           from: 'companies.id',
           to: 'user_companies.company_id',
@@ -50,7 +49,7 @@ export class Company extends BaseModel {
       },
       subscription: {
         relation: BaseModel.BelongsToOneRelation,
-        modelClass: Subscription,
+        modelClass: require('./subscription.model').Subscription,
         join: {
           from: 'companies.subscription_id',
           to: 'subscriptions.id',

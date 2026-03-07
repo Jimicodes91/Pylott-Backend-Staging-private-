@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { UserModelType } from '@/models';
+import { UserModelType } from '@/models/user.model';
 
 export interface IAuthenticatedRequest extends UserModelType {
   userId: string;

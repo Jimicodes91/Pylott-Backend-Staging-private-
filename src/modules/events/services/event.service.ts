@@ -12,7 +12,8 @@ import { EventsRepository, MetadataRepository, ProjectMembersRepository, Project
 import { EventDto } from '@/shared/types/dto/event.dto';
 import { AUDIT_TRAIL_ACTION, EmailSubject, MetadataType } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
-import { EventModelType, UserModelType } from '@/models';
+import { EventModelType } from '@/models/events.model';
+import { UserModelType } from '@/models/user.model';
 import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
 import { CreateCalenderEvent } from '@/shared/types/events.type';
 import sendEmail from '@/shared/utils/nodemailer';

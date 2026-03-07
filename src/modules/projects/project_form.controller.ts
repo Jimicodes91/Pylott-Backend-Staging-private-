@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { injectable } from 'tsyringe';
 
-import { UserModelType } from '@/models';
+import { UserModelType } from '@/models/user.model';
 import { AuthenticatedRequest } from '@/shared/types/express';
 import { genericResponse } from '@/shared/utils/api-response';
 import { ProjectFormService } from './services/forms.service';

@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { Comments, CommentsModelType } from '@/models';
+import { Comments, CommentsModelType } from '@/models/comments.model';
 import BaseRepository from './base.repository';
 
 @injectable()
