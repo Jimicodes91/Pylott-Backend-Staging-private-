@@ -7,10 +7,37 @@ import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository,
 
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { ServiceType } from '@/shared/types/general.type';
-import { AttachmentsModelType } from '@/models/document_attachments.model';
-import { DocumentsModelType } from '@/models/documents.model';
-import { UserModelType } from '@/models/user.model';
 import { DocumentsDirectory, MetadataType } from '@/shared/enums';
+
+// Plain types to avoid circular dependencies
+interface UserType {
+  id: string;
+  company_id: string;
+  email: string;
+  name?: string;
+  role: string;
+}
+
+interface DocumentsType {
+  id?: string;
+  company_id: string;
+  project_id: string;
+  document_type_id?: string | null;
+  name: string;
+  task_id?: string;
+  note_id?: string;
+  type: MetadataType;
+  description: string;
+  is_visible_to_client: boolean;
+  is_document_request: boolean;
+}
+
+interface AttachmentsType {
+  id?: string;
+  document_id: string;
+  field_id?: string;
+  media_url: string | null;
+}
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 
 @injectable()
@@ -26,7 +53,7 @@ export class DocsService {
     private readonly cloudinary: Cloudinary,
   ) {}
 
-  public async uploadDocument(project_id: string, user: UserModelType, payload: UploadDocumentType): Promise<ServiceType> {
+  public async uploadDocument(project_id: string, user: UserType, payload: UploadDocumentType): Promise<ServiceType> {
     const company_id = user.company_id;
 
     const { attachment, ...others } = payload;
@@ -61,7 +88,7 @@ export class DocsService {
       if (others.is_visible_to_client) isVisibleToClient = others.is_visible_to_client;
       if (isClient) isVisibleToClient = true;
 
-      const documentData: Partial<DocumentsModelType> = {
+      const documentData: Partial<DocumentsType> = {
         id: document_id,
         company_id,
         project_id,
@@ -80,7 +107,7 @@ export class DocsService {
         attachmentUrl = data;
       }
 
-      const documentAttachmentData: Partial<AttachmentsModelType> = {
+      const documentAttachmentData: Partial<AttachmentsType> = {
         document_id,
         media_url: attachmentUrl,
       };
@@ -116,7 +143,7 @@ export class DocsService {
     }
   }
 
-  public async getAllDocuments(user: UserModelType, project_id: string): Promise<ServiceType> {
+  public async getAllDocuments(user: UserType, project_id: string): Promise<ServiceType> {
     try {
       const isClient = user.role.toLowerCase() === 'client';
 
@@ -161,7 +188,7 @@ export class DocsService {
       const document = await this.documentRepository.findOne({ project_id, id: document_id, company_id });
       if (!document) return { status: false, message: 'Document not found', statusCode: StatusCodes.NOT_FOUND };
 
-      const updateData: Partial<DocumentsModelType> = {};
+      const updateData: Partial<DocumentsType> = {};
 
       if (payload.document_type_id && document.document_type_id === 'custom_field') {
         return { status: false, message: 'Cannot modify document_type_id for custom document' };

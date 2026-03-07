@@ -7,7 +7,15 @@ import { genericResponse } from '@/shared/utils/api-response';
 import { AuthenticatedRequest } from '@/shared/types/express';
 import { DocRequestService } from './services/docs-request.service';
 import { DocumentRequestType } from '@/shared/types/projects.type';
-import { UserModelType } from '@/models/user.model';
+
+// Plain type to avoid circular dependencies
+interface UserType {
+  id: string;
+  company_id: string;
+  email: string;
+  name?: string;
+  role: string;
+}
 
 @injectable()
 export class DocsController {
@@ -19,7 +27,7 @@ export class DocsController {
   uploadDocument = async (req: AuthenticatedRequest, res: Response) => {
     const { project_id } = req.params;
     const payload = req.body as UploadDocumentType;
-    const user = req.user as UserModelType;
+    const user = req.user as UserType;
     const { statusCode = null, ...others } = await this.docService.uploadDocument(project_id, user, payload);
     return genericResponse({ res, data: others, statusCode });
   };
@@ -62,7 +70,7 @@ export class DocsController {
 
   getAllDocuments = async (req: AuthenticatedRequest, res: Response) => {
     const { project_id } = req.params;
-    const user = req.user as UserModelType;
+    const user = req.user as UserType;
 
     const { statusCode = null, ...others } = await this.docService.getAllDocuments(user, project_id);
     return genericResponse({ res, data: others, statusCode });
@@ -73,7 +81,7 @@ export class DocsController {
     const payload = req.body as DocumentRequestType;
     const user = req.user;
 
-    const { statusCode = null, ...others } = await this.docRequestService.createDocumentRequest(user as UserModelType, project_id, payload);
+    const { statusCode = null, ...others } = await this.docRequestService.createDocumentRequest(user as UserType, project_id, payload);
 
     return genericResponse({ res, data: others, statusCode });
   };

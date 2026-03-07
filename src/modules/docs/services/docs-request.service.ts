@@ -7,9 +7,26 @@ import { StatusCodes } from 'http-status-codes';
 import { DocumentRequestsRepository } from '@/repositories/document_request.repository';
 import { MetadataRepository, ProjectRepository, ProjectTaskRepository, ProjectMembersRepository, UserRepository, ProjectTaskAssigneesRepository } from '@/repositories';
 
-import { MetadataModelType } from '@/models/metadata.model';
-import { UserModelType } from '@/models/user.model';
 import { DocumentRequestType } from '@/shared/types/projects.type';
+
+// Plain types to avoid circular dependencies
+interface UserType {
+  id: string;
+  company_id: string;
+  email: string;
+  name?: string;
+  role: string;
+}
+
+interface Metadata {
+  id?: string;
+  company_id: string;
+  type: string;
+  name: string;
+  description?: string;
+  is_system?: boolean;
+  deleted_at?: Date | null;
+}
 import { ServiceType } from '@/shared/types/general.type';
 import { AUDIT_TRAIL_ACTION, EmailSubject, MetadataType, ProjectTaskStatus } from '@/shared/enums';
 import sendEmail from '@/shared/utils/nodemailer';
@@ -34,7 +51,7 @@ export class DocRequestService {
     private readonly auditTrailService: AuditTrailService,
   ) {}
 
-  async createDocumentRequest(user: UserModelType, project_id: string, payload: DocumentRequestType): Promise<ServiceType> {
+  async createDocumentRequest(user: UserType, project_id: string, payload: DocumentRequestType): Promise<ServiceType> {
     try {
       const { company_id } = user;
 
@@ -45,7 +62,7 @@ export class DocRequestService {
         deleted_at: null,
       };
 
-      const docRequestMetadataQuery: Partial<MetadataModelType> = {
+      const docRequestMetadataQuery: Partial<Metadata> = {
         company_id,
         type: MetadataType.TASK,
         deleted_at: null,
@@ -67,7 +84,7 @@ export class DocRequestService {
       let docRequestMetadataType = await this.metadataRepository.findOne(docRequestMetadataQuery);
 
       if (!docRequestMetadataType) {
-        const data: Partial<MetadataModelType> = {
+        const data: Partial<Metadata> = {
           ...docRequestMetadataQuery,
           name: 'Document Request',
           description: 'Task type for document requests',

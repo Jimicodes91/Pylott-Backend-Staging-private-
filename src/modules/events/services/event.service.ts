@@ -12,9 +12,33 @@ import { EventsRepository, MetadataRepository, ProjectMembersRepository, Project
 import { EventDto } from '@/shared/types/dto/event.dto';
 import { AUDIT_TRAIL_ACTION, EmailSubject, MetadataType } from '@/shared/enums';
 import { ServiceType } from '@/shared/types/general.type';
-import { EventModelType } from '@/models/events.model';
-import { UserModelType } from '@/models/user.model';
 import { GoogleAPIsCalender } from '@/shared/utils/calender/gcal';
+
+// Plain types to avoid circular dependencies
+interface UserType {
+  id: string;
+  company_id: string;
+  email: string;
+  name?: string;
+  role: string;
+}
+
+interface EventType {
+  id?: string;
+  project_id: string;
+  company_id: string;
+  event_type_id?: string;
+  created_by: string;
+  name: string;
+  start_datetime: string;
+  end_datetime: string;
+  description: string;
+  venue: string;
+  invites: string;
+  provider_identifier: string;
+  is_visible_to_client: boolean;
+  deleted_at?: Date | null;
+}
 import { CreateCalenderEvent } from '@/shared/types/events.type';
 import sendEmail from '@/shared/utils/nodemailer';
 import { newEventScheduledEmail } from '@/shared/utils/email';
@@ -36,7 +60,7 @@ export class EventService {
     private readonly projectMemberRepository: ProjectMembersRepository,
   ) {}
 
-  public async createEvent(user: UserModelType, project_id: string, payload: EventDto): Promise<ServiceType> {
+  public async createEvent(user: UserType, project_id: string, payload: EventDto): Promise<ServiceType> {
     try {
       const company_id = user.company_id;
 
@@ -78,7 +102,7 @@ export class EventService {
 
       // if (!gcalResponse) return { status: false, message: 'Could not sync event at the moment' };
 
-      const insertData: Partial<EventModelType> = {
+      const insertData: Partial<EventType> = {
         ...payload,
         start_datetime: payload.start_datetime,
         end_datetime: payload.end_datetime,
@@ -138,7 +162,7 @@ export class EventService {
       };
     }
   }
-  public async updateEvent(user: UserModelType, event_id: string, project_id: string, payload: Partial<EventDto>): Promise<ServiceType> {
+  public async updateEvent(user: UserType, event_id: string, project_id: string, payload: Partial<EventDto>): Promise<ServiceType> {
     const company_id = user.company_id;
     try {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
@@ -164,7 +188,7 @@ export class EventService {
         return { status: false, message: 'Fields `start_datetime` and `end_datetime` are required when performing updates' };
       }
 
-      const updateData: Partial<EventModelType> = {};
+      const updateData: Partial<EventType> = {};
 
       if (payload.start_datetime) updateData.start_datetime = dayjs(payload.start_datetime).format();
       if (payload.end_datetime) updateData.end_datetime = dayjs(payload.end_datetime).format();
@@ -215,7 +239,7 @@ export class EventService {
     }
   }
 
-  public async getEventDetails(user: UserModelType, event_id: string, project_id: string): Promise<ServiceType> {
+  public async getEventDetails(user: UserType, event_id: string, project_id: string): Promise<ServiceType> {
     try {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record) return { status: false, message: 'Event not found', statusCode: 404 };
@@ -278,7 +302,7 @@ export class EventService {
     }
   }
 
-  public async deleteEvent(user: UserModelType, event_id: string, project_id: string): Promise<ServiceType> {
+  public async deleteEvent(user: UserType, event_id: string, project_id: string): Promise<ServiceType> {
     try {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
 
@@ -314,11 +338,11 @@ export class EventService {
     }
   }
 
-  public async getAllEvents(user: UserModelType, project_id?: string): Promise<ServiceType> {
+  public async getAllEvents(user: UserType, project_id?: string): Promise<ServiceType> {
     try {
       const { company_id } = user;
 
-      const queryData: Partial<EventModelType> = { company_id, deleted_at: null };
+      const queryData: Partial<EventType> = { company_id, deleted_at: null };
 
       if (project_id) queryData.project_id = project_id;
 
@@ -412,7 +436,7 @@ export class EventService {
    * @param project_id Project ID
    * @param response Response status ('accepted', 'declined', 'tentative')
    */
-  public async respondToEventInvite(user: UserModelType, event_id: string, project_id: string, response: 'accepted' | 'declined' | 'tentative'): Promise<ServiceType> {
+  public async respondToEventInvite(user: UserType, event_id: string, project_id: string, response: 'accepted' | 'declined' | 'tentative'): Promise<ServiceType> {
     try {
       const record = await this.eventRepository.findOne({ project_id, id: event_id, deleted_at: null });
       if (!record)

@@ -3,94 +3,28 @@ import { container } from 'tsyringe';
 import { authenticateUser as authGuard } from '@/shared/middlewares/guard.middleware';
 import { schemaValidator } from '@/shared/middlewares/validator.middleware';
 import { Server } from '@/shared/types/http.type';
-import { updateDocumentAttachmentValidationRules, updateUploadDocumentValidationRules, uploadDocumentValidationRules } from '@/shared/validations/docs';
-import { createEventValidationRules, updateEventValidationRules } from '@/shared/validations/event';
 
 import {
-  addCustomFieldValidationRules,
   addProjectMemberValidationRules,
   createCommentValidationRules,
   createMilestoneValidationRules,
   createNoteValidationRules,
   createProjectTypeValidationRules,
-  // createProjectValidationRules,
   createTaskValidationRules,
-  documentRequestValidationRules,
   reorderMilestonesValidationRules,
   toggleNotePinValidationRules,
-  updateFieldRequirementValidationRules,
   updateMilestoneValidationRules,
   updateProjectTypeValidationRules,
-  // updateProjectValidationRules,
   updateTaskValidationRules,
 } from '@/shared/validations/projects';
 
-// Lazy controller resolution with dynamic imports to avoid circular dependencies
-const getDocumentController = async () => {
-  const { DocsController } = await import('../docs/docs.controller');
-  return container.resolve(DocsController);
-};
-
-const getEventsController = async () => {
-  const { EventController } = await import('../events/event.controller');
-  return container.resolve(EventController);
-};
-
+// Lazy controller resolution with dynamic imports
 const getProjectController = async () => {
   const { ProjectController } = await import('./projects.controller');
   return container.resolve(ProjectController);
 };
 
-const getProjectFormController = async () => {
-  const { ProjectFormController } = await import('./project_form.controller');
-  return container.resolve(ProjectFormController);
-};
-
-export const projectRoutes = (prefix: string, server: Server) => {
-  /**
-   * Project Forms
-   */
-  server.get(`${prefix}/forms`, authGuard, async (req, res) => (await getProjectFormController()).getProjectForm(req, res));
-  server.post(`${prefix}/forms/fields`, authGuard, schemaValidator(addCustomFieldValidationRules), async (req, res) => (await getProjectFormController()).addCustomField(req, res));
-  server.patch(`${prefix}/forms/fields/:field_id/requirement`, authGuard, schemaValidator(updateFieldRequirementValidationRules), async (req, res) =>
-    (await getProjectFormController()).updateFieldRequirement(req, res),
-  );
-  server.get(`${prefix}/forms/fields`, authGuard, async (req, res) => (await getProjectFormController()).getAllFormFields(req, res));
-
-  /**
-   * Events
-   */
-  server.post(`${prefix}/:project_id/events`, authGuard, schemaValidator(createEventValidationRules), async (req, res) => (await getEventsController()).createEvent(req, res));
-  server.get(`${prefix}/:project_id/events`, authGuard, async (req, res) => (await getEventsController()).getAllEvents(req, res));
-  server.patch(`${prefix}/:project_id/events/:event_id`, authGuard, schemaValidator(updateEventValidationRules), async (req, res) => (await getEventsController()).updateEvent(req, res));
-  server.get(`${prefix}/:project_id/events/:event_id`, authGuard, async (req, res) => (await getEventsController()).getEventDetails(req, res));
-  server.delete(`${prefix}/:project_id/events/:event_id`, authGuard, async (req, res) => (await getEventsController()).deleteEvent(req, res));
-  // New event invitation response endpoints
-  server.post(`${prefix}/:project_id/events/:event_id/accept`, authGuard, async (req, res) => (await getEventsController()).acceptEventInvite(req, res));
-  server.post(`${prefix}/:project_id/events/:event_id/decline`, authGuard, async (req, res) => (await getEventsController()).declineEventInvite(req, res));
-
-  /**
-   * Documents
-   */
-  server.get(`${prefix}/:project_id/documents`, authGuard, async (req, res) => (await getDocumentController()).getAllDocuments(req, res));
-  server.get(`${prefix}/:project_id/documents/:document_id`, authGuard, async (req, res) => (await getDocumentController()).getDocumentDetails(req, res));
-  server.delete(`${prefix}/:project_id/documents/:document_id`, authGuard, async (req, res) => (await getDocumentController()).deleteDocument(req, res));
-  server.patch(`${prefix}/:project_id/documents/:document_id`, authGuard, schemaValidator(updateUploadDocumentValidationRules), async (req, res) =>
-    (await getDocumentController()).updateDocumentUpload(req, res),
-  );
-  server.post(`${prefix}/:project_id/documents`, authGuard, schemaValidator(uploadDocumentValidationRules), async (req, res) => (await getDocumentController()).uploadDocument(req, res));
-  server.delete(`${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`, authGuard, async (req, res) => (await getDocumentController()).deleteDocumentAttachment(req, res));
-  server.patch(`${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`, authGuard, schemaValidator(updateDocumentAttachmentValidationRules), async (req, res) =>
-    (await getDocumentController()).updateDocumentAttachment(req, res),
-  );
-
-  /**
-   * Document Request
-   */
-  server.post(`${prefix}/:project_id/document-requests`, authGuard, schemaValidator(documentRequestValidationRules), async (req, res) =>
-    (await getDocumentController()).createDocumentRequest(req, res),
-  );
-
+export const projectCoreRoutes = (prefix: string, server: Server) => {
   /**
    * Project Types
    */
