@@ -32,6 +32,7 @@ import { newTaskAssignedEmail, taskCompletedEmail } from '@/shared/utils/email';
 import sendEmail from '@/shared/utils/nodemailer';
 import { ContactRespository } from '@/repositories/contact.repository';
 import { FRONTEND_URL } from '@/config/env';
+import { notificationEmitter } from '@/shared/events/notification.events';
 
 @injectable()
 export class TaskService {
@@ -199,6 +200,22 @@ export class TaskService {
         const formattedDueDate = payload.end_date ? dayjs(payload.end_date).format('MMMM DD, YYYY') : 'Not set';
         const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, formattedDueDate, taskLink);
         await sendEmail(taskAuthor.email, emailSubject, email);
+
+        // Emit notification event for task assignment
+        notificationEmitter.emitNotification({
+          user_id: assignee_id,
+          type: 'task_assigned',
+          title: 'New Task Assigned',
+          message: `You have been assigned to task "${payload.name}" in project "${project.name}"`,
+          data: {
+            task_id,
+            project_id,
+            task_name: payload.name,
+            project_name: project.name,
+            due_date: payload.end_date,
+            task_link: taskLink,
+          },
+        });
       }
 
       return {
@@ -329,6 +346,21 @@ export class TaskService {
         const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
         const email = taskCompletedEmail(taskAuthor.name, task.name, taskLink);
         await sendEmail(taskAuthor.email, emailSubject, email);
+
+        // Emit notification event for task completion
+        notificationEmitter.emitNotification({
+          user_id: task.author_id,
+          type: 'task_completed',
+          title: 'Task Completed',
+          message: `Task "${task.name}" has been marked as completed`,
+          data: {
+            task_id,
+            project_id,
+            task_name: task.name,
+            project_name: project.name,
+            task_link: taskLink,
+          },
+        });
       }
 
       if (payload.assignees && payload.assignees.length) {
@@ -340,6 +372,22 @@ export class TaskService {
           const formattedDueDate = dueDate ? dayjs(dueDate).format('MMMM DD, YYYY') : 'Not set';
           const email = newTaskAssignedEmail(taskAuthor.name, payload.name || task.name, project.name, formattedDueDate, taskLink);
           await sendEmail(taskAuthor.email, emailSubject, email);
+
+          // Emit notification event for task assignment update
+          notificationEmitter.emitNotification({
+            user_id: assignee_id,
+            type: 'task_assigned',
+            title: 'Task Assignment Updated',
+            message: `You have been assigned to task "${payload.name || task.name}" in project "${project.name}"`,
+            data: {
+              task_id,
+              project_id,
+              task_name: payload.name || task.name,
+              project_name: project.name,
+              due_date: dueDate,
+              task_link: taskLink,
+            },
+          });
         }
       }
 
