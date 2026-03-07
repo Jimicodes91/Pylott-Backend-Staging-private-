@@ -18,7 +18,11 @@ import {
   UserRepository,
 } from '@/repositories';
 
-import { AttachmentsModelType, DocumentsModelType, ProjectTaskAssigneesModelType, ProjectTaskModelType, UserModelType } from '@/models';
+import { Attachments } from '@/models/document_attachments.model';
+import { Documents } from '@/models/documents.model';
+import { ProjectTaskAssignees } from '@/models/project_task_asignees.model';
+import { ProjectTask } from '@/models/project_task.model';
+import { User, UserModelType } from '@/models/user.model';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 import { AUDIT_TRAIL_ACTION, DocumentsDirectory, EmailSubject, MetadataType, ProjectTaskStatus } from '@/shared/enums';
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
@@ -103,7 +107,7 @@ export class TaskService {
       const task_id = uuidv4();
       const document_id = uuidv4();
 
-      const assigneePayload: Array<Partial<ProjectTaskAssigneesModelType>> = [];
+      const assigneePayload: Array<Partial<ProjectTaskAssignees>> = [];
 
       if (payload.assignees && payload.assignees.length) {
         for (const assignee_id of payload.assignees) {
@@ -130,7 +134,7 @@ export class TaskService {
         };
       }
       await Objection.Model.transaction(async (trx) => {
-        const projectTaskData: Partial<ProjectTaskModelType> = {
+        const projectTaskData: Partial<ProjectTask> = {
           id: task_id,
           project_id,
           company_id,
@@ -145,7 +149,7 @@ export class TaskService {
           project_type_id: payload.project_type_id,
         };
 
-        const documentData: Partial<DocumentsModelType> = {
+        const documentData: Partial<Documents> = {
           id: document_id,
           company_id,
           project_id,
@@ -155,7 +159,7 @@ export class TaskService {
           is_visible_to_client: payload.is_visible_to_client,
         };
 
-        const documentAttachmentData: Partial<AttachmentsModelType> = {
+        const documentAttachmentData: Partial<Attachments> = {
           document_id,
         };
 
@@ -222,7 +226,7 @@ export class TaskService {
     try {
       const { company_id } = user;
 
-      const updateData: Partial<ProjectTaskModelType> = { description: payload?.description };
+      const updateData: Partial<ProjectTask> = { description: payload?.description };
 
       const task = await this.projectTaskRepository.getTaskById(company_id, project_id, task_id);
       if (!task) {
@@ -304,7 +308,7 @@ export class TaskService {
         if (payload.attachments && payload.attachments.length) {
           const document = await this.documentRepository.findOne({ task_id }, trx);
           if (document) {
-            const documentAttachmentData: Partial<AttachmentsModelType> = {
+            const documentAttachmentData: Partial<Attachments> = {
               document_id: document.id,
             };
 
@@ -547,7 +551,7 @@ export class TaskService {
     }
   }
 
-  private async updateTaskAssignees(payload: { task_id: string; project_id: string; company_id: string; current_assignees: ProjectTaskAssigneesModelType[]; new_assignees: string[] }): Promise<void> {
+  private async updateTaskAssignees(payload: { task_id: string; project_id: string; company_id: string; current_assignees: ProjectTaskAssignees[]; new_assignees: string[] }): Promise<void> {
     const { company_id, current_assignees, new_assignees, project_id, task_id } = payload;
 
     const currentAssigneeIds = current_assignees.map((a) => a.assignee_id);
