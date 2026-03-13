@@ -215,6 +215,10 @@
 
 ---
 
+**Implementation:** **FIXED (AC 1).** In `AuthService.workspaceSignup`, after default journeys, default task types are created via `MetadataRepository` with `type: MetadataType.TASK`, `is_system: true`. Default names: `"Document upload"`, `"General"`. AC 2 (upload field when type is "Document upload") is frontend: task form should show an upload field when the selected task type name is "Document upload".
+
+---
+
 ## 10. Task Structure — Description Optional (Row 15)
 
 | Ref | Item |
@@ -223,6 +227,8 @@
 | **I want** | Description to be optional |
 | **So that** | I can quickly create tasks |
 | **AC 1** | **Task description** field is **optional**. |
+
+**Implementation:** **FIXED.** `createTaskValidationRules`: description is `.optional()` with max length 500. `CreateTask` type: `description` is optional (`description?: string`). Task service create: uses `payload?.description ?? ''` when persisting.
 
 ---
 
@@ -253,6 +259,8 @@
 
 **Implied:** New field on task (e.g. `visibility` or `classification`: inhouse | client_facing); migration to set existing tasks to inhouse.
 
+**Implementation:** **FIXED.** (11.1) Tasks already use `is_visible_to_client`: false = Inhouse, true = Client facing. AC 1 (dropdown) is frontend. AC 2–3: Client list and getTaskById only see/return tasks with `is_visible_to_client === true`; internal users see all. AC 4: List tasks accepts `?is_visible_to_client=true|false`; repository filters when no assignee and visibility is set; query param parsed from string to boolean. (11.2) Migration `20260313120001_set_old_tasks_inhouse.ts`: sets `is_visible_to_client = false` where NULL so existing tasks map to Inhouse.
+
 ---
 
 ## 12. Task Notification on Creation (Row 18)
@@ -267,6 +275,8 @@
 | **AC 3** | When task status is updated to **Completed**, **deduct** from the count. |
 
 **Implied:** Notifications or counts for “my assigned tasks” that are not completed; update on status change.
+
+**Implementation:** **FIXED.** Backend: new endpoint `GET /projects/tasks/assigned-to-me/count` returns `{ count }` = number of tasks assigned to the current user that are not completed (status ≠ completed, task and assignee not deleted). Frontend can poll this for the sidebar badge (AC 1–2). Count decreases when a task is marked completed (AC 3) because the query excludes completed tasks. Email on task assign already exists (`newTaskAssignedEmail`). Badge UI and placement on tasks sidebar are frontend.
 
 ---
 
@@ -289,6 +299,8 @@
 | **AC 1** | **Only two states:** **Completed**, **Pending**. **Remove** “In-progress” (or any third state) for tasks. |
 
 **Current state (from codebase):** Task status includes `pending`, `in_progress`, `completed`. This will be reduced to two states.
+
+**Implementation:** **FIXED.** (13.1) Migration `20260313120002_task_due_date_and_two_status.ts`: dropped `start_date`, renamed `end_date` to `due_date`. Model, CreateTask/DocumentRequestType, validations (create/update task, document request): single date field `due_date`. Task and docs-request services use `due_date` only; responses return `due_date`. (13.2) Migration sets existing `in_progress` to `pending`. Enum `ProjectTaskStatus`: removed `IN_PROGRESS`; only `PENDING`, `COMPLETED` (and `OVER_DUE` for computed display). Validations allow only `pending` and `completed`. `getTaskStatusCounts` uses `due_date` for overdue and returns `in_progress: 0`.
 
 ---
 

@@ -14,11 +14,12 @@ import {
   UserCompanyRepository,
   InvitationRepository,
   ProjectTypeRepository,
+  MetadataRepository,
 } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { generateOTP, strongPassword } from '@/shared/utils/any';
-import { AUDIT_TRAIL_ACTION, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, MetadataType, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
 import Objection from 'objection';
 import { AdminSignupData, CompanyAdminSignpData, loginData, WorkspaceSignupData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
@@ -48,6 +49,7 @@ export class AuthService {
     @inject(UserCompanyRepository) private userCompanyRepository: UserCompanyRepository,
     @inject(InvitationRepository) private invitationRepository: InvitationRepository,
     @inject(ProjectTypeRepository) private projectTypeRepository: ProjectTypeRepository,
+    @inject(MetadataRepository) private metadataRepository: MetadataRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     private readonly auditTrailService: AuditTrailService,
     _redis: Redis,
@@ -359,6 +361,12 @@ export class AuthService {
       const defaultJourneyNames = ['Default Journey'];
       for (const journeyName of defaultJourneyNames) {
         await this.projectTypeRepository.create({ company_id: company.id, name: journeyName, is_system: true }, trx);
+      }
+
+      // Default task types for onboarding (Document upload = upload field in task form per spec)
+      const defaultTaskTypeNames = ['Document upload', 'General'];
+      for (const taskTypeName of defaultTaskTypeNames) {
+        await this.metadataRepository.create({ company_id: company.id, name: taskTypeName, type: MetadataType.TASK, description: '', is_system: true }, trx);
       }
 
       return { user: newUser, company };

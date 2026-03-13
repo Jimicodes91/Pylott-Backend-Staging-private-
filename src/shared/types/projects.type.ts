@@ -44,10 +44,9 @@ export type AddProjectMember = {
 
 export type CreateTask = {
   name: string;
-  description: string;
+  description?: string;
   status?: string;
-  start_date: string;
-  end_date: string;
+  due_date: string;
   assignees: [string];
   attachments?: [string];
   is_visible_to_client: boolean;
@@ -153,7 +152,7 @@ export type DocumentRequestType = {
   name: string;
   description: string;
   is_visible_to_client: boolean;
-  end_date: string;
+  due_date: string;
 };
 
 export type AddCustomField = {

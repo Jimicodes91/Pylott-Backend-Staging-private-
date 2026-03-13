@@ -200,10 +200,10 @@ export class ProjectController {
   };
 
   getTaskById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const { company_id } = req.user as UserModelType;
+    const user = req.user as UserModelType;
     const { project_id, task_id } = req.params;
 
-    const { statusCode = null, ...others } = await this.taskService.getTaskById(company_id, project_id, task_id);
+    const { statusCode = null, ...others } = await this.taskService.getTaskById(user, user.company_id, project_id, task_id);
     genericResponse({ res, data: others, statusCode });
   };
 
@@ -212,6 +212,12 @@ export class ProjectController {
     const user = req.user as UserModelType;
 
     const { statusCode = null, ...others } = await this.taskService.getAllTask(user, project_id as string | null, otherQueries);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getMyAssignedTaskCount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { statusCode = null, ...others } = await this.taskService.getMyAssignedIncompleteTaskCount(user);
     genericResponse({ res, data: others, statusCode });
   };
 

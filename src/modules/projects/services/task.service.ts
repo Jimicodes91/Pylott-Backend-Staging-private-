@@ -54,17 +54,6 @@ export class TaskService {
     try {
       const { company_id } = user;
 
-      const start = dayjs(payload.start_date);
-      const end = dayjs(payload.end_date);
-
-      if (end.isBefore(start)) {
-        return {
-          status: false,
-          message: 'End date cannot be before start date',
-          statusCode: StatusCodes.BAD_REQUEST,
-        };
-      }
-
       const project = await this.projectRepository.findOne({ id: project_id, company_id, deleted_at: null });
       if (!project) {
         return {
@@ -135,10 +124,9 @@ export class TaskService {
           project_id,
           company_id,
           name: payload.name,
-          description: payload.description,
+          description: payload?.description ?? '',
           status: (payload?.status as ProjectTaskStatus) || ProjectTaskStatus.PENDING,
-          start_date: dayjs(payload.start_date).format(),
-          end_date: dayjs(payload.end_date).format(),
+          due_date: dayjs(payload.due_date).format(),
           is_visible_to_client: payload.is_visible_to_client,
           author_id: user.id,
           task_type_id: payload?.task_type_id ?? null,
@@ -192,7 +180,7 @@ export class TaskService {
         const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
         const taskAuthor = await this.userRepository.findOne({ id: assignee_id });
         const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
-        const formattedDueDate = payload.end_date ? dayjs(payload.end_date).format('MMMM DD, YYYY') : 'Not set';
+        const formattedDueDate = payload.due_date ? dayjs(payload.due_date).format('MMMM DD, YYYY') : 'Not set';
         const email = newTaskAssignedEmail(taskAuthor.name, payload.name, project.name, formattedDueDate, taskLink);
         await sendEmail(taskAuthor.email, emailSubject, email);
       }
@@ -293,8 +281,7 @@ export class TaskService {
         updateData.name = payload.name;
       }
 
-      if (payload.start_date) updateData.start_date = dayjs(payload.start_date).format();
-      if (payload.end_date) updateData.end_date = dayjs(payload.end_date).format();
+      if (payload.due_date) updateData.due_date = dayjs(payload.due_date).format();
       if (payload.status) updateData.status = payload.status as ProjectTaskStatus;
       if (payload.is_visible_to_client !== null || payload.is_visible_to_client !== undefined) updateData.is_visible_to_client = payload.is_visible_to_client;
 
@@ -332,7 +319,7 @@ export class TaskService {
           const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name || task.name}`;
           const taskAuthor = await this.userRepository.findOne({ id: assignee_id });
           const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
-          const dueDate = payload.end_date || task.end_date;
+          const dueDate = payload.due_date || task.due_date;
           const formattedDueDate = dueDate ? dayjs(dueDate).format('MMMM DD, YYYY') : 'Not set';
           const email = newTaskAssignedEmail(taskAuthor.name, payload.name || task.name, project.name, formattedDueDate, taskLink);
           await sendEmail(taskAuthor.email, emailSubject, email);
@@ -359,7 +346,7 @@ export class TaskService {
     }
   }
 
-  async getTaskById(company_id: string, project_id: string, task_id: string): Promise<ServiceType> {
+  async getTaskById(user: UserModelType, company_id: string, project_id: string, task_id: string): Promise<ServiceType> {
     try {
       const task = await this.projectTaskRepository.getTaskDetails(company_id, project_id, task_id);
 
@@ -371,15 +358,23 @@ export class TaskService {
         };
       }
 
-      task.start_date = dayjs(task.start_date).format('DD MMM, YYYY');
+      // Inhouse tasks are not visible to clients (requirement #11)
+      const isClient = user.role?.toLowerCase() === 'client';
+      if (isClient && !task.is_visible_to_client) {
+        return {
+          status: false,
+          message: 'Task not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
 
-      task.end_date = dayjs(task.end_date).format('DD MMM, YYYY');
+      task.due_date = dayjs(task.due_date).format('DD MMM, YYYY');
       task['assignees'] = task.assignees.map((assignee) => assignee.user).flat() as any;
 
       const today = dayjs().startOf('day');
-      const endDate = dayjs(task.end_date).startOf('day');
+      const dueDate = dayjs(task.due_date).startOf('day');
 
-      const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && endDate.isBefore(today);
+      const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && dueDate.isBefore(today);
 
       return {
         status: true,
@@ -406,14 +401,21 @@ export class TaskService {
     try {
       const isClient = user.role.toLowerCase() === 'client';
 
+      // Parse visibility filter from query string (e.g. ?is_visible_to_client=false for Inhouse)
+      if (typeof query.is_visible_to_client === 'string') {
+        query.is_visible_to_client = query.is_visible_to_client === 'true';
+      }
+
       if (isClient) {
         query.is_visible_to_client = true;
         query.assignee_id = user.id;
       }
 
       const projectSettings = await this.projectSettingsRepository.getOne({ company_id, deleted_at: null });
-
-      query['is_visible_to_client'] = projectSettings?.client_can_view_task ?? query.is_visible_to_client;
+      // Only apply project-level default when no explicit Inhouse/Client filter was provided
+      if (!isClient && (query.is_visible_to_client === undefined || query.is_visible_to_client === null)) {
+        query['is_visible_to_client'] = projectSettings?.client_can_view_task ?? query.is_visible_to_client;
+      }
 
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
 
@@ -423,16 +425,15 @@ export class TaskService {
 
           const today = dayjs().startOf('day');
 
-          const endDate = dayjs(task.end_date).startOf('day');
+          const dueDate = dayjs(task.due_date).startOf('day');
 
-          const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && endDate.isBefore(today);
+          const isOverdue = task.status !== ProjectTaskStatus.COMPLETED && dueDate.isBefore(today);
 
           const projectClientsData = await this.getProjectClients(company_id, project_id);
 
           return {
             ...task,
-            start_date: dayjs(task.start_date).format('DD MMM, YYYY'),
-            end_date: dayjs(task.end_date).format('DD MMM, YYYY'),
+            due_date: dayjs(task.due_date).format('DD MMM, YYYY'),
             assignees: task.assignees.map((assignee) => assignee.user).flat(),
             is_over_due: isOverdue,
             project_id,
@@ -458,6 +459,25 @@ export class TaskService {
       return {
         status: false,
         message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  /** Count of incomplete tasks assigned to the current user (for sidebar badge / task notification). */
+  async getMyAssignedIncompleteTaskCount(user: UserModelType): Promise<ServiceType> {
+    try {
+      const count = await this.projectTaskRepository.getIncompleteCountAssignedToUser(user.company_id, user.id);
+      return {
+        status: true,
+        message: 'Count retrieved successfully',
+        data: { count },
+      };
+    } catch (error) {
+      console.log(`${this.traceId} Error occurred getting assigned task count ===> ${JSON.stringify({ user_id: user.id, err_msg: (error as Error)?.message })}`);
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+        data: { count: 0 },
       };
     }
   }
