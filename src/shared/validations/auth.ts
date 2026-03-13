@@ -39,6 +39,14 @@ export const signUpCompanyAdminValidator = [
   }),
 ];
 
+/** Self-serve workspace signup: email + password + name → new workspace, user is super_admin, no approval */
+export const workspaceSignupValidator = [
+  validateName('name'),
+  body('email', 'Email is required').not().isEmpty().isEmail().withMessage('Valid email is required'),
+  body('password', 'Password cannot be empty').not().isEmpty(),
+  body('password', 'The minimum password length is 8 characters').isLength({ min: 8 }),
+];
+
 export const emailValidationRule = [body('email', 'Email is required').not().isEmpty(), body('email', 'Invalid email').isEmail()];
 
 export const resetPasswordValidationRule = [

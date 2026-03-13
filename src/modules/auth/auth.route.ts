@@ -12,6 +12,7 @@ import {
   resetPasswordValidationRule,
   signUpCompanyAdminValidator,
   updatePasswordValidatorRule,
+  workspaceSignupValidator,
 } from '@/shared/validations/auth';
 import { authenticateUser } from '@/shared/middlewares/guard.middleware';
 
@@ -21,6 +22,8 @@ export const authRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/admin-signup`, schemaValidator(adminSignupValidationRule), authController.signUpAdmin);
 
   server.post(`${prefix}/company-admin-signup`, schemaValidator(signUpCompanyAdminValidator), authController.signUpCompanyAdmin);
+
+  server.post(`${prefix}/workspace-signup`, schemaValidator(workspaceSignupValidator), authController.signUpWorkspace);
 
   server.post(`${prefix}/login`, schemaValidator(loginValidationRule), authController.signIn);
 

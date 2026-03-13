@@ -28,6 +28,18 @@ export class AuthController {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   };
+
+  /** Self-serve workspace signup: creates workspace + user as super_admin, no approval */
+  public signUpWorkspace = async (req: Request, res: Response) => {
+    try {
+      const newUser = await this.authService.workspaceSignup(req.body);
+      return successResponse(res, 'Workspace created successfully. You are the primary admin.', newUser);
+    } catch (error: any) {
+      const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, statusCode);
+    }
+  };
+
   public signIn = async (req: Request, res: Response) => {
     try {
       const loginData = await this.authService.signIn(req.body);

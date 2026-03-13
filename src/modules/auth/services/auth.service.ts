@@ -10,7 +10,8 @@ import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { generateOTP, strongPassword } from '@/shared/utils/any';
 import { AUDIT_TRAIL_ACTION, RedisPrefixKeyEnum, UserRoles } from '@/shared/enums';
-import { AdminSignupData, CompanyAdminSignpData, loginData } from '@/shared/interface/user';
+import Objection from 'objection';
+import { AdminSignupData, CompanyAdminSignpData, loginData, WorkspaceSignupData } from '@/shared/interface/user';
 import { generateToken } from '@/shared/utils/jwt';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY, FRONTEND_URL, PASSWORD_RESET_TOKEN_LENGTH, TEMP_PASSWORD_LENGTH, TOKEN_EXPIRATION_MS } from '@/config/env';
 import { GoogleAuthData } from '@/shared/types/google.type';
@@ -279,6 +280,77 @@ export class AuthService {
     } catch (error) {
       throw new HttpError(error.message || 'Error: something went wrong, failed to complete action', 500);
     }
+  }
+
+  /**
+   * Self-serve workspace signup: new user creates account with email + password,
+   * a new workspace (company) is created, and the user becomes super_admin. No approval required.
+   */
+  public async workspaceSignup(data: WorkspaceSignupData) {
+    const { email, password, name } = data;
+
+    if (!email || !password || !name) {
+      throw new HttpError('Email, password, and name are required', 400);
+    }
+
+    this.validateName(name);
+
+    const existingUser = await this.userRepository.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      throw new HttpError('Email is already registered', StatusCodes.CONFLICT);
+    }
+
+    await this.validatePasswordStrength(password);
+
+    const hashedPassword = await this.hashPassword(password);
+
+    const result = await Objection.Model.transaction(async (trx) => {
+      const company = await this.companyRepository.create(
+        {
+          name: `${name.trim()}'s Workspace`,
+          industry_type: 'General',
+          size: '1-10',
+          country: 'Not set',
+          address: '',
+          city: 'Not set',
+          is_active: true,
+        },
+        trx,
+      );
+
+      const newUser = await this.userRepository.create(
+        {
+          email: email.toLowerCase(),
+          name: name.trim(),
+          password: hashedPassword,
+          role: UserRoles.SUPER_ADMIN,
+          company_id: company.id,
+          is_verified: true,
+          is_active: true,
+        },
+        trx,
+      );
+
+      await this.userCompanyRepository.create(
+        {
+          user_id: newUser.id,
+          company_id: company.id,
+          role: UserRoles.SUPER_ADMIN,
+          is_active: true,
+          invited_by: undefined,
+          joined_at: new Date(),
+        },
+        trx,
+      );
+
+      await this.companyRepository.update({ id: company.id }, { admin_id: newUser.id }, trx);
+
+      return { user: newUser, company };
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userResponse } = result.user;
+    return userResponse;
   }
 
   public async signIn(data: loginData) {
