@@ -39,7 +39,7 @@
 
 ---
 
-## 2. Prevent Non-Admin Account Creation (Row 3)
+## 2. Prevent Non-Admin Account Creation (Row 3) — **FIXED**
 
 **Objective:** Platform must prevent non-admin users from signing up on their own.
 
@@ -53,9 +53,11 @@
 
 **Implied:** Remove or restrict any public/self-serve signup that allows selecting Consultant/Client/Admin. Only the “create workspace → become super_admin” path is self-serve.
 
+**Implementation:** Backend keeps `admin-signup` and `company-admin-signup` endpoints; **frontend** should not expose these APIs (no signup UI for Admin/Consultant/Client). Google auth: no new user creation—if no account exists, returns 403 with message to sign up for a workspace or request an invite.
+
 ---
 
-## 3. User vs Contact Separation (Rows 5–6)
+## 3. User vs Contact Separation (Rows 5–6) — **FIXED**
 
 **Objective:** Single place for client creation — Contacts only. No creating clients from User Management.
 
@@ -74,6 +76,8 @@
 - Contacts have `addToContact` (Contact only, no user).
 
 **Change:** Restrict “Add user” to Admin/Consultant only; remove “Add client” from User Management; client creation only via Contacts (see next section).
+
+**Implementation:** Added `ROLES_ALLOWED_IN_ADD_USER = [ADMIN, CONSULTANT]` in shared/enums. Firm-admin `addUser` and user module `addUserToCompany` reject role CLIENT (and SUPER_ADMIN) with 400; message: only Admin and Consultant can be added here; client creation is done from Contacts. Existing clients unchanged.
 
 ---
 
@@ -323,9 +327,9 @@
 
 ## Implementation order (suggested)
 
-1. **Auth & roles:** Self-serve workspace creation (super_admin) ✅ **DONE**; remove public signup for non-admins (2, 3).  
+1. **Auth & roles:** Self-serve workspace creation (super_admin) ✅ **DONE**; remove public signup for non-admins (2, 3) ✅ **DONE**.  
 2. **Contacts & clients:** Contact status (Uninvited/Invited/Active), client creation only via Contacts, Send Invite flow (4, 5).  
-3. **User management:** Restrict Add user to Admin/Consultant; remove Add client from user management (3).  
+3. **User management:** Restrict Add user to Admin/Consultant; remove Add client from user management (3) ✅ **DONE**.  
 4. **Invites & permissions:** Admin/Consultant invite flows, client invite rights, approval workflow for consultant-invited clients (6.1–6.4).  
 5. **Deactivation:** Deactivate/reactivate admin and consultant; optional password reset on reactivation (7).  
 6. **Defaults:** Default journeys and task types on workspace creation (8, 9).  

@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { UserService } from './services/user.service';
 import { errorResponse, successResponse } from '@/shared/utils/api-response';
 import { StatusCodes } from 'http-status-codes';
-import { UserRoles } from '@/shared/enums';
+import { ROLES_ALLOWED_IN_ADD_USER, UserRoles } from '@/shared/enums';
 
 @injectable()
 export class UserController {
@@ -58,6 +58,9 @@ export class UserController {
       // Validate role
       if (!Object.values(UserRoles).includes(role)) {
         return errorResponse(res, 'Invalid role specified');
+      }
+      if (!ROLES_ALLOWED_IN_ADD_USER.includes(role as UserRoles)) {
+        return errorResponse(res, 'Only Admin and Consultant can be added here. Client creation is done from Contacts.', undefined, StatusCodes.BAD_REQUEST);
       }
 
       const result = await this.userService.addUserToCompany(userId, companyId, role, adminId);
