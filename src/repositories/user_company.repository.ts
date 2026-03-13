@@ -34,6 +34,11 @@ export class UserCompanyRepository extends BaseRepository<UserCompanyModelType, 
     return userCompany?.role || null;
   }
 
+  // Get user's membership in a company (including inactive, for deactivation checks)
+  async getUserCompany(userId: string, companyId: string) {
+    return await this.model.query().where('user_id', userId).where('company_id', companyId).whereNull('deleted_at').first();
+  }
+
   // Add user to a company
   async addUserToCompany(userId: string, companyId: string, role: UserRoles, invitedBy?: string) {
     return await this.create({

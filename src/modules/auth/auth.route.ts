@@ -8,8 +8,10 @@ import {
   adminSignupValidationRule,
   completeRegistrationValidationRule,
   emailValidationRule,
+  inviteEmailValidator,
   loginValidationRule,
   resetPasswordValidationRule,
+  setPasswordWithTokenValidator,
   signUpCompanyAdminValidator,
   updatePasswordValidatorRule,
   workspaceSignupValidator,
@@ -36,6 +38,13 @@ export const authRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/reset-password`, schemaValidator(resetPasswordValidationRule), authController.resetPassword);
 
   server.post(`${prefix}/send-invite`, authenticateUser, authController.sendInvite);
+
+  server.post(`${prefix}/invite-admin`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteAdmin);
+  server.post(`${prefix}/invite-consultant`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteConsultant);
+
+  server.patch(`${prefix}/users/:userId/deactivate`, authenticateUser, authController.deactivateUser);
+  server.patch(`${prefix}/users/:userId/reactivate`, authenticateUser, authController.reactivateUser);
+  server.post(`${prefix}/set-password`, schemaValidator(setPasswordWithTokenValidator), authController.setPasswordWithToken);
 
   server.post(`${prefix}/invite-existing-user`, authenticateUser, authController.inviteExistingUser);
 

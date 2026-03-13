@@ -124,6 +124,75 @@ export class AuthController {
     }
   };
 
+  /** Super Admin only: invite an Admin. Body: { email } */
+  public inviteAdmin = async (req: Request, res: Response) => {
+    try {
+      const superAdminId = (req as any).user.id;
+      const { email } = req.body;
+      if (!email) return errorResponse(res, 'Email is required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.inviteAdmin(superAdminId, email);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** Super Admin or Admin: invite a Consultant. Body: { email } */
+  public inviteConsultant = async (req: Request, res: Response) => {
+    try {
+      const inviterId = (req as any).user.id;
+      const { email } = req.body;
+      if (!email) return errorResponse(res, 'Email is required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.inviteConsultant(inviterId, email);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** Super Admin only: deactivate an admin or consultant (they lose access). */
+  public deactivateUser = async (req: Request, res: Response) => {
+    try {
+      const superAdminId = (req as any).user.id;
+      const userId = req.params.userId;
+      if (!userId) return errorResponse(res, 'User ID is required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.deactivateUser(superAdminId, userId);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** Super Admin only: reactivate an admin or consultant (they must set password via email link). */
+  public reactivateUser = async (req: Request, res: Response) => {
+    try {
+      const superAdminId = (req as any).user.id;
+      const userId = req.params.userId;
+      if (!userId) return errorResponse(res, 'User ID is required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.reactivateUser(superAdminId, userId);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** Set password with token (e.g. after reactivation). Body: { token, newPassword } */
+  public setPasswordWithToken = async (req: Request, res: Response) => {
+    try {
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword) return errorResponse(res, 'Token and newPassword are required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.setPasswordWithToken(token, newPassword);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
   public completeRegistration = async (req: Request, res: Response) => {
     try {
       const { token, password, name } = req.body;

@@ -5,7 +5,16 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { RedisClientType } from 'redis';
 
-import { ClientRepository, CompanyRepository, ConsultantRepository, ProjectMembersRepository, UserRepository, UserCompanyRepository, InvitationRepository } from '@/repositories';
+import {
+  ClientRepository,
+  CompanyRepository,
+  ConsultantRepository,
+  ProjectMembersRepository,
+  UserRepository,
+  UserCompanyRepository,
+  InvitationRepository,
+  ProjectTypeRepository,
+} from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 import { generateOTP, strongPassword } from '@/shared/utils/any';
@@ -38,6 +47,7 @@ export class AuthService {
     @inject(ContactRespository) private contactRepository: ContactRespository,
     @inject(UserCompanyRepository) private userCompanyRepository: UserCompanyRepository,
     @inject(InvitationRepository) private invitationRepository: InvitationRepository,
+    @inject(ProjectTypeRepository) private projectTypeRepository: ProjectTypeRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     private readonly auditTrailService: AuditTrailService,
     _redis: Redis,
@@ -345,6 +355,12 @@ export class AuthService {
 
       await this.companyRepository.update({ id: company.id }, { admin_id: newUser.id }, trx);
 
+      // Default journeys (project types) for onboarding
+      const defaultJourneyNames = ['Default Journey'];
+      for (const journeyName of defaultJourneyNames) {
+        await this.projectTypeRepository.create({ company_id: company.id, name: journeyName, is_system: true }, trx);
+      }
+
       return { user: newUser, company };
     });
 
@@ -358,6 +374,9 @@ export class AuthService {
       const user = await this.userRepository.findOne({ email: data.email });
       if (!user) {
         throw new HttpError('Invalid email or password', 401);
+      }
+      if (user.password_setup_token && user.password_setup_token_expires && user.password_setup_token_expires > Date.now()) {
+        throw new HttpError('Please set your password. Check your email for the link.', 403);
       }
       if (!user.is_verified) {
         const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -403,7 +422,7 @@ export class AuthService {
         },
       );
 
-      // Get all companies the user belongs to
+      // Get all companies the user belongs to (only active memberships)
       const userCompanies = await this.userCompanyRepository.getUserCompanies(user.id);
 
       // Format companies list
@@ -415,20 +434,27 @@ export class AuthService {
         is_active: uc.is_active,
       }));
 
-      // If companies list is empty but user has a company_id, add it to the list
+      // If companies list is empty but user has a company_id, add it only if still active in that company
       if (companiesList.length === 0 && user.company_id) {
-        const company = await this.companyRepository.getById(user.company_id);
-        if (company) {
-          companiesList = [
-            {
-              id: company.id,
-              name: company.name,
-              role: user.role || UserRoles.CLIENT,
-              joined_at: user.created_at || (new Date() as any),
-              is_active: 1 as any,
-            },
-          ];
+        const uc = await this.userCompanyRepository.getUserCompany(user.id, user.company_id);
+        if (uc?.is_active) {
+          const company = await this.companyRepository.getById(user.company_id);
+          if (company) {
+            companiesList = [
+              {
+                id: company.id,
+                name: company.name,
+                role: user.role || UserRoles.CLIENT,
+                joined_at: user.created_at || (new Date() as any),
+                is_active: 1 as any,
+              },
+            ];
+          }
         }
+      }
+
+      if (companiesList.length === 0) {
+        throw new HttpError('Your account has been deactivated. Contact your administrator.', 403);
       }
 
       // Sort companies so the last viewed/switched company appears first
@@ -672,6 +698,218 @@ export class AuthService {
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to send invitation', 500);
     }
+  }
+
+  /** Super Admin only: invite a new Admin to the workspace. */
+  public async inviteAdmin(superAdminId: string, email: string) {
+    const inviter = await this.userRepository.getById(superAdminId);
+    if (!inviter || inviter.role !== UserRoles.SUPER_ADMIN) {
+      throw new HttpError('Only Super Admin can invite Admins', 403);
+    }
+    if (!inviter.company_id) {
+      throw new HttpError('Super Admin is not associated with a company', 400);
+    }
+    return this.createAndSendInvite(inviter, email, UserRoles.ADMIN);
+  }
+
+  /** Super Admin or Admin: invite a Consultant to the workspace. */
+  public async inviteConsultant(inviterId: string, email: string) {
+    const inviter = await this.userRepository.getById(inviterId);
+    if (!inviter) {
+      throw new HttpError('User not found', 404);
+    }
+    if (inviter.role !== UserRoles.SUPER_ADMIN && inviter.role !== UserRoles.ADMIN) {
+      throw new HttpError('Only Super Admin or Admin can invite Consultants', 403);
+    }
+    if (!inviter.company_id) {
+      throw new HttpError('You are not associated with a company', 400);
+    }
+    return this.createAndSendInvite(inviter, email, UserRoles.CONSULTANT);
+  }
+
+  private async createAndSendInvite(inviter: { id: string; name?: string; email: string; company_id?: string }, email: string, role: UserRoles) {
+    if (!inviter.company_id) {
+      throw new HttpError('Inviter is not associated with a company', 400);
+    }
+    const companyId = inviter.company_id;
+    const normalizedEmail = email.toLowerCase();
+    if (inviter.email.toLowerCase() === normalizedEmail) {
+      throw new HttpError('You cannot invite your own email address', 400);
+    }
+    const existingInvitation = await this.invitationRepository.findByEmailAndCompany(normalizedEmail, companyId);
+    if (existingInvitation) {
+      throw new HttpError('An invitation has already been sent to this email for this company', 400);
+    }
+    const existingUser = await this.userRepository.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      const inCompany = await this.userCompanyRepository.isUserInCompany(existingUser.id, companyId);
+      if (inCompany) {
+        throw new HttpError('User is already a member of this company', 400);
+      }
+    }
+
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpires = Date.now() + TOKEN_EXPIRATION_MS;
+    const registrationLink = `${this.FRONTEND_URL}/complete-invite?token=${invitationToken}`;
+    const company = await this.companyRepository.getCompanyNameById(companyId);
+    const companyName = company?.name || 'the company';
+
+    const invitation = await this.invitationRepository.create({
+      email: normalizedEmail,
+      role,
+      company_id: companyId,
+      invited_by: inviter.id,
+      invitation_token: invitationToken,
+      token_expires: tokenExpires,
+      status: 'PENDING',
+    });
+
+    await this.sendEmailTemplate(
+      normalizedEmail,
+      'Welcome to Pylott',
+      `Invitation to join ${companyName}`,
+      `You have been invited to join ${companyName} as an ${role}. Click the button below to complete your registration:`,
+      registrationLink,
+      'Complete Registration',
+      inviter.name || role,
+    );
+
+    this.auditTrailService.createEvent(
+      AUDIT_TRAIL_ACTION.USER_INVITATION_SENT,
+      {
+        user_id: inviter.id,
+        company_id: companyId,
+        description: 'Invitation sent',
+        entity_description: `${inviter.name} invited ${normalizedEmail} as ${role}`,
+        entity_id: invitation.id,
+      },
+      inviter.id,
+    );
+
+    return { message: 'Invitation sent successfully', invitationId: invitation.id };
+  }
+
+  /** Super Admin only: deactivate an admin or consultant in the workspace. They lose access until reactivated. */
+  public async deactivateUser(superAdminId: string, userId: string) {
+    const superAdmin = await this.userRepository.getById(superAdminId);
+    if (!superAdmin || superAdmin.role !== UserRoles.SUPER_ADMIN) {
+      throw new HttpError('Only Super Admin can deactivate users', StatusCodes.FORBIDDEN);
+    }
+    if (!superAdmin.company_id) {
+      throw new HttpError('Super Admin is not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+    const target = await this.userRepository.getById(userId);
+    if (!target) {
+      throw new HttpError('User not found', StatusCodes.NOT_FOUND);
+    }
+    if (target.role !== UserRoles.ADMIN && target.role !== UserRoles.CONSULTANT) {
+      throw new HttpError('Only Admin or Consultant can be deactivated', StatusCodes.BAD_REQUEST);
+    }
+    const membership = await this.userCompanyRepository.getUserCompany(userId, superAdmin.company_id);
+    if (!membership) {
+      throw new HttpError('User is not in this workspace', StatusCodes.BAD_REQUEST);
+    }
+    if (!membership.is_active) {
+      throw new HttpError('User is already deactivated', StatusCodes.BAD_REQUEST);
+    }
+
+    await this.userCompanyRepository.update({ user_id: userId, company_id: superAdmin.company_id }, { is_active: false, deleted_at: new Date().toISOString() } as any);
+    if (target.company_id === superAdmin.company_id) {
+      await this.userRepository.update({ id: userId }, { company_id: null });
+    }
+
+    this.auditTrailService.createEvent(
+      AUDIT_TRAIL_ACTION.USER_INVITATION_SENT,
+      {
+        user_id: superAdminId,
+        company_id: superAdmin.company_id,
+        description: 'User deactivated',
+        entity_description: `${target.name} was deactivated`,
+        entity_id: userId,
+      },
+      superAdminId,
+    );
+    return { message: 'User deactivated successfully', userId };
+  }
+
+  /** Super Admin only: reactivate an admin or consultant. They must set password again (email sent with link). */
+  public async reactivateUser(superAdminId: string, userId: string) {
+    const superAdmin = await this.userRepository.getById(superAdminId);
+    if (!superAdmin || superAdmin.role !== UserRoles.SUPER_ADMIN) {
+      throw new HttpError('Only Super Admin can reactivate users', StatusCodes.FORBIDDEN);
+    }
+    if (!superAdmin.company_id) {
+      throw new HttpError('Super Admin is not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+    const target = await this.userRepository.getById(userId);
+    if (!target) {
+      throw new HttpError('User not found', StatusCodes.NOT_FOUND);
+    }
+    const membership = await this.userCompanyRepository.getUserCompany(userId, superAdmin.company_id);
+    if (!membership) {
+      throw new HttpError('User is not in this workspace', StatusCodes.BAD_REQUEST);
+    }
+    if (membership.is_active) {
+      throw new HttpError('User is already active', StatusCodes.BAD_REQUEST);
+    }
+
+    await this.userCompanyRepository.update({ user_id: userId, company_id: superAdmin.company_id }, { is_active: true, deleted_at: null } as any);
+
+    const setupToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpires = Date.now() + TOKEN_EXPIRATION_MS;
+    await this.userRepository.update(
+      { id: userId },
+      {
+        password_setup_token: setupToken,
+        password_setup_token_expires: tokenExpires,
+      },
+    );
+
+    const setPasswordLink = `${this.FRONTEND_URL}/set-password?token=${setupToken}`;
+    await this.sendEmailTemplate(
+      target.email,
+      'Your account has been reactivated',
+      'Set your password',
+      'Your account has been reactivated. Please set your password using the link below to access the system.',
+      setPasswordLink,
+      'Set password',
+      target.name || 'User',
+    );
+
+    this.auditTrailService.createEvent(
+      AUDIT_TRAIL_ACTION.USER_INVITATION_SENT,
+      {
+        user_id: superAdminId,
+        company_id: superAdmin.company_id,
+        description: 'User reactivated',
+        entity_description: `${target.name} was reactivated`,
+        entity_id: userId,
+      },
+      superAdminId,
+    );
+    return { message: 'User reactivated. They must set their password using the link sent by email.', userId };
+  }
+
+  /** Set password using token (e.g. after reactivation). Clears token so user can log in. */
+  public async setPasswordWithToken(token: string, newPassword: string) {
+    const user = await this.userRepository.findOne({ password_setup_token: token });
+    if (!user) {
+      throw new HttpError('Invalid or expired token', StatusCodes.BAD_REQUEST);
+    }
+    if (!user.password_setup_token_expires || user.password_setup_token_expires < Date.now()) {
+      throw new HttpError('Token has expired', StatusCodes.BAD_REQUEST);
+    }
+    await this.validatePasswordStrength(newPassword);
+    const hashedPassword = await this.hashPassword(newPassword);
+    await this.userRepository.update(
+      { id: user.id },
+      {
+        password: hashedPassword,
+        password_setup_token: null,
+        password_setup_token_expires: null,
+      },
+    );
+    return { message: 'Password set successfully. You can now log in.' };
   }
 
   public async completeRegistration(token: string, password: string, name: string) {

@@ -169,7 +169,7 @@
 
 ---
 
-## 7. Deactivate Admin or Consultant (Row 12)
+## 7. Deactivate Admin or Consultant (Row 12) — **FIXED**
 
 | Ref | Item |
 |-----|------|
@@ -181,6 +181,8 @@
 | **AC 3** | If **reactivated**, they must **set/confirm password** again to get access. |
 
 **Implied:** Deactivation (e.g. `is_active` or equivalent) and reactivation flow; optional “must reset password on reactivation” rule.
+
+**Implementation:** Super Admin only: PATCH /auth/users/:userId/deactivate and PATCH /auth/users/:userId/reactivate. Reactivate sends set-password email; POST /auth/set-password (token, newPassword) required before login. Login blocks when no active company or when password_setup_token set.
 
 ---
 
@@ -194,6 +196,8 @@
 | **AC 1** | When a **super admin is created** (workspace created), **default journeys** are created automatically. |
 
 **Note:** The doc doesn’t list the exact default journey names; these need to be defined (or already exist in another spec).
+
+**Implementation:** **FIXED.** In `AuthService.workspaceSignup`, after creating company and user (inside the same transaction), default project types (journeys) are created via `ProjectTypeRepository`. Default name used: `"Default Journey"` (single journey, `is_system: true`). Constant `defaultJourneyNames` allows adding more names later.
 
 ---
 
@@ -333,7 +337,7 @@
 2. **Contacts & clients:** Contact status (Uninvited/Invited/Active), client creation only via Contacts (4) ✅ **DONE**; Send Invite flow (5).  
 3. **User management:** Restrict Add user to Admin/Consultant; remove Add client from user management (3) ✅ **DONE**.  
 4. **Invites & permissions:** Admin/Consultant invite flows, client invite rights, approval workflow for consultant-invited clients (6.1–6.4).  
-5. **Deactivation:** Deactivate/reactivate admin and consultant; optional password reset on reactivation (7).  
+5. **Deactivation:** Deactivate/reactivate admin and consultant; optional password reset on reactivation (7) ✅ **DONE**.  
 6. **Defaults:** Default journeys and task types on workspace creation (8, 9).  
 7. **Tasks:** Optional description; inhouse vs client-facing; migration; remove start date, rename end → due date; status = Pending | Completed only (10, 11, 13, 17).  
 8. **Task UX:** Notifications and count badge on tasks sidebar (12).  
