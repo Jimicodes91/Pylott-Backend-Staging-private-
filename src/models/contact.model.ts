@@ -6,6 +6,8 @@ interface Assignee {
   name: string;
 }
 
+export type ContactStatus = 'Uninvited' | 'Invited' | 'Active';
+
 export class Contact extends BaseModel {
   static tableName = 'contacts';
 
@@ -18,6 +20,7 @@ export class Contact extends BaseModel {
         name: { type: 'string' },
         email: { type: 'string' },
         phone: { type: 'string' },
+        status: { type: 'string', enum: ['Uninvited', 'Invited', 'Active'] },
         organization: { type: 'string' },
         company_id: { type: 'string' },
         address: { type: 'string' },
@@ -54,6 +57,7 @@ export class Contact extends BaseModel {
   name: string;
   email: string;
   phone: string;
+  status?: ContactStatus;
   organization: string;
   address: string;
   active_projects: string;

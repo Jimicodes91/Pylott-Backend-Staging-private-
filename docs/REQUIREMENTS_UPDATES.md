@@ -81,7 +81,7 @@
 
 ---
 
-## 4. Client Creation Only via Contacts (Row 6)
+## 4. Client Creation Only via Contacts (Row 6) — **FIXED**
 
 **Objective:** Clients are created only from the Contacts view; contact and client share the same lifecycle.
 
@@ -96,6 +96,8 @@
 | **AC 4** | **No invite email** is sent automatically on contact creation. |
 
 **Implied:** Contact model/table needs a **status** field (e.g. `Uninvited` | `Invited` | `Active`). Backend and frontend for contact form and grid must support it.
+
+**Implementation:** Added `status` to contacts (migration `20260313120000_add_contact_status.ts`, default `Uninvited`). Contact model and AddContactDto include `status`; add-contact sets `status: 'Uninvited'` on create. No invite email is sent on contact creation. List/get contact APIs return `status` so the grid can display it. Add-contact form already has Name, Email, Phone (optional fields remain for backward compatibility).
 
 ---
 
@@ -328,7 +330,7 @@
 ## Implementation order (suggested)
 
 1. **Auth & roles:** Self-serve workspace creation (super_admin) ✅ **DONE**; remove public signup for non-admins (2, 3) ✅ **DONE**.  
-2. **Contacts & clients:** Contact status (Uninvited/Invited/Active), client creation only via Contacts, Send Invite flow (4, 5).  
+2. **Contacts & clients:** Contact status (Uninvited/Invited/Active), client creation only via Contacts (4) ✅ **DONE**; Send Invite flow (5).  
 3. **User management:** Restrict Add user to Admin/Consultant; remove Add client from user management (3) ✅ **DONE**.  
 4. **Invites & permissions:** Admin/Consultant invite flows, client invite rights, approval workflow for consultant-invited clients (6.1–6.4).  
 5. **Deactivation:** Deactivate/reactivate admin and consultant; optional password reset on reactivation (7).  

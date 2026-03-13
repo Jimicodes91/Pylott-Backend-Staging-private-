@@ -45,10 +45,11 @@ export class ContactService {
       throw new HttpError('A contact with this email address already exists', 400);
     }
 
-    // Transform assigne to assigned_to if needed
+    // Transform assigne to assigned_to if needed. New contacts start as Uninvited; no invite email sent.
     const contactData = {
       ...input,
       email: input.email.toLowerCase(), // Normalize email to lowercase
+      status: input.status ?? 'Uninvited',
       assigned_to: input.assigned_to || (input.assigne ? input.assigne.map((id) => ({ id, name: '' })) : []),
     };
 

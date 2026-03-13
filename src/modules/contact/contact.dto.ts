@@ -3,10 +3,13 @@ export interface AssigneeDto {
   name: string;
 }
 
+export type ContactStatus = 'Uninvited' | 'Invited' | 'Active';
+
 export interface AddContactDto {
   name: string;
   email: string;
   phone: string;
+  status?: ContactStatus;
   organization?: string;
   address?: string;
   active_projects?: string;
