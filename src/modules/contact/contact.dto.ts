@@ -19,6 +19,8 @@ export interface AddContactDto {
   closed_projects?: string;
   assigne?: string[]; // Old field (deprecated)
   assigned_to?: AssigneeDto[]; // New field
+  /** Set by backend from authenticated user (who added the contact). */
+  added_by_user_id?: string | null;
 }
 
 export interface PaginationOptions {

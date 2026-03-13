@@ -67,6 +67,7 @@ export class Contact extends BaseModel {
   closed_projects: string;
   assigne: string[]; // Keep for backward compatibility
   assigned_to: Assignee[]; // New field
+  added_by_user_id?: string | null;
 }
 
 export type ContactModelType = ModelObject<Contact>;

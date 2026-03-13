@@ -39,6 +39,14 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/send-invite`, authenticateUser, authController.sendInvite);
 
+  server.post(`${prefix}/contacts/:contactId/send-invite`, authenticateUser, authController.sendContactInvite);
+
+  server.get(`${prefix}/client-invite-requests/pending`, authenticateUser, authController.getPendingClientInviteRequests);
+  server.post(`${prefix}/client-invite-requests/:requestId/approve`, authenticateUser, authController.approveClientInviteRequest);
+  server.post(`${prefix}/client-invite-requests/:requestId/reject`, authenticateUser, authController.rejectClientInviteRequest);
+
+  server.patch(`${prefix}/users/:userId/client-invite-permissions`, authenticateUser, authController.updateUserClientInvitePermissions);
+
   server.post(`${prefix}/invite-admin`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteAdmin);
   server.post(`${prefix}/invite-consultant`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteConsultant);
 

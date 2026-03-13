@@ -101,7 +101,7 @@
 
 ---
 
-## 5. Controlled Client Activation (Row 7)
+## 5. Controlled Client Activation (Row 7) — **FIXED**
 
 **Objective:** Decouple “creating a contact” from “giving platform access”; invite is explicit.
 
@@ -118,9 +118,11 @@
 
 **Implied:** Invite flow for clients is contact-based (contact id/email), token lifecycle, and status transitions: Uninvited → Invited → Active.
 
+**Implementation:** **FIXED.** Backend: `POST /auth/contacts/:contactId/send-invite` (Admin or Consultant). Loads contact by id, checks company and status (Uninvited only); creates CLIENT invitation and sends email via `createAndSendInvite`; sets contact `status` to `Invited`. In `completeRegistration`, when role is CLIENT: new contacts created with `status: 'Active'`; existing contact updated to `status: 'Active'`. AC 1–2 (button and modal) are frontend.
+
 ---
 
-## 6. Account and Role Creation — Invites (Rows 8–11)
+## 6. Account and Role Creation — Invites (Rows 8–11) — **FIXED**
 
 ### 6.1 Invite Admin (Row 8)
 
@@ -166,6 +168,8 @@
 | **AC 3** | **Super admin and admin** can see **contacts added by consultants**. |
 
 **Implied:** Permission model: “client_invite”, “approve_client_invite”; approval state on contact or invite (e.g. pending_approval → approved → invite sent).
+
+**Implementation:** **FIXED.** (6.3) Migration adds `user_companies.can_invite_clients` and `can_approve_client_invites` (default false). Super Admin grants via `PATCH /auth/users/:userId/client-invite-permissions` (body: `can_invite_clients`, `can_approve_client_invites`). `sendContactInvite` allows only if user has `can_invite_clients` (Super Admin bypass). (6.4) Consultant with right: creates pending `client_invite_requests`; Admin/Super Admin with `can_approve_client_invites` can `GET /auth/client-invite-requests/pending`, `POST .../approve` (sends invite), `POST .../reject`. Contacts have `added_by_user_id`; list returns it so Super Admin/Admin can see contacts added by consultants.
 
 ---
 
@@ -328,6 +332,8 @@
 
 **Implied:** Project form uses email/phone (and optionally name) to attach contacts; contact creation/linking when creating a project.
 
+**Implementation:** **FIXED.** (Row 22) Create project accepts `client_email` (and optional `client_phone`, `client_name`). When `client_email` is provided, contact is found by company_id + email or created (Uninvited) with name/phone; contact id is added to `project_client` so existing logic adds them as project member if they have a user. (Row 23) Same flow: adding client email/phone on project create creates or links the contact. `CreateProjectType`: `client_id`, `start_date`, `end_date` optional; added `client_email?`, `client_phone?`, `client_name?`. Project create stores `start_date`/`end_date` as null when not provided (end date removed from required; start date optional). Form field changes (remove Description, Client organization, etc.) and default form field list are frontend/config; backend accepts the new optional shape.
+
 ---
 
 ## Quick reference: A–AB (your columns)
@@ -348,7 +354,7 @@
 1. **Auth & roles:** Self-serve workspace creation (super_admin) ✅ **DONE**; remove public signup for non-admins (2, 3) ✅ **DONE**.  
 2. **Contacts & clients:** Contact status (Uninvited/Invited/Active), client creation only via Contacts (4) ✅ **DONE**; Send Invite flow (5).  
 3. **User management:** Restrict Add user to Admin/Consultant; remove Add client from user management (3) ✅ **DONE**.  
-4. **Invites & permissions:** Admin/Consultant invite flows, client invite rights, approval workflow for consultant-invited clients (6.1–6.4).  
+4. **Invites & permissions:** Admin/Consultant invite flows, client invite rights, approval workflow for consultant-invited clients (6.1–6.4) ✅ **DONE**.  
 5. **Deactivation:** Deactivate/reactivate admin and consultant; optional password reset on reactivation (7) ✅ **DONE**.  
 6. **Defaults:** Default journeys and task types on workspace creation (8, 9).  
 7. **Tasks:** Optional description; inhouse vs client-facing; migration; remove start date, rename end → due date; status = Pending | Completed only (10, 11, 13, 17).  

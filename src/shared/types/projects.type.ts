@@ -4,19 +4,23 @@ import { ProjectMemberTypeEnum, ProjectStatus } from '../enums';
 export type CreateProjectType = {
   name: string;
   description?: string;
-  client_id: string;
+  client_id?: string;
   consultant_id?: string;
   jurisdiction?: string;
   visa_required?: string;
   package?: string;
   project_type_id: string;
-  start_date: string;
-  end_date: string;
+  start_date?: string;
+  end_date?: string;
   milestone_id?: string;
   status?: ProjectStatus;
   currency?: string;
   country?: string;
   milestones?: Array<CreateMilestoneType>;
+  /** Create or link contact by email when creating project (Row 22–23). */
+  client_email?: string;
+  client_phone?: string;
+  client_name?: string;
 };
 
 export type CreateMilestoneType = {

@@ -124,6 +124,20 @@ export class AuthController {
     }
   };
 
+  /** Send client invite to a contact (Admin or Consultant). Contact status Uninvited → Invited. (Requirement #5.) */
+  public sendContactInvite = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const contactId = req.params.contactId;
+      if (!userId || !contactId) return errorResponse(res, 'User and contact ID are required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.sendContactInvite(userId, contactId);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
   /** Super Admin only: invite an Admin. Body: { email } */
   public inviteAdmin = async (req: Request, res: Response) => {
     try {
@@ -173,6 +187,65 @@ export class AuthController {
       const userId = req.params.userId;
       if (!userId) return errorResponse(res, 'User ID is required', undefined, StatusCodes.BAD_REQUEST);
       const result = await this.authService.reactivateUser(superAdminId, userId);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** List pending client invite requests (Super Admin or Admin with can_approve_client_invites). */
+  public getPendingClientInviteRequests = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) return errorResponse(res, 'Unauthorized', undefined, StatusCodes.UNAUTHORIZED);
+      const result = await this.authService.getPendingClientInviteRequests(userId);
+      return successResponse(res, 'Pending requests retrieved', { pendingRequests: result.data });
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** Approve a client invite request (sends invite and sets contact to Invited). */
+  public approveClientInviteRequest = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const requestId = req.params.requestId;
+      if (!userId || !requestId) return errorResponse(res, 'User and request ID are required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.approveClientInviteRequest(userId, requestId);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** Reject a client invite request. */
+  public rejectClientInviteRequest = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const requestId = req.params.requestId;
+      if (!userId || !requestId) return errorResponse(res, 'User and request ID are required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.rejectClientInviteRequest(userId, requestId);
+      return successResponse(res, result.message, result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
+  /** Super Admin only: set can_invite_clients / can_approve_client_invites for a user. Body: { can_invite_clients?, can_approve_client_invites? } */
+  public updateUserClientInvitePermissions = async (req: Request, res: Response) => {
+    try {
+      const superAdminId = (req as any).user?.id;
+      const targetUserId = req.params.userId;
+      const body = req.body || {};
+      if (!superAdminId || !targetUserId) return errorResponse(res, 'User ID is required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.updateUserClientInvitePermissions(superAdminId, targetUserId, {
+        can_invite_clients: body.can_invite_clients,
+        can_approve_client_invites: body.can_approve_client_invites,
+      });
       return successResponse(res, result.message, result);
     } catch (error: any) {
       const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;

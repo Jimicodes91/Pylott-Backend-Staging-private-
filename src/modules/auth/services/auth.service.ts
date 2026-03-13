@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { inject, injectable } from 'tsyringe';
 import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { RedisClientType } from 'redis';
@@ -15,6 +16,7 @@ import {
   InvitationRepository,
   ProjectTypeRepository,
   MetadataRepository,
+  ClientInviteRequestRepository,
 } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
@@ -50,6 +52,7 @@ export class AuthService {
     @inject(InvitationRepository) private invitationRepository: InvitationRepository,
     @inject(ProjectTypeRepository) private projectTypeRepository: ProjectTypeRepository,
     @inject(MetadataRepository) private metadataRepository: MetadataRepository,
+    @inject(ClientInviteRequestRepository) private clientInviteRequestRepository: ClientInviteRequestRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     private readonly auditTrailService: AuditTrailService,
     _redis: Redis,
@@ -797,6 +800,181 @@ export class AuthService {
     return { message: 'Invitation sent successfully', invitationId: invitation.id };
   }
 
+  /** Send client invite to a contact. (Requirement #5, #6.3, #6.4.) Super Admin can always send; Admin/Consultant need can_invite_clients. Consultant creates pending approval request; Admin/Super Admin with can_approve_client_invites can approve. */
+  public async sendContactInvite(inviterUserId: string, contactId: string) {
+    const inviter = await this.userRepository.getById(inviterUserId);
+    if (!inviter) {
+      throw new HttpError('User not found', 404);
+    }
+    if (inviter.role !== UserRoles.SUPER_ADMIN && inviter.role !== UserRoles.ADMIN && inviter.role !== UserRoles.CONSULTANT) {
+      throw new HttpError('Only Super Admin, Admin or Consultant can send client invites', StatusCodes.FORBIDDEN);
+    }
+    if (!inviter.company_id) {
+      throw new HttpError('You are not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+
+    const membership = await this.userCompanyRepository.getUserCompany(inviterUserId, inviter.company_id);
+    if (!membership) {
+      throw new HttpError('You are not a member of this workspace', StatusCodes.FORBIDDEN);
+    }
+
+    const contact = await this.contactRepository.getContactById(contactId);
+    if (!contact) {
+      throw new HttpError('Contact not found', StatusCodes.NOT_FOUND);
+    }
+    if (contact.company_id !== inviter.company_id) {
+      throw new HttpError('Contact does not belong to your workspace', StatusCodes.FORBIDDEN);
+    }
+    if (contact.status === 'Invited') {
+      throw new HttpError('An invitation has already been sent to this contact', StatusCodes.BAD_REQUEST);
+    }
+    if (contact.status === 'Active') {
+      throw new HttpError('Contact is already active (client has already joined)', StatusCodes.BAD_REQUEST);
+    }
+
+    const canInviteClients = inviter.role === UserRoles.SUPER_ADMIN || (membership as any).can_invite_clients === true;
+    if (!canInviteClients) {
+      throw new HttpError('You do not have permission to invite clients. Ask a Super Admin to grant you client invite rights.', StatusCodes.FORBIDDEN);
+    }
+
+    if (inviter.role === UserRoles.CONSULTANT) {
+      const existing = await this.clientInviteRequestRepository.findPendingByContact(contactId);
+      if (existing) {
+        throw new HttpError('A client invite request for this contact is already pending approval', StatusCodes.BAD_REQUEST);
+      }
+      const requestId = uuidv4();
+      await this.clientInviteRequestRepository.create({
+        id: requestId,
+        contact_id: contactId,
+        company_id: inviter.company_id,
+        requested_by_user_id: inviterUserId,
+        status: 'pending',
+      });
+      return { message: 'Client invite request submitted for approval. An admin will review and send the invite.', contactId, requestId };
+    }
+
+    await this.createAndSendInvite(inviter, contact.email.toLowerCase(), UserRoles.CLIENT);
+    await this.contactRepository.update({ id: contactId }, { status: 'Invited' as const });
+    return { message: 'Invitation sent successfully. Contact status updated to Invited.', contactId };
+  }
+
+  /** List pending client invite requests (Super Admin or Admin with can_approve_client_invites). */
+  public async getPendingClientInviteRequests(userId: string) {
+    const user = await this.userRepository.getById(userId);
+    if (!user?.company_id) {
+      throw new HttpError('You are not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+    const membership = await this.userCompanyRepository.getUserCompany(userId, user.company_id);
+    if (!membership) {
+      throw new HttpError('You are not a member of this workspace', StatusCodes.FORBIDDEN);
+    }
+    const canApprove = user.role === UserRoles.SUPER_ADMIN || (membership as any).can_approve_client_invites === true;
+    if (!canApprove) {
+      throw new HttpError('You do not have permission to approve client invite requests', StatusCodes.FORBIDDEN);
+    }
+    const requests = await this.clientInviteRequestRepository.getPendingByCompany(user.company_id);
+    return { data: requests };
+  }
+
+  /** Approve a client invite request: send the invite and set contact to Invited. (Super Admin or Admin with can_approve_client_invites.) */
+  public async approveClientInviteRequest(approverUserId: string, requestId: string) {
+    const approver = await this.userRepository.getById(approverUserId);
+    if (!approver?.company_id) {
+      throw new HttpError('You are not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+    const membership = await this.userCompanyRepository.getUserCompany(approverUserId, approver.company_id);
+    if (!membership) {
+      throw new HttpError('You are not a member of this workspace', StatusCodes.FORBIDDEN);
+    }
+    const canApprove = approver.role === UserRoles.SUPER_ADMIN || (membership as any).can_approve_client_invites === true;
+    if (!canApprove) {
+      throw new HttpError('You do not have permission to approve client invite requests', StatusCodes.FORBIDDEN);
+    }
+
+    const request = await this.clientInviteRequestRepository.findOne({ id: requestId, company_id: approver.company_id, deleted_at: null });
+    if (!request) {
+      throw new HttpError('Client invite request not found', StatusCodes.NOT_FOUND);
+    }
+    if ((request as any).status !== 'pending') {
+      throw new HttpError('This request has already been processed', StatusCodes.BAD_REQUEST);
+    }
+
+    const contact = await this.contactRepository.getContactById((request as any).contact_id);
+    if (!contact) {
+      throw new HttpError('Contact not found', StatusCodes.NOT_FOUND);
+    }
+    if (contact.status !== 'Uninvited') {
+      throw new HttpError('Contact is no longer in Uninvited status', StatusCodes.BAD_REQUEST);
+    }
+
+    const inviter = await this.userRepository.getById((request as any).requested_by_user_id);
+    if (!inviter) {
+      throw new HttpError('Requester not found', StatusCodes.NOT_FOUND);
+    }
+    await this.createAndSendInvite(inviter, contact.email.toLowerCase(), UserRoles.CLIENT);
+    await this.contactRepository.update({ id: contact.id }, { status: 'Invited' as const });
+    await this.clientInviteRequestRepository.update({ id: requestId }, { status: 'approved', approved_by_user_id: approverUserId, approved_at: new Date().toISOString() } as any);
+    return { message: 'Client invite approved and invitation sent.', requestId, contactId: contact.id };
+  }
+
+  /** Reject a client invite request. */
+  public async rejectClientInviteRequest(approverUserId: string, requestId: string) {
+    const approver = await this.userRepository.getById(approverUserId);
+    if (!approver?.company_id) {
+      throw new HttpError('You are not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+    const membership = await this.userCompanyRepository.getUserCompany(approverUserId, approver.company_id);
+    if (!membership) {
+      throw new HttpError('You are not a member of this workspace', StatusCodes.FORBIDDEN);
+    }
+    const canApprove = approver.role === UserRoles.SUPER_ADMIN || (membership as any).can_approve_client_invites === true;
+    if (!canApprove) {
+      throw new HttpError('You do not have permission to reject client invite requests', StatusCodes.FORBIDDEN);
+    }
+
+    const request = await this.clientInviteRequestRepository.findOne({ id: requestId, company_id: approver.company_id, deleted_at: null });
+    if (!request) {
+      throw new HttpError('Client invite request not found', StatusCodes.NOT_FOUND);
+    }
+    if ((request as any).status !== 'pending') {
+      throw new HttpError('This request has already been processed', StatusCodes.BAD_REQUEST);
+    }
+
+    await this.clientInviteRequestRepository.update({ id: requestId }, { status: 'rejected', approved_by_user_id: approverUserId, approved_at: new Date().toISOString() } as any);
+    return { message: 'Client invite request rejected.', requestId };
+  }
+
+  /** Super Admin only: set can_invite_clients and/or can_approve_client_invites for a user in the workspace. */
+  public async updateUserClientInvitePermissions(superAdminUserId: string, targetUserId: string, payload: { can_invite_clients?: boolean; can_approve_client_invites?: boolean }) {
+    const superAdmin = await this.userRepository.getById(superAdminUserId);
+    if (!superAdmin || superAdmin.role !== UserRoles.SUPER_ADMIN) {
+      throw new HttpError('Only Super Admin can update client invite permissions', StatusCodes.FORBIDDEN);
+    }
+    if (!superAdmin.company_id) {
+      throw new HttpError('Super Admin is not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+    const membership = await this.userCompanyRepository.getUserCompany(targetUserId, superAdmin.company_id);
+    if (!membership) {
+      throw new HttpError('Target user is not in this workspace', StatusCodes.NOT_FOUND);
+    }
+    const target = await this.userRepository.getById(targetUserId);
+    if (!target) {
+      throw new HttpError('Target user not found', StatusCodes.NOT_FOUND);
+    }
+    if (target.role !== UserRoles.ADMIN && target.role !== UserRoles.CONSULTANT) {
+      throw new HttpError('Client invite permissions can only be set for Admin or Consultant', StatusCodes.BAD_REQUEST);
+    }
+
+    const update: any = {};
+    if (payload.can_invite_clients !== undefined) update.can_invite_clients = payload.can_invite_clients;
+    if (payload.can_approve_client_invites !== undefined) update.can_approve_client_invites = payload.can_approve_client_invites;
+    if (Object.keys(update).length === 0) {
+      throw new HttpError('Provide at least one of can_invite_clients or can_approve_client_invites', StatusCodes.BAD_REQUEST);
+    }
+    await this.userCompanyRepository.update({ user_id: targetUserId, company_id: superAdmin.company_id }, update);
+    return { message: 'Permissions updated.', userId: targetUserId, ...update };
+  }
+
   /** Super Admin only: deactivate an admin or consultant in the workspace. They lose access until reactivated. */
   public async deactivateUser(superAdminId: string, userId: string) {
     const superAdmin = await this.userRepository.getById(superAdminId);
@@ -1007,10 +1185,11 @@ export class AuthService {
               is_active: true,
             });
 
-            // Add client to company contacts (only if contact doesn't already exist)
+            // Add client to company contacts (only if contact doesn't already exist); set status to Active when client completes registration (AC 5)
             const existingContact = await this.contactRepository.findOne({
               email: invitation.email.toLowerCase(),
               company_id: invitation.company_id,
+              deleted_at: null,
             });
 
             if (!existingContact) {
@@ -1020,9 +1199,12 @@ export class AuthService {
                 phone: userToProcess.phone_number || '',
                 company_id: invitation.company_id,
                 assigned_to: [], // Empty array or default assignments
+                status: 'Active' as const,
               };
 
               await this.contactRepository.create(contactData);
+            } else {
+              await this.contactRepository.update({ id: existingContact.id }, { status: 'Active' });
             }
 
             const isProjectClient = await this.redis.get(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${invitation.email}`);
@@ -1046,6 +1228,18 @@ export class AuthService {
           if (!existingUser) {
             throw new HttpError('Failed to create role-specific profile', 500);
           }
+        }
+      }
+
+      // When client completes registration, set contact status to Active (AC 5; also covers existing user path)
+      if (invitation.role === UserRoles.CLIENT) {
+        const contactToActivate = await this.contactRepository.findOne({
+          email: invitation.email.toLowerCase(),
+          company_id: invitation.company_id,
+          deleted_at: null,
+        });
+        if (contactToActivate) {
+          await this.contactRepository.update({ id: contactToActivate.id }, { status: 'Active' });
         }
       }
 
