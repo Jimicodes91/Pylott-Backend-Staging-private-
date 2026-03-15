@@ -199,9 +199,9 @@
 | **So that** | Onboarding is structured immediately |
 | **AC 1** | When a **super admin is created** (workspace created), **default journeys** are created automatically. |
 
-**Note:** The doc doesn’t list the exact default journey names; these need to be defined (or already exist in another spec).
+**Note:** The doc doesn’t list the exact default journey names; see Implementation section below.
 
-**Implementation:** **FIXED.** In `AuthService.workspaceSignup`, after creating company and user (inside the same transaction), default project types (journeys) are created via `ProjectTypeRepository`. Default name used: `"Default Journey"` (single journey, `is_system: true`). Constant `defaultJourneyNames` allows adding more names later.
+**Implementation:** **FIXED.** In `AuthService.workspaceSignup`, after creating company and user (inside the same transaction), two default project types (journeys) and their milestones are created via `ProjectTypeRepository` and `MilestonesRepository` (all `is_system: true`): (1) **IFZA Incorporation Journey** — Document Preparation (2d), Submitted to Free Zone for Review (1d), Know Your Client (KYC) Review (1d), Summary Signing (authorization) (1d), Resolution & MOA Authorization (1d), License Issued (1d). (2) **Residency/Immigration Journey** — Establishment Card Processing (2d), Entry Permit Application (3d), Medicals (1d), Biometrics (1d), Visa Issuance (2d), Emirates ID (1d). Default task types (Row 14) are created in the same flow so onboarding is structured immediately.
 
 ---
 

@@ -15,6 +15,7 @@ import {
   UserCompanyRepository,
   InvitationRepository,
   ProjectTypeRepository,
+  MilestonesRepository,
   MetadataRepository,
   ClientInviteRequestRepository,
 } from '@/repositories';
@@ -51,6 +52,7 @@ export class AuthService {
     @inject(UserCompanyRepository) private userCompanyRepository: UserCompanyRepository,
     @inject(InvitationRepository) private invitationRepository: InvitationRepository,
     @inject(ProjectTypeRepository) private projectTypeRepository: ProjectTypeRepository,
+    @inject(MilestonesRepository) private milestonesRepository: MilestonesRepository,
     @inject(MetadataRepository) private metadataRepository: MetadataRepository,
     @inject(ClientInviteRequestRepository) private clientInviteRequestRepository: ClientInviteRequestRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
@@ -360,10 +362,50 @@ export class AuthService {
 
       await this.companyRepository.update({ id: company.id }, { admin_id: newUser.id }, trx);
 
-      // Default journeys (project types) for onboarding
-      const defaultJourneyNames = ['Default Journey'];
-      for (const journeyName of defaultJourneyNames) {
-        await this.projectTypeRepository.create({ company_id: company.id, name: journeyName, is_system: true }, trx);
+      // Default journeys (project types) with milestones (Row 13: IFZA + Residency/Immigration)
+      const defaultJourneys: Array<{ name: string; milestones: Array<{ name: string; duration: number }> }> = [
+        {
+          name: 'IFZA Incorporation Journey',
+          milestones: [
+            { name: 'Document Preparation', duration: 2 },
+            { name: 'Submitted to Free Zone for Review', duration: 1 },
+            { name: 'Know Your Client (KYC) Review', duration: 1 },
+            { name: 'Summary Signing (authorization)', duration: 1 },
+            { name: 'Resolution & MOA Authorization', duration: 1 },
+            { name: 'License Issued', duration: 1 },
+          ],
+        },
+        {
+          name: 'Residency/Immigration Journey',
+          milestones: [
+            { name: 'Establishment Card Processing', duration: 2 },
+            { name: 'Entry Permit Application', duration: 3 },
+            { name: 'Medicals', duration: 1 },
+            { name: 'Biometrics', duration: 1 },
+            { name: 'Visa Issuance', duration: 2 },
+            { name: 'Emirates ID', duration: 1 },
+          ],
+        },
+      ];
+      for (const journey of defaultJourneys) {
+        const projectType = await this.projectTypeRepository.create({ company_id: company.id, name: journey.name, is_system: true }, trx);
+        const typeId = typeof projectType === 'string' ? projectType : (projectType as { id?: string })?.id;
+        if (!typeId) throw new Error('Failed to create default project type');
+        for (let i = 0; i < journey.milestones.length; i++) {
+          const m = journey.milestones[i];
+          await this.milestonesRepository.create(
+            {
+              project_type_id: typeId,
+              company_id: company.id,
+              name: m.name,
+              duration: m.duration,
+              order: i + 1,
+              is_system: true,
+              completed_at: null,
+            },
+            trx,
+          );
+        }
       }
 
       // Default task types for onboarding (Document upload = upload field in task form per spec)
