@@ -2,7 +2,7 @@
 	"name": "pylott",
 	"version": "1.0.0",
 	"scripts": {
-		"build": "tsc && tsc-alias",
+		"build": "tsc; tsc-alias",
 		"start": "node dist/src/index.js",
 		"dev": "nodemon",
 		"knex": "ts-node -r dotenv/config ./node_modules/knex/bin/cli.js",
