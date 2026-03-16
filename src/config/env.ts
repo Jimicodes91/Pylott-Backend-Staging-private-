@@ -27,6 +27,7 @@ export const database = {
       port: Number(process.env.DB_PORT),
       host: process.env.DB_HOST,
       charset: 'utf8mb4',
+      ...(process.env.DB_SSL === 'true' && { ssl: { rejectUnauthorized: false } }),
     },
     pool: {
       min: 2,
