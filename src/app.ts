@@ -38,7 +38,7 @@ export default class Application {
   private setMiddlewares() {
     this.server.use(
       cors({
-        origin: ['https://www.pylott.io', 'https://pylott.io', 'https://staging.pylott.io', 'http://localhost:3000', 'https://pylot-tkrh.vercel.app'],
+        origin: ['https://www.pylott.io', 'https://pylott.io', 'https://staging.pylott.io', 'https://pylott-staging-frontend.onrender.com', 'http://localhost:3000', 'https://pylot-tkrh.vercel.app'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Api-key', 'Api-Reference-Id', 'x-api-key'],
