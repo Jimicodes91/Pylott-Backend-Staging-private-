@@ -8,49 +8,68 @@ import {
   adminSignupValidationRule,
   completeRegistrationValidationRule,
   emailValidationRule,
+  inviteEmailValidator,
   loginValidationRule,
   resetPasswordValidationRule,
+  setPasswordWithTokenValidator,
   signUpCompanyAdminValidator,
   updatePasswordValidatorRule,
+  workspaceSignupValidator,
 } from '@/shared/validations/auth';
 import { authenticateUser } from '@/shared/middlewares/guard.middleware';
 
-// Lazy controller resolution to avoid circular dependencies
-const getAuthController = () => container.resolve(AuthController);
+const authController = container.resolve(AuthController);
 
 export const authRoutes = (prefix: string, server: Server) => {
-  server.post(`${prefix}/admin-signup`, schemaValidator(adminSignupValidationRule), (req, res) => getAuthController().signUpAdmin(req, res));
+  server.post(`${prefix}/admin-signup`, schemaValidator(adminSignupValidationRule), authController.signUpAdmin);
 
-  server.post(`${prefix}/company-admin-signup`, schemaValidator(signUpCompanyAdminValidator), (req, res) => getAuthController().signUpCompanyAdmin(req, res));
+  server.post(`${prefix}/company-admin-signup`, schemaValidator(signUpCompanyAdminValidator), authController.signUpCompanyAdmin);
 
-  server.post(`${prefix}/login`, schemaValidator(loginValidationRule), (req, res) => getAuthController().signIn(req, res));
+  server.post(`${prefix}/signup`, schemaValidator(workspaceSignupValidator), authController.signUpWorkspace);
 
-  server.post(`${prefix}/verify`, (req, res) => getAuthController().verifyEmail(req, res));
+  server.post(`${prefix}/login`, schemaValidator(loginValidationRule), authController.signIn);
 
-  server.post(`${prefix}/resend-verification`, schemaValidator(emailValidationRule), (req, res) => getAuthController().resendVerificationEmail(req, res));
+  server.post(`${prefix}/verify`, authController.verifyEmail);
 
-  server.post(`${prefix}/forgot-password`, schemaValidator(emailValidationRule), (req, res) => getAuthController().forgotPassword(req, res));
+  server.post(`${prefix}/resend-verification`, schemaValidator(emailValidationRule), authController.resendVerificationEmail);
 
-  server.post(`${prefix}/reset-password`, schemaValidator(resetPasswordValidationRule), (req, res) => getAuthController().resetPassword(req, res));
+  server.post(`${prefix}/forgot-password`, schemaValidator(emailValidationRule), authController.forgotPassword);
 
-  server.post(`${prefix}/send-invite`, authenticateUser, (req, res) => getAuthController().sendInvite(req, res));
+  server.post(`${prefix}/reset-password`, schemaValidator(resetPasswordValidationRule), authController.resetPassword);
 
-  server.post(`${prefix}/invite-existing-user`, authenticateUser, (req, res) => getAuthController().inviteExistingUser(req, res));
+  server.post(`${prefix}/send-invite`, authenticateUser, authController.sendInvite);
 
-  server.post(`${prefix}/complete-registration`, schemaValidator(completeRegistrationValidationRule), (req, res) => getAuthController().completeRegistration(req, res));
+  server.post(`${prefix}/contacts/:contactId/send-invite`, authenticateUser, authController.sendContactInvite);
 
-  server.post(`${prefix}/add-client`, schemaValidator(addClientValidator), (req, res) => getAuthController().addClient(req, res));
+  server.get(`${prefix}/client-invite-requests/pending`, authenticateUser, authController.getPendingClientInviteRequests);
+  server.post(`${prefix}/client-invite-requests/:requestId/approve`, authenticateUser, authController.approveClientInviteRequest);
+  server.post(`${prefix}/client-invite-requests/:requestId/reject`, authenticateUser, authController.rejectClientInviteRequest);
 
-  server.post(`${prefix}/update-password`, schemaValidator(updatePasswordValidatorRule), (req, res) => getAuthController().updatePassword(req, res));
+  server.patch(`${prefix}/users/:userId/client-invite-permissions`, authenticateUser, authController.updateUserClientInvitePermissions);
 
-  server.post(`${prefix}/switch-organization`, authenticateUser, (req, res) => getAuthController().switchOrganization(req, res));
+  server.post(`${prefix}/invite-admin`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteAdmin);
+  server.post(`${prefix}/invite-consultant`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteConsultant);
 
-  server.get(`${prefix}/companies/:companyId/users`, authenticateUser, (req, res) => getAuthController().getCompanyUsersWithStatus(req, res));
+  server.patch(`${prefix}/users/:userId/deactivate`, authenticateUser, authController.deactivateUser);
+  server.patch(`${prefix}/users/:userId/reactivate`, authenticateUser, authController.reactivateUser);
+  server.post(`${prefix}/set-password`, schemaValidator(setPasswordWithTokenValidator), authController.setPasswordWithToken);
 
-  server.post(`${prefix}/resend-invitation`, authenticateUser, (req, res) => getAuthController().resendInvitation(req, res));
+  server.post(`${prefix}/invite-existing-user`, authenticateUser, authController.inviteExistingUser);
 
-  server.post(`${prefix}/logout`, authenticateUser, (req, res) => getAuthController().logout(req, res));
+  server.post(`${prefix}/complete-registration`, schemaValidator(completeRegistrationValidationRule), authController.completeRegistration);
 
-  server.get(`${prefix}/auth/google`, (req, res, next) => getAuthController().getGoogleAuthURL(req, res, next));
-  server.get(`${prefix}/auth/google/callback`, (req, res, next) => getAuthController().googleAuthCallback(req, res, next));
+  server.post(`${prefix}/add-client`, schemaValidator(addClientValidator), authController.addClient);
+
+  server.post(`${prefix}/update-password`, schemaValidator(updatePasswordValidatorRule), authController.updatePassword);
+
+  server.post(`${prefix}/switch-organization`, authenticateUser, authController.switchOrganization);
+
+  server.get(`${prefix}/companies/:companyId/users`, authenticateUser, authController.getCompanyUsersWithStatus);
+
+  server.post(`${prefix}/resend-invitation`, authenticateUser, authController.resendInvitation);
+
+  server.post(`${prefix}/logout`, authenticateUser, authController.logout);
+
+  server.get(`${prefix}/auth/google`, authController.getGoogleAuthURL);
+  server.get(`${prefix}/auth/google/callback`, authController.googleAuthCallback);
 };

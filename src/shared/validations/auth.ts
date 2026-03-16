@@ -39,7 +39,18 @@ export const signUpCompanyAdminValidator = [
   }),
 ];
 
+/** Self-serve workspace signup: email + password + name → new workspace, user is super_admin, no approval */
+export const workspaceSignupValidator = [
+  validateName('name'),
+  body('email', 'Email is required').not().isEmpty().isEmail().withMessage('Valid email is required'),
+  body('password', 'Password cannot be empty').not().isEmpty(),
+  body('password', 'The minimum password length is 8 characters').isLength({ min: 8 }),
+];
+
 export const emailValidationRule = [body('email', 'Email is required').not().isEmpty(), body('email', 'Invalid email').isEmail()];
+
+/** Invite admin or consultant: body { email } */
+export const inviteEmailValidator = [body('email', 'Email is required').not().isEmpty().isEmail().withMessage('Valid email is required')];
 
 export const resetPasswordValidationRule = [
   body('token', 'Token is required').not().isEmpty(),
@@ -55,4 +66,11 @@ export const updatePasswordValidatorRule = [
   body('userId', 'userId is required').not().isEmpty(),
   body('currentPassword', 'current password is required').not().isEmpty(),
   body('newPassword', 'new password is required').not().isEmpty(),
+];
+
+/** Set password with token (e.g. after reactivation). Body: { token, newPassword } */
+export const setPasswordWithTokenValidator = [
+  body('token', 'Token is required').not().isEmpty(),
+  body('newPassword', 'New password is required').not().isEmpty(),
+  body('newPassword', 'The minimum password length is 8 characters').isLength({ min: 8 }),
 ];

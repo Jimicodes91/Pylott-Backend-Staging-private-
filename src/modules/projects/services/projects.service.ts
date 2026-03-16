@@ -304,6 +304,33 @@ export class ProjectService {
       const existentClients: Array<Partial<ProjectMemebersModelType>> = [];
       const existentClientsEmail = [];
 
+      // Row 22–23: Create or link contact by client email/phone when creating project
+      if (payload['client_email'] && typeof payload['client_email'] === 'string' && payload['client_email'].trim()) {
+        const clientEmail = (payload['client_email'] as string).trim().toLowerCase();
+        let contact = await this.contactRepository.findOne({ company_id, email: clientEmail, deleted_at: null });
+        if (!contact) {
+          contact = await this.contactRepository.create({
+            company_id,
+            email: clientEmail,
+            name: (payload['client_name'] as string)?.trim() || clientEmail,
+            phone: (payload['client_phone'] as string)?.trim() || '',
+            organization: (payload['client_organization'] as string)?.trim() || '',
+            status: 'Uninvited',
+            address: '',
+            active_projects: '',
+            total_projects: '',
+            no_of_projects: '',
+            closed_projects: '',
+            assigned_to: [],
+            added_by_user_id: user.id,
+          });
+        }
+        if (!payload['project_client']) payload['project_client'] = [];
+        if (Array.isArray(payload['project_client']) && !payload['project_client'].includes(contact.id)) {
+          payload['project_client'] = [...payload['project_client'], contact.id];
+        }
+      }
+
       if (payload['project_client']) {
         for (const client of payload['project_client']) {
           const clientRecord = await this.contactRepository.findOne({
@@ -386,14 +413,14 @@ export class ProjectService {
             consultant_id: payload.consultant_id || null,
             project_type_id: payload['journey'] || null,
             milestone_id: payload.milestone_id || null,
-            start_date: payload['start_date'],
+            start_date: payload['start_date']?.length ? payload['start_date'] : null,
             end_date: payload['end_date']?.length ? payload['end_date'] : null,
             status: ProjectStatus.IN_PROGRESS,
             form_data: payload,
             jurisdiction: payload?.jurisdiction,
             visa_required: payload?.visa_required,
             package: payload?.package,
-            milestone_start_date: payload.milestone_id ? payload['start_date'] : null,
+            milestone_start_date: payload.milestone_id && payload['start_date'] ? payload['start_date'] : null,
             milestone_status: payload.milestone_id ? ProjectStatus.ON_TRACK : null,
             country: payload?.country ?? null,
             currency: payload?.currency ?? null,

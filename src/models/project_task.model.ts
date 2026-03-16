@@ -20,8 +20,7 @@ export class ProjectTask extends BaseModel {
   name: string;
   description: string;
   status: ProjectTaskStatus;
-  start_date: string;
-  end_date: string;
+  due_date: string;
   is_visible_to_client: boolean;
 
   assignees: Array<ProjectTaskAssignees>;

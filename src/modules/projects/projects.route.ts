@@ -5,7 +5,9 @@ import { schemaValidator } from '@/shared/middlewares/validator.middleware';
 import { Server } from '@/shared/types/http.type';
 import { updateDocumentAttachmentValidationRules, updateUploadDocumentValidationRules, uploadDocumentValidationRules } from '@/shared/validations/docs';
 import { createEventValidationRules, updateEventValidationRules } from '@/shared/validations/event';
-
+import { DocsController } from '../docs/docs.controller';
+import { EventController } from '../events/event.controller';
+import { ProjectController } from './projects.controller';
 import {
   addCustomFieldValidationRules,
   addProjectMemberValidationRules,
@@ -24,133 +26,115 @@ import {
   // updateProjectValidationRules,
   updateTaskValidationRules,
 } from '@/shared/validations/projects';
+import { ProjectFormController } from './project_form.controller';
+// import { canPerformActionOnProject } from '@/shared/middlewares/project.middleware';
 
-// Lazy controller resolution with dynamic imports to avoid circular dependencies
-const getDocumentController = async () => {
-  const { DocsController } = await import('../docs/docs.controller');
-  return container.resolve(DocsController);
-};
-
-const getEventsController = async () => {
-  const { EventController } = await import('../events/event.controller');
-  return container.resolve(EventController);
-};
-
-const getProjectController = async () => {
-  const { ProjectController } = await import('./projects.controller');
-  return container.resolve(ProjectController);
-};
-
-const getProjectFormController = async () => {
-  const { ProjectFormController } = await import('./project_form.controller');
-  return container.resolve(ProjectFormController);
-};
+const documentController = container.resolve(DocsController);
+const eventsController = container.resolve(EventController);
+const projectController = container.resolve(ProjectController);
+const projectFormController = container.resolve(ProjectFormController);
 
 export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Project Forms
    */
-  server.get(`${prefix}/forms`, authGuard, async (req, res) => (await getProjectFormController()).getProjectForm(req, res));
-  server.post(`${prefix}/forms/fields`, authGuard, schemaValidator(addCustomFieldValidationRules), async (req, res) => (await getProjectFormController()).addCustomField(req, res));
-  server.patch(`${prefix}/forms/fields/:field_id/requirement`, authGuard, schemaValidator(updateFieldRequirementValidationRules), async (req, res) =>
-    (await getProjectFormController()).updateFieldRequirement(req, res),
-  );
-  server.get(`${prefix}/forms/fields`, authGuard, async (req, res) => (await getProjectFormController()).getAllFormFields(req, res));
+  server.get(`${prefix}/forms`, authGuard, projectFormController.getProjectForm);
+  server.post(`${prefix}/forms/fields`, authGuard, schemaValidator(addCustomFieldValidationRules), projectFormController.addCustomField);
+  server.patch(`${prefix}/forms/fields/:field_id/requirement`, authGuard, schemaValidator(updateFieldRequirementValidationRules), projectFormController.updateFieldRequirement);
+  server.get(`${prefix}/forms/fields`, authGuard, projectFormController.getAllFormFields);
 
   /**
    * Events
    */
-  server.post(`${prefix}/:project_id/events`, authGuard, schemaValidator(createEventValidationRules), async (req, res) => (await getEventsController()).createEvent(req, res));
-  server.get(`${prefix}/:project_id/events`, authGuard, async (req, res) => (await getEventsController()).getAllEvents(req, res));
-  server.patch(`${prefix}/:project_id/events/:event_id`, authGuard, schemaValidator(updateEventValidationRules), async (req, res) => (await getEventsController()).updateEvent(req, res));
-  server.get(`${prefix}/:project_id/events/:event_id`, authGuard, async (req, res) => (await getEventsController()).getEventDetails(req, res));
-  server.delete(`${prefix}/:project_id/events/:event_id`, authGuard, async (req, res) => (await getEventsController()).deleteEvent(req, res));
+  server.post(`${prefix}/:project_id/events`, authGuard, schemaValidator(createEventValidationRules), eventsController.createEvent);
+  server.get(`${prefix}/:project_id/events`, authGuard, eventsController.getAllEvents);
+  server.patch(`${prefix}/:project_id/events/:event_id`, authGuard, schemaValidator(updateEventValidationRules), eventsController.updateEvent);
+  server.get(`${prefix}/:project_id/events/:event_id`, authGuard, eventsController.getEventDetails);
+  server.delete(`${prefix}/:project_id/events/:event_id`, authGuard, eventsController.deleteEvent);
   // New event invitation response endpoints
-  server.post(`${prefix}/:project_id/events/:event_id/accept`, authGuard, async (req, res) => (await getEventsController()).acceptEventInvite(req, res));
-  server.post(`${prefix}/:project_id/events/:event_id/decline`, authGuard, async (req, res) => (await getEventsController()).declineEventInvite(req, res));
+  server.post(`${prefix}/:project_id/events/:event_id/accept`, authGuard, eventsController.acceptEventInvite);
+  server.post(`${prefix}/:project_id/events/:event_id/decline`, authGuard, eventsController.declineEventInvite);
 
   /**
    * Documents
    */
-  server.get(`${prefix}/:project_id/documents`, authGuard, async (req, res) => (await getDocumentController()).getAllDocuments(req, res));
-  server.get(`${prefix}/:project_id/documents/:document_id`, authGuard, async (req, res) => (await getDocumentController()).getDocumentDetails(req, res));
-  server.delete(`${prefix}/:project_id/documents/:document_id`, authGuard, async (req, res) => (await getDocumentController()).deleteDocument(req, res));
-  server.patch(`${prefix}/:project_id/documents/:document_id`, authGuard, schemaValidator(updateUploadDocumentValidationRules), async (req, res) =>
-    (await getDocumentController()).updateDocumentUpload(req, res),
-  );
-  server.post(`${prefix}/:project_id/documents`, authGuard, schemaValidator(uploadDocumentValidationRules), async (req, res) => (await getDocumentController()).uploadDocument(req, res));
-  server.delete(`${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`, authGuard, async (req, res) => (await getDocumentController()).deleteDocumentAttachment(req, res));
-  server.patch(`${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`, authGuard, schemaValidator(updateDocumentAttachmentValidationRules), async (req, res) =>
-    (await getDocumentController()).updateDocumentAttachment(req, res),
+  server.get(`${prefix}/:project_id/documents`, authGuard, documentController.getAllDocuments);
+  server.get(`${prefix}/:project_id/documents/:document_id`, authGuard, documentController.getDocumentDetails);
+  server.delete(`${prefix}/:project_id/documents/:document_id`, authGuard, documentController.deleteDocument);
+  server.patch(`${prefix}/:project_id/documents/:document_id`, authGuard, schemaValidator(updateUploadDocumentValidationRules), documentController.updateDocumentUpload);
+  server.post(`${prefix}/:project_id/documents`, authGuard, schemaValidator(uploadDocumentValidationRules), documentController.uploadDocument);
+  server.delete(`${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`, authGuard, documentController.deleteDocumentAttachment);
+  server.patch(
+    `${prefix}/:project_id/documents/:document_id/attachments/:attachment_id`,
+    authGuard,
+    schemaValidator(updateDocumentAttachmentValidationRules),
+    documentController.updateDocumentAttachment,
   );
 
   /**
    * Document Request
    */
-  server.post(`${prefix}/:project_id/document-requests`, authGuard, schemaValidator(documentRequestValidationRules), async (req, res) =>
-    (await getDocumentController()).createDocumentRequest(req, res),
-  );
+  server.post(`${prefix}/:project_id/document-requests`, authGuard, schemaValidator(documentRequestValidationRules), documentController.createDocumentRequest);
 
   /**
    * Project Types
    */
-  server.get(`${prefix}/types`, authGuard, async (req, res) => (await getProjectController()).getAllProjectTypes(req, res));
-  server.get(`${prefix}/types/:project_type_id`, authGuard, async (req, res) => (await getProjectController()).getProjectTypeDetails(req, res));
-  server.post(`${prefix}/types`, authGuard, schemaValidator(createProjectTypeValidationRules), async (req, res) => (await getProjectController()).createProjectType(req, res));
-  server.patch(`${prefix}/types/:project_type_id`, authGuard, schemaValidator(updateProjectTypeValidationRules), async (req, res) => (await getProjectController()).updateProjectTypeDetails(req, res));
-  server.delete(`${prefix}/types/:project_type_id`, authGuard, async (req, res) => (await getProjectController()).deleteProjectType(req, res));
-  server.patch(`${prefix}/types/:project_type_id/milestones/reorder`, authGuard, schemaValidator(reorderMilestonesValidationRules), async (req, res) =>
-    (await getProjectController()).reorderMilestones(req, res),
-  );
+  server.get(`${prefix}/types`, authGuard, projectController.getAllProjectTypes);
+  server.get(`${prefix}/types/:project_type_id`, authGuard, projectController.getProjectTypeDetails);
+  server.post(`${prefix}/types`, authGuard, schemaValidator(createProjectTypeValidationRules), projectController.createProjectType);
+  server.patch(`${prefix}/types/:project_type_id`, authGuard, schemaValidator(updateProjectTypeValidationRules), projectController.updateProjectTypeDetails);
+  server.delete(`${prefix}/types/:project_type_id`, authGuard, projectController.deleteProjectType);
+  server.patch(`${prefix}/types/:project_type_id/milestones/reorder`, authGuard, schemaValidator(reorderMilestonesValidationRules), projectController.reorderMilestones);
 
   /**
    * Milestones
    */
-  server.get(`${prefix}/types/:project_type_id/milestones`, authGuard, async (req, res) => (await getProjectController()).getAllMilestones(req, res));
-  server.get(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, async (req, res) => (await getProjectController()).getMilestoneDetails(req, res));
-  server.post(`${prefix}/types/milestones`, authGuard, schemaValidator(createMilestoneValidationRules), async (req, res) => (await getProjectController()).createMilestone(req, res));
-  server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, schemaValidator(updateMilestoneValidationRules), async (req, res) => (await getProjectController()).updateMilestone(req, res));
-  server.delete(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, async (req, res) => (await getProjectController()).deleteMilestone(req, res));
+  server.get(`${prefix}/types/:project_type_id/milestones`, authGuard, projectController.getAllMilestones);
+  server.get(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, projectController.getMilestoneDetails);
+  server.post(`${prefix}/types/milestones`, authGuard, schemaValidator(createMilestoneValidationRules), projectController.createMilestone);
+  server.patch(`${prefix}/types/milestones/:milestone_id`, authGuard, schemaValidator(updateMilestoneValidationRules), projectController.updateMilestone);
+  server.delete(`${prefix}/types/:project_type_id/milestones/:milestone_id`, authGuard, projectController.deleteMilestone);
 
   /**
    * Project Members
    */
-  server.get(`${prefix}/:project_id/members`, authGuard, async (req, res) => (await getProjectController()).getProjectMembers(req, res));
-  server.post(`${prefix}/:project_id/members`, authGuard, schemaValidator(addProjectMemberValidationRules), async (req, res) => (await getProjectController()).addProjectMember(req, res));
-  server.delete(`${prefix}/:project_id/members/:member_id`, authGuard, async (req, res) => (await getProjectController()).removeProjectMember(req, res));
+  server.get(`${prefix}/:project_id/members`, authGuard, projectController.getProjectMembers);
+  server.post(`${prefix}/:project_id/members`, authGuard, schemaValidator(addProjectMemberValidationRules), projectController.addProjectMember);
+  server.delete(`${prefix}/:project_id/members/:member_id`, authGuard, projectController.removeProjectMember);
 
   /**
    * Tasks
    */
-  server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), async (req, res) => (await getProjectController()).createTask(req, res));
-  server.get(`${prefix}/tasks`, authGuard, async (req, res) => (await getProjectController()).getAllTasks(req, res));
-  server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, async (req, res) => (await getProjectController()).getTaskById(req, res));
-  server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), async (req, res) => (await getProjectController()).updateTask(req, res));
-  server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, async (req, res) => (await getProjectController()).deleteTask(req, res));
-  server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, async (req, res) => (await getProjectController()).deleteTaskAttachment(req, res));
+  server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), projectController.createTask);
+  server.get(`${prefix}/tasks`, authGuard, projectController.getAllTasks);
+  server.get(`${prefix}/tasks/assigned-to-me/count`, authGuard, projectController.getMyAssignedTaskCount);
+  server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.getTaskById);
+  server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), projectController.updateTask);
+  server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, projectController.deleteTask);
+  server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, projectController.deleteTaskAttachment);
 
   /**
    * Notes
    */
-  server.post(`${prefix}/:project_id/notes`, authGuard, schemaValidator(createNoteValidationRules), async (req, res) => (await getProjectController()).createNote(req, res));
-  server.get(`${prefix}/:project_id/notes`, authGuard, async (req, res) => (await getProjectController()).getAllNotes(req, res));
-  server.get(`${prefix}/:project_id/notes/:note_id`, authGuard, async (req, res) => (await getProjectController()).getNoteDetails(req, res));
-  server.patch(`${prefix}/:project_id/notes/:note_id/pin-state`, authGuard, schemaValidator(toggleNotePinValidationRules), async (req, res) => (await getProjectController()).toggleNotePin(req, res));
+  server.post(`${prefix}/:project_id/notes`, authGuard, schemaValidator(createNoteValidationRules), projectController.createNote);
+  server.get(`${prefix}/:project_id/notes`, authGuard, projectController.getAllNotes);
+  server.get(`${prefix}/:project_id/notes/:note_id`, authGuard, projectController.getNoteDetails);
+  server.patch(`${prefix}/:project_id/notes/:note_id/pin-state`, authGuard, schemaValidator(toggleNotePinValidationRules), projectController.toggleNotePin);
 
   /**
    * Comments
    */
-  server.post(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, schemaValidator(createCommentValidationRules), async (req, res) => (await getProjectController()).createComment(req, res));
-  server.get(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, async (req, res) => (await getProjectController()).getNoteComments(req, res));
-  server.delete(`${prefix}/:project_id/notes/:note_id/comments/:comment_id`, authGuard, async (req, res) => (await getProjectController()).deleteComment(req, res));
+  server.post(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, schemaValidator(createCommentValidationRules), projectController.createComment);
+  server.get(`${prefix}/:project_id/notes/:note_id/comments`, authGuard, projectController.getNoteComments);
+  server.delete(`${prefix}/:project_id/notes/:note_id/comments/:comment_id`, authGuard, projectController.deleteComment);
 
-  server.get(`${prefix}/metrics`, authGuard, async (req, res) => (await getProjectController()).projectMetrics(req, res));
+  server.get(`${prefix}/metrics`, authGuard, projectController.projectMetrics);
   /**
    * Projects
    */
-  server.get(`${prefix}`, authGuard, async (req, res) => (await getProjectController()).getAllProjects(req, res));
-  server.get(`${prefix}/query`, authGuard, async (req, res) => (await getProjectController()).searchProjects(req, res));
-  server.get(`${prefix}/:project_id`, authGuard, async (req, res) => (await getProjectController()).getProject(req, res));
-  server.post(`${prefix}`, authGuard, async (req, res) => (await getProjectController()).createProject(req, res));
-  server.patch(`${prefix}/:project_id`, authGuard, async (req, res) => (await getProjectController()).updateProject(req, res));
+  server.get(`${prefix}`, authGuard, projectController.getAllProjects);
+  server.get(`${prefix}/query`, authGuard, projectController.searchProjects);
+  server.get(`${prefix}/:project_id`, authGuard, projectController.getProject);
+  server.post(`${prefix}`, authGuard, projectController.createProject);
+  server.patch(`${prefix}/:project_id`, authGuard, projectController.updateProject);
 };

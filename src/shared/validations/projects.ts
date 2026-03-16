@@ -417,24 +417,11 @@ export const createTaskValidationRules = [
     customMessage: 'Numbers are not allowed in task name. Only letters, spaces, hyphens, and apostrophes are allowed',
   }),
 
-  body('description').trim().notEmpty().withMessage('Description is required').isString().withMessage('Description must be a string'),
+  body('description').optional().trim().isString().withMessage('Description must be a string').isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
 
-  body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['pending', 'in_progress', 'completed']).withMessage('Invalid status value'),
+  body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['pending', 'completed']).withMessage('Invalid status value'),
 
-  body('start_date').trim().notEmpty().withMessage('Start date is required').isISO8601().withMessage('Start date must be a valid ISO8601 date'),
-
-  body('end_date')
-    .trim()
-    .notEmpty()
-    .withMessage('End date is required')
-    .isISO8601()
-    .withMessage('End date must be a valid ISO8601 date')
-    .custom((value, { req }) => {
-      if (new Date(value) < new Date(req.body.start_date)) {
-        throw new Error('End date cannot be before start date');
-      }
-      return true;
-    }),
+  body('due_date').trim().notEmpty().withMessage('Due date is required').isISO8601().withMessage('Due date must be a valid ISO8601 date'),
 
   body('assignees')
     .optional()
@@ -480,24 +467,10 @@ export const updateTaskValidationRules = [
     .withMessage('Status cannot be empty')
     .isString()
     .withMessage('Status must be a string')
-    .isIn(['pending', 'in_progress', 'completed'])
+    .isIn(['pending', 'completed'])
     .withMessage('Invalid status value'),
 
-  body('start_date').optional().trim().notEmpty().withMessage('Start date cannot be empty').isISO8601().withMessage('Start date must be a valid ISO8601 date'),
-
-  body('end_date')
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage('End date cannot be empty')
-    .isISO8601()
-    .withMessage('End date must be a valid ISO8601 date')
-    .custom((value, { req }) => {
-      if (req.body.start_date && new Date(value) < new Date(req.body.start_date)) {
-        throw new Error('End date cannot be before start date');
-      }
-      return true;
-    }),
+  body('due_date').optional().trim().notEmpty().withMessage('Due date cannot be empty').isISO8601().withMessage('Due date must be a valid ISO8601 date'),
 
   body('assignees')
     .optional()
@@ -598,15 +571,15 @@ export const documentRequestValidationRules = [
 
   body('is_visible_to_client').notEmpty().withMessage('Visibility flag is required').isBoolean().withMessage('Visibility must be a boolean').toBoolean(),
 
-  body('end_date')
+  body('due_date')
     .trim()
     .notEmpty()
-    .withMessage('End date is required')
+    .withMessage('Due date is required')
     .isISO8601()
-    .withMessage('End date must be in ISO8601 format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ)')
+    .withMessage('Due date must be in ISO8601 format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ)')
     .custom((value) => {
       if (new Date(value) < new Date()) {
-        throw new Error('End date cannot be in the past');
+        throw new Error('Due date cannot be in the past');
       }
       return true;
     }),
