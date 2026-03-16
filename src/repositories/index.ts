@@ -22,3 +22,4 @@ export * from './project_task_asignees.repository';
 export * from './org-finance-payment.repository';
 export * from './user_company.repository';
 export * from './invitation.repository';
+export * from './client_invite_request.repository';

@@ -3,7 +3,7 @@ import { UserUpdateData } from '@/shared/interface/user';
 import HttpError from '@/shared/utils/errorHandler';
 import { inject, injectable } from 'tsyringe';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
-import { AUDIT_TRAIL_ACTION, DocumentsDirectory, UserRoles } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, DocumentsDirectory, ROLES_ALLOWED_IN_ADD_USER, UserRoles } from '@/shared/enums';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
@@ -80,6 +80,9 @@ export class UserService {
   }
 
   public async addUserToCompany(userId: string, companyId: string, role: UserRoles, invitedBy?: string) {
+    if (!ROLES_ALLOWED_IN_ADD_USER.includes(role)) {
+      throw new HttpError('Only Admin and Consultant can be added here. Client creation is done from Contacts.', 400);
+    }
     try {
       const user = await this.userRepository.getById(userId);
       if (!user) {

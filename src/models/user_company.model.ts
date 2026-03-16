@@ -15,6 +15,8 @@ export class UserCompany extends BaseModel {
   is_active: boolean;
   invited_by?: string;
   joined_at: Date;
+  can_invite_clients?: boolean;
+  can_approve_client_invites?: boolean;
 
   // Relations
   user: User;

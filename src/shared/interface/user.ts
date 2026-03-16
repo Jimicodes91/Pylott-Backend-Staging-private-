@@ -49,6 +49,13 @@ export interface CompanyAdminSignpData {
   //name: string;
 }
 
+/** Payload for self-serve workspace creation: user becomes super_admin of a new workspace */
+export interface WorkspaceSignupData {
+  email: string;
+  password: string;
+  name: string;
+}
+
 export interface EmailVerificationData {
   token: string;
   email: string;

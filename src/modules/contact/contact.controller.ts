@@ -11,7 +11,13 @@ export class ContactController {
 
   public addContact = async (req: Request, res: Response) => {
     try {
-      const contact = await this.contactService.addToContact(req.body);
+      const user = (req as any).user;
+      const body = {
+        ...req.body,
+        ...(user?.company_id && { company_id: user.company_id }),
+        ...(user?.id && { added_by_user_id: user.id }),
+      };
+      const contact = await this.contactService.addToContact(body);
       return successResponse(res, 'Contact added successfully', contact, 201);
     } catch (error: any) {
       return errorResponse(res, error.message, error.message, StatusCodes.INTERNAL_SERVER_ERROR);

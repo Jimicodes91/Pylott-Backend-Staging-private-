@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 import { FRONTEND_URL, TEMP_PASSWORD_LENGTH } from '@/config/env';
 import { CompanyRepository, UserRepository, UserCompanyRepository } from '@/repositories';
-import { UserRoles } from '@/shared/enums';
+import { ROLES_ALLOWED_IN_ADD_USER, UserRoles } from '@/shared/enums';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
 
@@ -42,6 +42,9 @@ export class FirmAdminService {
   }
 
   public async addUser(name: string, email: string, role: UserRoles, companyId: string) {
+    if (!ROLES_ALLOWED_IN_ADD_USER.includes(role)) {
+      throw new HttpError('Only Admin and Consultant can be added here. Client creation is done from Contacts.', 400);
+    }
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({ email });
     if (existingUser) {

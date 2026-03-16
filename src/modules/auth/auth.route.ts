@@ -8,10 +8,13 @@ import {
   adminSignupValidationRule,
   completeRegistrationValidationRule,
   emailValidationRule,
+  inviteEmailValidator,
   loginValidationRule,
   resetPasswordValidationRule,
+  setPasswordWithTokenValidator,
   signUpCompanyAdminValidator,
   updatePasswordValidatorRule,
+  workspaceSignupValidator,
 } from '@/shared/validations/auth';
 import { authenticateUser } from '@/shared/middlewares/guard.middleware';
 
@@ -21,6 +24,8 @@ export const authRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/admin-signup`, schemaValidator(adminSignupValidationRule), authController.signUpAdmin);
 
   server.post(`${prefix}/company-admin-signup`, schemaValidator(signUpCompanyAdminValidator), authController.signUpCompanyAdmin);
+
+  server.post(`${prefix}/workspace-signup`, schemaValidator(workspaceSignupValidator), authController.signUpWorkspace);
 
   server.post(`${prefix}/login`, schemaValidator(loginValidationRule), authController.signIn);
 
@@ -33,6 +38,21 @@ export const authRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/reset-password`, schemaValidator(resetPasswordValidationRule), authController.resetPassword);
 
   server.post(`${prefix}/send-invite`, authenticateUser, authController.sendInvite);
+
+  server.post(`${prefix}/contacts/:contactId/send-invite`, authenticateUser, authController.sendContactInvite);
+
+  server.get(`${prefix}/client-invite-requests/pending`, authenticateUser, authController.getPendingClientInviteRequests);
+  server.post(`${prefix}/client-invite-requests/:requestId/approve`, authenticateUser, authController.approveClientInviteRequest);
+  server.post(`${prefix}/client-invite-requests/:requestId/reject`, authenticateUser, authController.rejectClientInviteRequest);
+
+  server.patch(`${prefix}/users/:userId/client-invite-permissions`, authenticateUser, authController.updateUserClientInvitePermissions);
+
+  server.post(`${prefix}/invite-admin`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteAdmin);
+  server.post(`${prefix}/invite-consultant`, authenticateUser, schemaValidator(inviteEmailValidator), authController.inviteConsultant);
+
+  server.patch(`${prefix}/users/:userId/deactivate`, authenticateUser, authController.deactivateUser);
+  server.patch(`${prefix}/users/:userId/reactivate`, authenticateUser, authController.reactivateUser);
+  server.post(`${prefix}/set-password`, schemaValidator(setPasswordWithTokenValidator), authController.setPasswordWithToken);
 
   server.post(`${prefix}/invite-existing-user`, authenticateUser, authController.inviteExistingUser);
 

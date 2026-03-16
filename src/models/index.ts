@@ -25,3 +25,4 @@ export * from './project_task_asignees.model';
 export * from './org-finance-payment.model';
 export * from './user_company.model';
 export * from './invitation.model';
+export * from './client_invite_request.model';

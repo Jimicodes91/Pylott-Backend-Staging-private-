@@ -10,6 +10,9 @@ export enum UserRoles {
   USER = 'USER',
 }
 
+/** Roles allowed in User Management "Add user" flow. Clients are created only via Contacts. */
+export const ROLES_ALLOWED_IN_ADD_USER: UserRoles[] = [UserRoles.ADMIN, UserRoles.CONSULTANT];
+
 export enum CompanySubscriptionStatus {
   ACTIVE = 'ACTIVE',
   PENDING = 'PENDING',
@@ -34,8 +37,7 @@ export enum ProjectStatus {
 export enum ProjectTaskStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
-  IN_PROGRESS = 'in_progress',
-  OVER_DUE = 'over_due',
+  OVER_DUE = 'over_due', // computed only (task not completed and past due_date)
 }
 
 export enum MetadataType {
