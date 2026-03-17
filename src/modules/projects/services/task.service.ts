@@ -200,7 +200,7 @@ export class TaskService {
             project_id,
             task_name: payload.name,
             project_name: project.name,
-            due_date: payload.end_date,
+            due_date: payload.due_date,
             task_link: taskLink,
           },
         });
