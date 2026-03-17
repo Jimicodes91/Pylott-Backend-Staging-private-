@@ -420,7 +420,7 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userResponse } = result.user;
     const token = generateToken(userResponse.email, userResponse.id);
-    return { ...userResponse, token };
+    return { user: userResponse, token };
   }
 
   public async signIn(data: loginData) {
