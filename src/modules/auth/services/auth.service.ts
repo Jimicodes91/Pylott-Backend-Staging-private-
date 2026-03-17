@@ -675,7 +675,7 @@ export class AuthService {
   public async sendInvitation(adminId: string, email: string, role: UserRoles) {
     try {
       const admin = await this.userRepository.getById(adminId);
-      if (!admin || admin.role !== UserRoles.ADMIN) {
+      if (!admin || (admin.role !== UserRoles.ADMIN && admin.role !== UserRoles.SUPER_ADMIN)) {
         throw new HttpError('Only company admins can send invitations', 403);
       }
 
@@ -1688,7 +1688,7 @@ export class AuthService {
   public async resendInvitation(adminId: string, email: string, role: UserRoles) {
     try {
       const admin = await this.userRepository.getById(adminId);
-      if (!admin || admin.role !== UserRoles.ADMIN) {
+      if (!admin || (admin.role !== UserRoles.ADMIN && admin.role !== UserRoles.SUPER_ADMIN)) {
         throw new HttpError('Only company admins can resend invitations', 403);
       }
 

@@ -50,6 +50,10 @@ export const authorizeRole = (allowedRoles: UserRoles[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const userRole = (req as any).user.role;
+      // SUPER_ADMIN (workspace owner) has access to all role-gated routes
+      if (userRole === UserRoles.SUPER_ADMIN) {
+        return next();
+      }
       if (!userRole || !allowedRoles.includes(userRole as UserRoles)) {
         return next(new HttpError('Access denied. You do not have permission to access this resource.', 403));
       }
