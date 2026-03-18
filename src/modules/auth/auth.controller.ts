@@ -40,6 +40,30 @@ export class AuthController {
     }
   };
 
+  /** Send OTP for signup email verification */
+  public sendOtp = async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      const result = await this.authService.sendSignupOtp(email);
+      return successResponse(res, result.message, undefined);
+    } catch (error: any) {
+      const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, statusCode);
+    }
+  };
+
+  /** Verify OTP and return signup token */
+  public verifyOtp = async (req: Request, res: Response) => {
+    try {
+      const { email, otp } = req.body;
+      const result = await this.authService.verifySignupOtp(email, otp);
+      return successResponse(res, 'OTP verified successfully', result);
+    } catch (error: any) {
+      const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, statusCode);
+    }
+  };
+
   public signIn = async (req: Request, res: Response) => {
     try {
       const loginData = await this.authService.signIn(req.body);

@@ -27,6 +27,9 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/signup`, schemaValidator(workspaceSignupValidator), authController.signUpWorkspace);
 
+  server.post(`${prefix}/send-otp`, authController.sendOtp);
+  server.post(`${prefix}/verify-otp`, authController.verifyOtp);
+
   server.post(`${prefix}/login`, schemaValidator(loginValidationRule), authController.signIn);
 
   server.post(`${prefix}/verify`, authController.verifyEmail);

@@ -300,36 +300,104 @@ export class AuthService {
   }
 
   /**
-   * Self-serve workspace signup: new user creates account with email + password,
-   * a new workspace (company) is created, and the user becomes super_admin. No approval required.
+   * Send a 6-digit OTP to a new user's email during the multi-step signup flow.
+   * Rate-limited to 5 requests per email per 15-minute window.
+   * OTP is stored in Redis (not the users table) since the user doesn't exist yet.
+   */
+  public async sendSignupOtp(email: string): Promise<{ message: string }> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Rate limit check — must happen before email availability check or OTP generation
+    const rateKey = `signup_otp_rate:${normalizedEmail}`;
+    const attempts = await this.redis.incr(rateKey);
+    if (attempts === 1) await this.redis.expire(rateKey, 900); // 15-minute window
+    if (attempts > 5) throw new HttpError('Too many OTP requests. Try again later.', 429);
+
+    // Check email not already registered
+    const existingUser = await this.userRepository.findOne({ email: normalizedEmail });
+    if (existingUser) throw new HttpError('Email is already registered', 409);
+
+    // Generate 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store in Redis with 10-minute TTL
+    const otpKey = `signup_otp:${normalizedEmail}`;
+    await this.redis.set(otpKey, otp, { EX: 600 });
+
+    // Send OTP email using existing template
+    await this.sendVerificationEmail(normalizedEmail, otp, 'New User');
+
+    return { message: 'OTP sent successfully' };
+  }
+
+  /**
+   * Verify a signup OTP submitted by the user. On success, deletes the OTP
+   * from Redis (single-use) and returns a short-lived signup_token JWT that
+   * proves email ownership for the final signup step.
+   */
+  public async verifySignupOtp(email: string, otp: string): Promise<{ signup_token: string }> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const otpKey = `signup_otp:${normalizedEmail}`;
+
+    // 1. Retrieve stored OTP from Redis
+    const storedOtp = await this.redis.get(otpKey);
+    if (!storedOtp) throw new HttpError('OTP expired or not found', 400);
+
+    // 2. Constant-time comparison to prevent timing attacks
+    const isValid = crypto.timingSafeEqual(Buffer.from(otp.padEnd(6)), Buffer.from(storedOtp.padEnd(6)));
+    if (!isValid) throw new HttpError('Invalid OTP', 400);
+
+    // 3. Delete OTP key — single-use enforcement
+    await this.redis.del(otpKey);
+
+    // 4. Sign and return signup_token JWT
+    const signupToken = jwt.sign({ email: normalizedEmail, purpose: 'signup' }, JWT_SECRET_KEY, { expiresIn: '15m' });
+
+    return { signup_token: signupToken };
+  }
+
+  /**
+   * Self-serve workspace signup: verified user creates account using a signup_token (from OTP verification),
+   * a new workspace (company) is created with real details, and the user becomes super_admin.
+   * Email is extracted from the signup_token JWT — not from the request body.
    */
   public async workspaceSignup(data: WorkspaceSignupData) {
-    const { email, password, name } = data;
+    const { signup_token, password, name, workspace_name, industry_type, size, country, address, city } = data;
 
-    if (!email || !password || !name) {
-      throw new HttpError('Email, password, and name are required', 400);
+    // 1. Verify signup_token JWT
+    let decoded: { email: string; purpose: string };
+    try {
+      decoded = jwt.verify(signup_token, JWT_SECRET_KEY) as { email: string; purpose: string };
+    } catch {
+      throw new HttpError('Invalid or expired signup token', 401);
+    }
+    if (decoded.purpose !== 'signup') {
+      throw new HttpError('Invalid token purpose', 401);
     }
 
-    this.validateName(name);
+    const email = decoded.email;
 
-    const existingUser = await this.userRepository.findOne({ email: email.toLowerCase() });
+    // 2. Double-check email not taken (race condition guard)
+    const existingUser = await this.userRepository.findOne({ email });
     if (existingUser) {
       throw new HttpError('Email is already registered', StatusCodes.CONFLICT);
     }
 
+    // 3. Validate name & password, then hash
+    this.validateName(name);
     await this.validatePasswordStrength(password);
-
     const hashedPassword = await this.hashPassword(password);
 
+    // 4. Single transaction: create company → user → user_company → update admin_id → seed defaults
     const result = await Objection.Model.transaction(async (trx) => {
       const company = await this.companyRepository.create(
         {
-          name: `${name.trim()}'s Workspace`,
-          industry_type: 'General',
-          size: '1-10',
-          country: 'Not set',
-          address: '',
-          city: 'Not set',
+          name: workspace_name.trim(),
+          industry_type,
+          size,
+          country,
+          address,
+          city,
           is_active: true,
         },
         trx,
@@ -337,7 +405,7 @@ export class AuthService {
 
       const newUser = await this.userRepository.create(
         {
-          email: email.toLowerCase(),
+          email,
           name: name.trim(),
           password: hashedPassword,
           role: UserRoles.SUPER_ADMIN,
@@ -420,7 +488,11 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userResponse } = result.user;
     const token = generateToken(userResponse.email, userResponse.id);
-    return { user: userResponse, token };
+    return {
+      user: { ...userResponse, is_primary_admin: true, workspace_id: result.company.id },
+      workspace: { id: result.company.id, name: result.company.name, status: result.company.is_active ? 'active' : 'inactive' },
+      token,
+    };
   }
 
   public async signIn(data: loginData) {

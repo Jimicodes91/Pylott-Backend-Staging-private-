@@ -39,12 +39,18 @@ export const signUpCompanyAdminValidator = [
   }),
 ];
 
-/** Self-serve workspace signup: email + password + name → new workspace, user is super_admin, no approval */
+/** Self-serve workspace signup: signup_token (from OTP verification) + password + profile & company details */
 export const workspaceSignupValidator = [
+  body('signup_token', 'Signup token is required').not().isEmpty().isString().withMessage('Signup token must be a string'),
   validateName('name'),
-  body('email', 'Email is required').not().isEmpty().isEmail().withMessage('Valid email is required'),
   body('password', 'Password cannot be empty').not().isEmpty(),
   body('password', 'The minimum password length is 8 characters').isLength({ min: 8 }),
+  body('workspace_name', 'Workspace name is required').not().isEmpty(),
+  body('industry_type', 'Industry type is required').not().isEmpty(),
+  body('size', 'Size is required').not().isEmpty(),
+  body('country', 'Country is required').not().isEmpty(),
+  body('address', 'Address is required').not().isEmpty(),
+  body('city', 'City is required').not().isEmpty(),
 ];
 
 export const emailValidationRule = [body('email', 'Email is required').not().isEmpty(), body('email', 'Invalid email').isEmail()];
