@@ -325,7 +325,14 @@ export class AuthService {
     await this.redis.set(otpKey, otp, { EX: 600 });
 
     // Send OTP email using existing template
-    await this.sendVerificationEmail(normalizedEmail, otp, 'New User');
+    try {
+      await this.sendVerificationEmail(normalizedEmail, otp, 'New User');
+    } catch (error) {
+      // Clean up the stored OTP since email failed
+      await this.redis.del(otpKey);
+      console.error('Failed to send signup OTP email:', error.message);
+      throw new HttpError('Failed to send verification email. Please try again later.', 503);
+    }
 
     return { message: 'OTP sent successfully' };
   }
