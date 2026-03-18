@@ -163,9 +163,11 @@ export class ProjectRepository extends BaseRepository<ProjectModelType, Project>
             JOIN (
               SELECT 0 AS seq UNION ALL SELECT 1 UNION ALL 
               SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-            ) seq ON seq.seq < JSON_LENGTH(COALESCE(p.form_data->'$.project_client', JSON_ARRAY()))
+            ) seq ON seq.seq < JSON_LENGTH(COALESCE(JSON_EXTRACT(p.form_data, '$.project_client'), JSON_ARRAY()))
           WHERE 
             p.deleted_at IS NULL
+            AND p.form_data IS NOT NULL
+            AND JSON_VALID(p.form_data)
             AND JSON_CONTAINS_PATH(p.form_data, 'one', '$.project_client')
         ) p ON p.client_id = c.id AND p.company_id = c.company_id
         WHERE c.company_id = ?

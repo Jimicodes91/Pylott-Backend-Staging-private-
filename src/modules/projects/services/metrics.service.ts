@@ -39,17 +39,17 @@ export class MetricsService {
 
       const recentProjects = await this.projectRepository.getRecentProject(company_id);
 
-      const mappedRecentProjects = recentProjects?.map((project) => {
+      const mappedRecentProjects = (recentProjects ?? []).map((project) => {
         const { id, name, status, start_date, milestone, project_type, form_data } = project;
         let milestoneDuration = 0;
 
-        project_type?.milestones.forEach((milestone) => {
+        (project_type?.milestones ?? []).forEach((milestone) => {
           milestoneDuration += milestone.duration;
         });
 
         const expectedEndDate = dayjs(start_date).add(milestoneDuration, 'day').format('DD MMM, YYYY');
 
-        const company = form_data['client_organization'] ?? '';
+        const company = form_data?.['client_organization'] ?? '';
         const progress = this.calculatePhaseProgress(project_type?.milestones ?? []);
 
         return {
@@ -75,16 +75,17 @@ export class MetricsService {
         data: { project_report: projectReport, task_report: taskReport, recent_projects: mappedRecentProjects, top_pipeline: topPipeline, top_clients: topClients },
       };
     } catch (error) {
-      console.log(
+      console.error(
         `${this.traceId} Error occurred fetching project report ===> ${JSON.stringify({
           company_id,
           err_msg: error?.message,
+          stack: error?.stack,
         })}`,
       );
 
       return {
         status: false,
-        message: 'An error occurred, please try again later',
+        message: `An error occurred, please try again later: ${error?.message}`,
         data: [],
       };
     }
