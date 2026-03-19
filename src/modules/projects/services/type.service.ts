@@ -346,4 +346,32 @@ export class TypeService {
       };
     }
   }
+  getJourneyTemplates(): ServiceType {
+    const templates = [
+      {
+        name: 'IFZA Incorporation Journey',
+        milestones: [
+          { name: 'Document Preparation', duration: 2 },
+          { name: 'Submitted to Free Zone for Review', duration: 1 },
+          { name: 'Know Your Client (KYC) Review', duration: 1 },
+          { name: 'Summary Signing (authorization)', duration: 1 },
+          { name: 'Resolution & MOA Authorization', duration: 1 },
+          { name: 'License Issued', duration: 1 },
+        ],
+      },
+      {
+        name: 'Residency/Immigration Journey',
+        milestones: [
+          { name: 'Establishment Card Processing', duration: 2 },
+          { name: 'Entry Permit Application', duration: 3 },
+          { name: 'Medicals', duration: 1 },
+          { name: 'Biometrics', duration: 1 },
+          { name: 'Visa Issuance', duration: 2 },
+          { name: 'Emirates ID', duration: 1 },
+        ],
+      },
+    ];
+
+    return { status: true, message: 'Journey templates fetched successfully', data: templates };
+  }
 }

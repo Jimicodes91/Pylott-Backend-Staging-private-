@@ -26,6 +26,11 @@ export class ProjectController {
     private readonly metricsService: MetricsService,
   ) {}
 
+  getJourneyTemplates = async (_req: AuthenticatedRequest, res: Response) => {
+    const { statusCode = null, ...others } = this.typeService.getJourneyTemplates();
+    return genericResponse({ res, data: others, statusCode });
+  };
+
   getAllProjectTypes = async (req: AuthenticatedRequest, res: Response) => {
     const company_id = (req.user as UserModelType)?.company_id;
     const { statusCode = null, ...others } = await this.typeService.getAllProjectTypes(company_id);

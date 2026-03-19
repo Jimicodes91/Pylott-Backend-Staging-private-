@@ -29,6 +29,7 @@ export const projectCoreRoutes = (prefix: string, server: Server) => {
    * Project Types
    */
   server.get(`${prefix}/types`, authGuard, async (req, res) => (await getProjectController()).getAllProjectTypes(req, res));
+  server.get(`${prefix}/types/templates`, authGuard, async (req, res) => (await getProjectController()).getJourneyTemplates(req, res));
   server.get(`${prefix}/types/:project_type_id`, authGuard, async (req, res) => (await getProjectController()).getProjectTypeDetails(req, res));
   server.post(`${prefix}/types`, authGuard, schemaValidator(createProjectTypeValidationRules), async (req, res) => (await getProjectController()).createProjectType(req, res));
   server.patch(`${prefix}/types/:project_type_id`, authGuard, schemaValidator(updateProjectTypeValidationRules), async (req, res) => (await getProjectController()).updateProjectTypeDetails(req, res));
