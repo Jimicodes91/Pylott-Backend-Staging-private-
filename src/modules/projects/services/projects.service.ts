@@ -1164,7 +1164,7 @@ export class ProjectService {
     return {
       ...project,
       timeline: override_value ?? this.calculateTimeline(project?.milestone?.duration ?? 0),
-      project_timeline: this.calculateTimeline(project?.project_type?.milestones.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0),
+      project_timeline: this.calculateTimeline(project?.project_type?.milestones?.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0),
     };
   }
 
