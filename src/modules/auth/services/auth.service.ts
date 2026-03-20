@@ -967,7 +967,7 @@ export class AuthService {
       throw new HttpError('You do not have permission to approve client invite requests', StatusCodes.FORBIDDEN);
     }
 
-    const request = await this.clientInviteRequestRepository.findOne({ id: requestId, company_id: approver.company_id, deleted_at: null });
+    const request = await this.clientInviteRequestRepository.findOne({ id: requestId, company_id: approver.company_id });
     if (!request) {
       throw new HttpError('Client invite request not found', StatusCodes.NOT_FOUND);
     }
@@ -1008,7 +1008,7 @@ export class AuthService {
       throw new HttpError('You do not have permission to reject client invite requests', StatusCodes.FORBIDDEN);
     }
 
-    const request = await this.clientInviteRequestRepository.findOne({ id: requestId, company_id: approver.company_id, deleted_at: null });
+    const request = await this.clientInviteRequestRepository.findOne({ id: requestId, company_id: approver.company_id });
     if (!request) {
       throw new HttpError('Client invite request not found', StatusCodes.NOT_FOUND);
     }
@@ -1265,7 +1265,6 @@ export class AuthService {
             const existingContact = await this.contactRepository.findOne({
               email: invitation.email.toLowerCase(),
               company_id: invitation.company_id,
-              deleted_at: null,
             });
 
             if (!existingContact) {
@@ -1312,7 +1311,6 @@ export class AuthService {
         const contactToActivate = await this.contactRepository.findOne({
           email: invitation.email.toLowerCase(),
           company_id: invitation.company_id,
-          deleted_at: null,
         });
         if (contactToActivate) {
           await this.contactRepository.update({ id: contactToActivate.id }, { status: 'Active' });
