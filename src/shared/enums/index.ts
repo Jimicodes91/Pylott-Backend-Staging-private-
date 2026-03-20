@@ -3,11 +3,11 @@ export enum RoutePrefix {
 }
 
 export enum UserRoles {
-  ADMIN = 'ADMIN',
-  CLIENT = 'CLIENT',
-  CONSULTANT = 'CONSULTANT',
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  USER = 'USER',
+  ADMIN = 'admin',
+  CLIENT = 'client',
+  CONSULTANT = 'consultant',
+  SUPER_ADMIN = 'super_admin',
+  USER = 'user',
 }
 
 /** Roles allowed in User Management "Add user" flow. Clients are created only via Contacts. */
