@@ -1667,7 +1667,7 @@ export class AuthService {
   public async getCompanyUsersWithStatus(adminId: string, companyId: string, page: number = 1, pageSize: number = 10) {
     try {
       const admin = await this.userRepository.getById(adminId);
-      if (!admin || admin.role !== UserRoles.ADMIN) {
+      if (!admin || (admin.role !== UserRoles.ADMIN && admin.role !== UserRoles.SUPER_ADMIN)) {
         throw new HttpError('Only company admins can view users', 403);
       }
 
