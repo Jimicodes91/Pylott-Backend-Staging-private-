@@ -893,25 +893,21 @@ export function authEmailTemplate({
                                       font-weight: 300;
                                     "
                                   >
-                                    <a
-                                      href="${actionLink}"
-                                      target="_blank"
-                                      style="
-                                        display: inline-block;
-                                        width: 100%;
-                                        color: #ffffff;
-                                        height: 50px;
-                                        margin-right: 8px;
-                                        background-color: #191819;
-                                        text-align: center;
-                                        line-height: 50px;
-                                        vertical-align: middle;
-                                        border-radius: 30px;
-                                        text-decoration: none;
-                                      "
-                                    >
-                                      ${actionText}
-                                    </a>
+                                    <!--[if mso]>
+                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${actionLink}" style="height:50px;v-text-anchor:middle;width:300px;" arcsize="60%" fillcolor="#191819">
+                                      <w:anchorlock/>
+                                      <center style="color:#ffffff;font-family:'DM Sans',sans-serif;font-size:16px;">${actionText}</center>
+                                    </v:roundrect>
+                                    <![endif]-->
+                                    <!--[if !mso]><!-->
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                      <tr>
+                                        <td align="center" bgcolor="#191819" style="border-radius:30px;">
+                                          <a href="${actionLink}" target="_blank" style="display:block;padding:15px 30px;font-size:16px;color:#ffffff;text-decoration:none;border-radius:30px;background-color:#191819;font-family:'DM Sans',sans-serif;text-align:center;mso-hide:all;">${actionText}</a>
+                                        </td>
+                                      </tr>
+                                    </table>
+                                    <!--<![endif]-->
                                   </td>
                                 </tr>
                               </tbody>
