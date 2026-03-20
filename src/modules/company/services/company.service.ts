@@ -3,7 +3,7 @@ import { SubscriptionRepository } from '@/repositories/subscription.repository';
 import { CompanySignupData } from '@/shared/interface/company';
 import HttpError from '@/shared/utils/errorHandler';
 import { inject, injectable } from 'tsyringe';
-import { AUDIT_TRAIL_ACTION } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, UserRoles } from '@/shared/enums';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 @injectable()
@@ -126,7 +126,7 @@ export class CompanyService {
       }
 
       // Only company admin or system admin can update company details
-      if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.company_id !== companyId) {
+      if (user.role !== UserRoles.ADMIN && user.role !== UserRoles.SUPER_ADMIN && user.company_id !== companyId) {
         throw new HttpError('You do not have permission to update this company', 403);
       }
 

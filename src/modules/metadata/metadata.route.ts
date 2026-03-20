@@ -18,19 +18,49 @@ export const metadataRoutes = (prefix: string, server: Server) => {
 
   server.get(`${prefix}/type/notes`, authGuard, metadataController.getNoteTypes);
 
-  server.post(`${prefix}/type/documents`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createDocumentType);
+  server.post(
+    `${prefix}/type/documents`,
+    authGuard,
+    authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]),
+    schemaValidator(createMetadataValidationRules),
+    metadataController.createDocumentType,
+  );
 
-  server.post(`${prefix}/type/tasks`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createTaskType);
+  server.post(`${prefix}/type/tasks`, authGuard, authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createTaskType);
 
-  server.post(`${prefix}/type/events`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createEventType);
+  server.post(`${prefix}/type/events`, authGuard, authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createEventType);
 
-  server.post(`${prefix}/type/notes`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createNoteType);
+  server.post(`${prefix}/type/notes`, authGuard, authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]), schemaValidator(createMetadataValidationRules), metadataController.createNoteType);
 
-  server.patch(`${prefix}/type/documents/:metadata_id`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(updateMetadataValidationRules), metadataController.updateDocumentType);
+  server.patch(
+    `${prefix}/type/documents/:metadata_id`,
+    authGuard,
+    authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]),
+    schemaValidator(updateMetadataValidationRules),
+    metadataController.updateDocumentType,
+  );
 
-  server.patch(`${prefix}/type/tasks/:metadata_id`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(updateMetadataValidationRules), metadataController.updateTaskType);
+  server.patch(
+    `${prefix}/type/tasks/:metadata_id`,
+    authGuard,
+    authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]),
+    schemaValidator(updateMetadataValidationRules),
+    metadataController.updateTaskType,
+  );
 
-  server.patch(`${prefix}/type/events/:metadata_id`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(updateMetadataValidationRules), metadataController.updateEventType);
+  server.patch(
+    `${prefix}/type/events/:metadata_id`,
+    authGuard,
+    authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]),
+    schemaValidator(updateMetadataValidationRules),
+    metadataController.updateEventType,
+  );
 
-  server.patch(`${prefix}/type/notes/:metadata_id`, authGuard, authorizationGuard([UserRoles.ADMIN]), schemaValidator(updateMetadataValidationRules), metadataController.updateNoteType);
+  server.patch(
+    `${prefix}/type/notes/:metadata_id`,
+    authGuard,
+    authorizationGuard([UserRoles.ADMIN, UserRoles.SUPER_ADMIN]),
+    schemaValidator(updateMetadataValidationRules),
+    metadataController.updateNoteType,
+  );
 };
