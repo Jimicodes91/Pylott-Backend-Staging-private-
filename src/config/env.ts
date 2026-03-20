@@ -85,7 +85,7 @@ export const storage = {
   },
 };
 
-export const FRONTEND_URL = process.env.FRONTEND_URL || 'https://pylot-tkrh.vercel.app';
+export const FRONTEND_URL = process.env.FRONTEND_URL || 'https://pylott-staging-frontend.onrender.com';
 
 export const TOKEN_EXPIRATION_MS = 5 * 60 * 60 * 1000; // 5 hours
 export const PASSWORD_RESET_TOKEN_LENGTH = 15;

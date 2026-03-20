@@ -162,6 +162,20 @@ export class AuthController {
     }
   };
 
+  /** Admin or Super Admin: uninvite an active contact (deactivate their access). */
+  public uninviteContact = async (req: Request, res: Response) => {
+    try {
+      const adminUserId = (req as any).user?.id;
+      const contactId = req.params.contactId;
+      if (!adminUserId || !contactId) return errorResponse(res, 'User and contact ID are required', undefined, StatusCodes.BAD_REQUEST);
+      const result = await this.authService.uninviteContact(adminUserId, contactId);
+      return successResponse(res, 'Contact uninvited successfully', result);
+    } catch (error: any) {
+      const code = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+      return errorResponse(res, error.message, undefined, code);
+    }
+  };
+
   /** Super Admin only: invite an Admin. Body: { email } */
   public inviteAdmin = async (req: Request, res: Response) => {
     try {

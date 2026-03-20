@@ -1270,3 +1270,19 @@ export function otpEmailTemplate({
 </html>
   `;
 }
+
+/**
+ * Generates the HTML email for uninvite (access revoked) notifications.
+ * @param clientName The name of the client being uninvited.
+ * @param companyName The name of the company revoking access.
+ */
+export function uninviteNotificationEmail(clientName: string, companyName: string) {
+  return authEmailTemplate({
+    userName: clientName,
+    mainTitle: 'Account Access Revoked',
+    message: `Hi ${clientName}, your access to ${companyName} on Pylott has been revoked by your administrator. If you believe this was a mistake or have any questions, please contact support at ava@pylott.io.`,
+    actionText: 'Visit Pylott',
+    actionLink: 'https://pylott.io',
+    supportEmail: 'ava@pylott.io',
+  });
+}

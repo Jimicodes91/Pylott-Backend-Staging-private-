@@ -32,7 +32,7 @@ import { StatusCodes } from 'http-status-codes';
 import { Redis } from '@/shared/utils/redis/redis';
 import { AddContactDto } from '@/modules/contact/contact.dto';
 import { ContactRespository } from '@/repositories/contact.repository';
-import { authEmailTemplate, otpEmailTemplate } from '../../../shared/utils/email';
+import { authEmailTemplate, otpEmailTemplate, uninviteNotificationEmail } from '../../../shared/utils/email';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -904,7 +904,7 @@ export class AuthService {
     if (contact.status === 'Invited') {
       throw new HttpError('An invitation has already been sent to this contact', StatusCodes.BAD_REQUEST);
     }
-    if (contact.status === 'Active') {
+    if (contact.status === 'Active' || contact.status === 'active') {
       throw new HttpError('Contact is already active (client has already joined)', StatusCodes.BAD_REQUEST);
     }
 
@@ -930,8 +930,85 @@ export class AuthService {
     }
 
     await this.createAndSendInvite(inviter, contact.email.toLowerCase(), UserRoles.CLIENT);
+
+    // Re-invite flow: if contact was previously uninvited and has an existing user, reactivate them
+    if (contact.status === 'Uninvited' || contact.status === 'uninvited') {
+      const existingUser = await this.userRepository.findOne({ email: contact.email });
+      if (existingUser) {
+        await this.userRepository.update({ id: existingUser.id }, { is_active: true });
+        await this.userCompanyRepository.update({ user_id: existingUser.id, company_id: inviter.company_id }, { is_active: true } as any);
+      }
+    }
+
     await this.contactRepository.update({ id: contactId }, { status: 'Invited' as const });
     return { message: 'Invitation sent successfully. Contact status updated to Invited.', contactId };
+  }
+
+  public async uninviteContact(adminUserId: string, contactId: string) {
+    const admin = await this.userRepository.getById(adminUserId);
+    if (!admin) {
+      throw new HttpError('User not found', StatusCodes.NOT_FOUND);
+    }
+    if (admin.role !== UserRoles.ADMIN && admin.role !== UserRoles.SUPER_ADMIN) {
+      throw new HttpError('Only Admin or Super Admin can uninvite contacts', StatusCodes.FORBIDDEN);
+    }
+    if (!admin.company_id) {
+      throw new HttpError('You are not associated with a company', StatusCodes.BAD_REQUEST);
+    }
+
+    const contact = await this.contactRepository.getById(contactId);
+    if (!contact) {
+      throw new HttpError('Contact not found', StatusCodes.NOT_FOUND);
+    }
+    if (contact.company_id !== admin.company_id) {
+      throw new HttpError('Contact does not belong to your workspace', StatusCodes.FORBIDDEN);
+    }
+    if (contact.status !== 'active' && contact.status !== 'Active') {
+      throw new HttpError('Contact is not currently active', StatusCodes.BAD_REQUEST);
+    }
+
+    const user = await this.userRepository.findOne({ email: contact.email });
+    if (!user) {
+      throw new HttpError('No user account found for this contact', StatusCodes.BAD_REQUEST);
+    }
+
+    // Deactivate contact, user, and company membership
+    await this.contactRepository.update({ id: contactId }, { status: 'uninvited' });
+    await this.userRepository.update({ id: user.id }, { is_active: false });
+    await this.userCompanyRepository.update({ user_id: user.id, company_id: admin.company_id }, { is_active: false } as any);
+
+    // Expire pending invitations for this contact's email in the company
+    const pendingInvitations = await this.invitationRepository.findMany({
+      email: contact.email,
+      company_id: admin.company_id,
+      status: 'PENDING',
+    } as any);
+    for (const invitation of pendingInvitations) {
+      await this.invitationRepository.markAsExpired(invitation.id);
+    }
+
+    // Send uninvite notification email (non-blocking)
+    try {
+      const company = await this.companyRepository.getCompanyNameById(admin.company_id);
+      await sendEmail(contact.email, 'Account Access Revoked', uninviteNotificationEmail(contact.name, company.name));
+    } catch (emailError: any) {
+      console.error('Failed to send uninvite notification email:', emailError.message);
+    }
+
+    // Log audit trail
+    this.auditTrailService.createEvent(
+      AUDIT_TRAIL_ACTION.CLIENT_UNINVITED,
+      {
+        user_id: adminUserId,
+        company_id: admin.company_id,
+        description: 'Client uninvited',
+        entity_description: `${admin.name} uninvited ${contact.name}`,
+        entity_id: contactId,
+      },
+      adminUserId,
+    );
+
+    return { contactId, email: contact.email, status: 'uninvited' };
   }
 
   /** List pending client invite requests (Super Admin or Admin with can_approve_client_invites). */

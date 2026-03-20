@@ -44,6 +44,8 @@ export const authRoutes = (prefix: string, server: Server) => {
 
   server.post(`${prefix}/contacts/:contactId/send-invite`, authenticateUser, authController.sendContactInvite);
 
+  server.post(`${prefix}/contacts/:contactId/uninvite`, authenticateUser, authController.uninviteContact);
+
   server.get(`${prefix}/client-invite-requests/pending`, authenticateUser, authController.getPendingClientInviteRequests);
   server.post(`${prefix}/client-invite-requests/:requestId/approve`, authenticateUser, authController.approveClientInviteRequest);
   server.post(`${prefix}/client-invite-requests/:requestId/reject`, authenticateUser, authController.rejectClientInviteRequest);
