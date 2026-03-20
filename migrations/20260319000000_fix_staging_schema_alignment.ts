@@ -26,6 +26,11 @@ export async function up(knex: Knex): Promise<void> {
       t.string('no_of_projects').nullable();
     });
   }
+  if (!(await hasCol('contacts', 'assigned_to'))) {
+    await knex.schema.alterTable('contacts', (t) => {
+      t.json('assigned_to').nullable();
+    });
+  }
 
   // ─── projects: add milestone_start_date, milestone_status, currency, country ───
   if (!(await hasCol('projects', 'milestone_start_date'))) {
@@ -73,6 +78,9 @@ export async function down(knex: Knex): Promise<void> {
   }
   if (await hasCol('contacts', 'no_of_projects')) {
     await knex.schema.alterTable('contacts', (t) => t.dropColumn('no_of_projects'));
+  }
+  if (await hasCol('contacts', 'assigned_to')) {
+    await knex.schema.alterTable('contacts', (t) => t.dropColumn('assigned_to'));
   }
   if (await hasCol('projects', 'milestone_start_date')) {
     await knex.schema.alterTable('projects', (t) => t.dropColumn('milestone_start_date'));
