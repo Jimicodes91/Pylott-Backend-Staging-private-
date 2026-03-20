@@ -98,6 +98,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Project Members
    */
+  server.get(`${prefix}/:project_id/available-assignees`, authGuard, projectController.getAvailableAssignees);
   server.get(`${prefix}/:project_id/members`, authGuard, projectController.getProjectMembers);
   server.post(`${prefix}/:project_id/members`, authGuard, schemaValidator(addProjectMemberValidationRules), projectController.addProjectMember);
   server.delete(`${prefix}/:project_id/members/:member_id`, authGuard, projectController.removeProjectMember);

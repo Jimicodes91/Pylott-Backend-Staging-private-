@@ -50,6 +50,7 @@ export const projectCoreRoutes = (prefix: string, server: Server) => {
   /**
    * Project Members
    */
+  server.get(`${prefix}/:project_id/available-assignees`, authGuard, async (req, res) => (await getProjectController()).getAvailableAssignees(req, res));
   server.get(`${prefix}/:project_id/members`, authGuard, async (req, res) => (await getProjectController()).getProjectMembers(req, res));
   server.post(`${prefix}/:project_id/members`, authGuard, schemaValidator(addProjectMemberValidationRules), async (req, res) => (await getProjectController()).addProjectMember(req, res));
   server.delete(`${prefix}/:project_id/members/:member_id`, authGuard, async (req, res) => (await getProjectController()).removeProjectMember(req, res));

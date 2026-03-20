@@ -169,6 +169,15 @@ export class ProjectController {
     return genericResponse({ res, data: others, statusCode });
   };
 
+  getAvailableAssignees = async (req: AuthenticatedRequest, res: Response) => {
+    const company_id = (req.user as UserModelType)?.company_id;
+    const { project_id } = req.params;
+    const category = (req.query.category as string) || 'internal';
+
+    const { statusCode = null, ...others } = await this.memberService.getAvailableAssignees(company_id, project_id, category);
+    return genericResponse({ res, data: others, statusCode });
+  };
+
   addProjectMember = async (req: AuthenticatedRequest, res: Response) => {
     const user = req.user as UserModelType;
     const { project_id } = req.params;

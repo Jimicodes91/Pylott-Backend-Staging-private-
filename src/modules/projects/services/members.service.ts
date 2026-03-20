@@ -1,12 +1,12 @@
 import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
 
-import { ProjectMembersRepository, UserRepository, ProjectRepository } from '@/repositories';
+import { ProjectMembersRepository, UserRepository, ProjectRepository, UserCompanyRepository } from '@/repositories';
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { UserModelType } from '@/models/user.model';
 import { AddProjectMember } from '@/shared/types/projects.type';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
-import { AUDIT_TRAIL_ACTION } from '@/shared/enums';
+import { AUDIT_TRAIL_ACTION, UserRoles } from '@/shared/enums';
 
 @injectable()
 export class MemberService {
@@ -17,6 +17,7 @@ export class MemberService {
     private readonly userRepository: UserRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly auditTrailService: AuditTrailService,
+    private readonly userCompanyRepository: UserCompanyRepository,
   ) {}
 
   async getProjectMembers(company_id: string, project_id: string, query: ObjectLiteral = {}): Promise<ServiceType> {
@@ -198,6 +199,32 @@ export class MemberService {
         status: false,
         message: 'An error occurred, please try again later',
       };
+    }
+  }
+
+  async getAvailableAssignees(company_id: string, project_id: string, category: string): Promise<ServiceType> {
+    try {
+      const project = await this.projectRepository.findOne({ id: project_id, company_id });
+      if (!project) {
+        return { status: false, message: 'Project not found', statusCode: StatusCodes.NOT_FOUND };
+      }
+
+      if (category === 'internal') {
+        // Internal: all active team members in the company (super_admin, admin, consultant)
+        const companyUsers = await this.userCompanyRepository.getCompanyUsers(company_id);
+        const teamMembers = companyUsers
+          .filter((uc: any) => uc.user && [UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.CONSULTANT].includes(uc.role || uc.user?.role))
+          .map((uc: any) => ({ id: uc.user.id, name: uc.user.name, email: uc.user.email }));
+        return { status: true, message: 'Available assignees fetched successfully', data: teamMembers };
+      } else {
+        // External: client members of this project
+        const members = await this.projectMembersRepository.getProjectMembers(project_id, company_id, { member_type: 'client' });
+        const clients = members.filter((m: any) => m.user).map((m: any) => ({ id: m.user.id, name: m.user.name, email: m.user.email }));
+        return { status: true, message: 'Available assignees fetched successfully', data: clients };
+      }
+    } catch (error) {
+      console.log(`${this.traceId} Error fetching available assignees ===> ${error?.message}`);
+      return { status: false, message: 'An error occurred, please try again later' };
     }
   }
 }
