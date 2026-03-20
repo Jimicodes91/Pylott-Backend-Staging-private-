@@ -41,6 +41,6 @@ export const validateName = (
     validation = validation.customSanitizer(options.customSanitizer);
   }
 
-  // Add the number validation
-  return validation.matches(/^[a-zA-Z\s'-]+$/).withMessage(customMessage);
+  // Add the number validation (allow letters, spaces, hyphens, apostrophes, slashes, and parentheses)
+  return validation.matches(/^[a-zA-Z\s'\/()&,-]+$/).withMessage(customMessage);
 };
