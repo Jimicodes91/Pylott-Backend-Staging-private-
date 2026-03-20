@@ -915,7 +915,7 @@ export class ProjectService {
           jurisdiction: data.jurisdiction ?? project.jurisdiction,
           visa_required: data.visa_required ?? project.visa_required,
           package: data.package ?? project.package,
-          milestone_start_date: data['milestone_start_date '] ?? project.milestone_start_date,
+          milestone_start_date: data['milestone_start_date'] ?? project.milestone_start_date,
           milestone_status: data['milestone_status'] ?? project.milestone_status,
           country: data.country ?? project.country,
           currency: data.currency ?? project.currency,
