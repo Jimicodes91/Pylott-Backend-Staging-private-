@@ -229,7 +229,7 @@ export const updateMilestoneValidationRules = [
     customMessage: 'Numbers are not allowed in milestone name. Only letters, spaces, hyphens, and apostrophes are allowed',
   }),
 
-  body('duration').optional().isInt({ min: 1 }).withMessage('Duration must be a positive integer'),
+  body('duration').optional().isInt({ min: 1 }).withMessage('Duration must be a positive integer').toInt(),
 
   // body('start_date')
   //   .optional()

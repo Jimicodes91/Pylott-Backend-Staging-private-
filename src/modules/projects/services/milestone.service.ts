@@ -175,7 +175,7 @@ export class MilestoneService {
 
       const updateData: Partial<MilestonesModelType> = {};
 
-      if (payload.duration) {
+      if (payload.duration !== undefined && payload.duration !== null) {
         updateData.duration = payload.duration;
       }
 
