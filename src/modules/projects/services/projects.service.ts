@@ -484,20 +484,23 @@ export class ProjectService {
         }
       });
 
-      for (const payload of nonExistentClients) {
-        try {
-          await this.authSvc.sendInvitation(user.id, payload, UserRoles.CLIENT);
-          const projectMember: Partial<ProjectMemebersModelType> = {
-            added_by: user.id,
-            company_id,
-            is_visible_to_client: true,
-            member_type: ProjectMemberTypeEnum.CLIENT,
-            project_id: projectId,
-          };
-          await this.redis.set(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${payload}`, JSON.stringify(projectMember));
-        } catch (error: any) {
-          // Fail safe
-          console.error(`${this.traceId} Error inviting project client to pylott:`, error);
+      // Only send invites to non-registered clients if send_client_invite is true
+      if (payload['send_client_invite'] === true) {
+        for (const clientEmail of nonExistentClients) {
+          try {
+            await this.authSvc.sendInvitation(user.id, clientEmail, UserRoles.CLIENT);
+            const projectMember: Partial<ProjectMemebersModelType> = {
+              added_by: user.id,
+              company_id,
+              is_visible_to_client: true,
+              member_type: ProjectMemberTypeEnum.CLIENT,
+              project_id: projectId,
+            };
+            await this.redis.set(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${clientEmail}`, JSON.stringify(projectMember));
+          } catch (error: any) {
+            // Fail safe
+            console.error(`${this.traceId} Error inviting project client to pylott:`, error);
+          }
         }
       }
 

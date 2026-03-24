@@ -449,8 +449,20 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userResponse } = result.user;
     const token = generateToken(userResponse.email, userResponse.id);
+
+    // Build companies list matching the login response format
+    const companiesList = [
+      {
+        id: result.company.id,
+        name: result.company.name,
+        role: UserRoles.SUPER_ADMIN,
+        joined_at: result.user.created_at || new Date(),
+        is_active: 1,
+      },
+    ];
+
     return {
-      user: { ...userResponse, is_primary_admin: true, workspace_id: result.company.id },
+      user: { ...userResponse, is_primary_admin: true, workspace_id: result.company.id, company_name: result.company.name, companies: companiesList },
       workspace: { id: result.company.id, name: result.company.name, status: result.company.is_active ? 'active' : 'inactive' },
       token,
     };

@@ -21,6 +21,9 @@ export type CreateProjectType = {
   client_email?: string;
   client_phone?: string;
   client_name?: string;
+  /** When true, send platform invite to the client after project creation. */
+  send_client_invite?: boolean;
+  invite_message?: string;
 };
 
 export type CreateMilestoneType = {
