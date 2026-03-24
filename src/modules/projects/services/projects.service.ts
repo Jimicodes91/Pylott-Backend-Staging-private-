@@ -146,6 +146,7 @@ export class ProjectService {
           form_fields: formattedFormFields,
           timeline: this.calculateTimeline(project?.milestone?.duration ?? 0),
           project_timeline: this.calculateTimeline(project?.project_type?.milestones?.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0),
+          total_duration_days: project?.project_type?.milestones?.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0,
           documents:
             project.documents?.map((doc) => ({
               id: doc.id,
@@ -1164,10 +1165,13 @@ export class ProjectService {
   private formatProjectWithTimeline(project: ProjectModelType, override_value: number | null = null): any {
     if (!project && !override_value) return null;
 
+    const totalDurationDays = project?.project_type?.milestones?.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0;
+
     return {
       ...project,
       timeline: override_value ?? this.calculateTimeline(project?.milestone?.duration ?? 0),
-      project_timeline: this.calculateTimeline(project?.project_type?.milestones?.map((ms) => ms?.duration ?? 0).reduce((a, b) => a + b, 0) ?? 0),
+      project_timeline: this.calculateTimeline(totalDurationDays),
+      total_duration_days: totalDurationDays,
     };
   }
 
