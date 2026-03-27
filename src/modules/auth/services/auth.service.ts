@@ -18,6 +18,8 @@ import {
   MilestonesRepository,
   MetadataRepository,
   ClientInviteRequestRepository,
+  ProjectFormsRepository,
+  ProjectFormFieldRepository,
 } from '@/repositories';
 import HttpError from '@/shared/utils/errorHandler';
 import sendEmail from '@/shared/utils/nodemailer';
@@ -57,6 +59,8 @@ export class AuthService {
     @inject(ClientInviteRequestRepository) private clientInviteRequestRepository: ClientInviteRequestRepository,
     private readonly projectMemberRepository: ProjectMembersRepository,
     private readonly auditTrailService: AuditTrailService,
+    private readonly projectFormsRepository: ProjectFormsRepository,
+    private readonly projectFormFieldRepository: ProjectFormFieldRepository,
     _redis: Redis,
   ) {
     this.googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${this.FRONTEND_URL}/auth/google/callback`);
@@ -441,6 +445,23 @@ export class AuthService {
       const defaultTaskTypeNames = ['Document upload', 'General'];
       for (const taskTypeName of defaultTaskTypeNames) {
         await this.metadataRepository.create({ company_id: company.id, name: taskTypeName, type: MetadataType.TASK, description: '', is_system: true }, trx);
+      }
+
+      // Seed default project form and fields so the company can create projects
+      const projectForm = await this.projectFormsRepository.create({ company_id: company.id, name: 'Default Project Form' }, trx);
+
+      const defaultFields = [
+        { slug: 'project_name', name: 'Project name', type: 'text', is_required: 1, is_multiple: 0, sort_order: 1 },
+        { slug: 'journey', name: 'Journey', type: 'select', is_required: 1, is_multiple: 0, sort_order: 2 },
+        { slug: 'project_client', name: 'Project Client', type: 'select', is_required: 0, is_multiple: 1, sort_order: 3 },
+        { slug: 'project_value', name: 'Project value', type: 'number', is_required: 0, is_multiple: 0, sort_order: 4 },
+        { slug: 'nationality', name: 'Nationality', type: 'text', is_required: 0, is_multiple: 0, sort_order: 5 },
+        { slug: 'start_date', name: 'Start date', type: 'date', is_required: 1, is_multiple: 0, sort_order: 6 },
+        { slug: 'end_date', name: 'End date', type: 'date', is_required: 0, is_multiple: 0, sort_order: 7 },
+      ];
+
+      for (const field of defaultFields) {
+        await this.projectFormFieldRepository.create({ ...field, form_id: projectForm.id, company_id: company.id, is_custom: 0 }, trx);
       }
 
       return { user: newUser, company };
