@@ -814,6 +814,15 @@ export class AuthService {
         adminId, // Use actual admin ID instead of hardcoded '123'
       );
 
+      // Update contact status to Invited if a matching contact exists
+      const contactToInvite = await this.contactRepository.findOne({
+        email: email.toLowerCase(),
+        company_id: admin.company_id,
+      });
+      if (contactToInvite && contactToInvite.status !== 'Active') {
+        await this.contactRepository.update({ id: contactToInvite.id }, { status: 'Invited' as const });
+      }
+
       return { message: 'Invitation sent successfully', invitationId: invitation.id };
     } catch (error: any) {
       throw new HttpError(error.message || 'Failed to send invitation', 500);
