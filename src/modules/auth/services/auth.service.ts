@@ -893,6 +893,10 @@ export class AuthService {
       status: 'PENDING',
     });
 
+    // Look up the recipient's name from contacts for a personalized greeting
+    const recipientContact = await this.contactRepository.findOne({ email: normalizedEmail, company_id: companyId });
+    const recipientName = recipientContact?.name || role;
+
     await this.sendEmailTemplate(
       normalizedEmail,
       'Welcome to Pylott',
@@ -900,7 +904,7 @@ export class AuthService {
       `You have been invited to join ${companyName} as an ${role}. Click the button below to complete your registration:`,
       registrationLink,
       'Complete Registration',
-      inviter.name || role,
+      recipientName,
     );
 
     this.auditTrailService.createEvent(
