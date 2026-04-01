@@ -301,12 +301,55 @@ export class ProjectService {
         payload.milestone_id = milestone?.id ?? null;
       }
 
+      // Multi-client duplicate email validation
+      if (payload.clients && Array.isArray(payload.clients) && payload.clients.length > 0) {
+        const emails = payload.clients.map((c) => c.email.trim().toLowerCase());
+        const seen = new Set<string>();
+        for (const email of emails) {
+          if (seen.has(email)) {
+            return {
+              status: false,
+              message: `Duplicate client email: ${email}`,
+              statusCode: StatusCodes.BAD_REQUEST,
+            };
+          }
+          seen.add(email);
+        }
+      }
+
       const nonExistentClients = [];
       const existentClients: Array<Partial<ProjectMemebersModelType>> = [];
       const existentClientsEmail = [];
 
-      // Row 22–23: Create or link contact by client email/phone when creating project
-      if (payload['client_email'] && typeof payload['client_email'] === 'string' && payload['client_email'].trim()) {
+      // Multi-client contact creation loop (falls back to single client_email)
+      if (payload.clients && Array.isArray(payload.clients) && payload.clients.length > 0) {
+        if (!payload['project_client']) payload['project_client'] = [];
+        for (const clientEntry of payload.clients) {
+          const clientEmail = clientEntry.email.trim().toLowerCase();
+          let contact = await this.contactRepository.findOne({ company_id, email: clientEmail, deleted_at: null });
+          if (!contact) {
+            contact = await this.contactRepository.create({
+              company_id,
+              email: clientEmail,
+              name: clientEntry.name?.trim() || clientEmail,
+              phone: clientEntry.phone?.trim() || '',
+              organization: (payload['client_organization'] as string)?.trim() || '',
+              status: 'Uninvited',
+              address: '',
+              active_projects: '',
+              total_projects: '',
+              no_of_projects: '',
+              closed_projects: '',
+              assigned_to: [],
+              added_by_user_id: user.id,
+            });
+          }
+          if (Array.isArray(payload['project_client']) && !payload['project_client'].includes(contact.id)) {
+            payload['project_client'] = [...payload['project_client'], contact.id];
+          }
+        }
+      } else if (payload['client_email'] && typeof payload['client_email'] === 'string' && payload['client_email'].trim()) {
+        // Backward compatibility: single client_email flow
         const clientEmail = (payload['client_email'] as string).trim().toLowerCase();
         let contact = await this.contactRepository.findOne({ company_id, email: clientEmail, deleted_at: null });
         if (!contact) {
@@ -499,15 +542,19 @@ export class ProjectService {
             };
             await this.redis.set(`${RedisPrefixKeyEnum.PROJECT_CLIENT_INVITATION}:${clientEmail}`, JSON.stringify(projectMember));
           } catch (error: any) {
-            // Fail safe
+            // Fail safe — continue with remaining clients
             console.error(`${this.traceId} Error inviting project client to pylott:`, error);
           }
         }
-      }
 
-      for (const _email of existentClientsEmail) {
-        const emailTemplate = newProjectCreatedEmail(_email.name, payload['project_name'], '');
-        await sendEmail(_email.email, `New Project Created - ${toTitleCase(payload['project_name'])}`, emailTemplate);
+        for (const _email of existentClientsEmail) {
+          try {
+            const emailTemplate = newProjectCreatedEmail(_email.name, payload['project_name'], '');
+            await sendEmail(_email.email, `New Project Created - ${toTitleCase(payload['project_name'])}`, emailTemplate);
+          } catch (error: any) {
+            console.error(`${this.traceId} Error sending project notification to existing client:`, error);
+          }
+        }
       }
 
       const author = user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id;

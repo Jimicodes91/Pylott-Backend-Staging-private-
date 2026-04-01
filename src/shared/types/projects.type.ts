@@ -24,6 +24,8 @@ export type CreateProjectType = {
   /** When true, send platform invite to the client after project creation. */
   send_client_invite?: boolean;
   invite_message?: string;
+  /** Multi-client support: array of client entries to create/link contacts. */
+  clients?: Array<{ email: string; phone: string; name?: string }>;
 };
 
 export type CreateMilestoneType = {
