@@ -74,4 +74,11 @@ export default (server: Server) => {
   } catch (error) {
     console.error('Failed to load project form routes:', error.message);
   }
+
+  try {
+    const { formsRoutes } = require('@/modules/forms/forms.route');
+    formsRoutes(`${RoutePrefix.V1}/forms`, server);
+  } catch (error) {
+    console.error('Failed to load forms routes:', error.message);
+  }
 };
