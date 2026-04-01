@@ -24,7 +24,9 @@ import { ProjectTaskAssignees } from '@/models/project_task_asignees.model';
 import { ProjectTask } from '@/models/project_task.model';
 import { User, UserModelType } from '@/models/user.model';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
-import { AUDIT_TRAIL_ACTION, DocumentsDirectory, EmailSubject, MetadataType, ProjectTaskStatus } from '@/shared/enums';
+import { StatusTransitionValidator } from '@/modules/projects/services/status-transition.service';
+import { AUDIT_TRAIL_ACTION, DocumentsDirectory, EmailSubject, MetadataType, ProjectTaskStatus, TaskActivityAction, UserRoles } from '@/shared/enums';
+import { TaskActivityLog } from '@/models/task_activity_log.model';
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { CreateTask } from '@/shared/types/projects.type';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
@@ -53,6 +55,7 @@ export class TaskService {
     private readonly attachmentRepository: DocumentAttachmentsRepository,
     private readonly auditTrailService: AuditTrailService,
     private readonly projectSettingsRepository: ProjectSettingsRepository,
+    private readonly statusTransitionValidator: StatusTransitionValidator,
   ) {}
 
   async createTask(user: UserModelType, project_id: string, payload: CreateTask): Promise<ServiceType> {
@@ -130,12 +133,15 @@ export class TaskService {
           company_id,
           name: payload.name,
           description: payload?.description ?? '',
-          status: (payload?.status as ProjectTaskStatus) || ProjectTaskStatus.PENDING,
+          status: (payload?.status as ProjectTaskStatus) || ProjectTaskStatus.DRAFT,
           due_date: dayjs(payload.due_date).format(),
           is_visible_to_client: payload.is_visible_to_client,
           author_id: user.id,
           task_type_id: payload?.task_type_id ?? null,
           project_type_id: payload.project_type_id,
+          task_category_type: payload?.task_category_type ?? null,
+          form_config: payload?.form_config ?? null,
+          signing_status: payload?.task_category_type === 'signing' ? 'sent' : null,
         };
 
         const documentData: Partial<Documents> = {
@@ -303,8 +309,30 @@ export class TaskService {
       }
 
       if (payload.due_date) updateData.due_date = dayjs(payload.due_date).format();
-      if (payload.status) updateData.status = payload.status as ProjectTaskStatus;
       if (payload.is_visible_to_client !== null || payload.is_visible_to_client !== undefined) updateData.is_visible_to_client = payload.is_visible_to_client;
+
+      // Validate status transition before persisting
+      const previousStatus = this.normalizeTaskStatus(task.status);
+      if (payload.status) {
+        const transitionResult = this.statusTransitionValidator.validateTransition(previousStatus, payload.status);
+        if (!transitionResult.status) {
+          return transitionResult;
+        }
+
+        // Enforce admin-only unarchive (archived → completed)
+        if (previousStatus === ProjectTaskStatus.ARCHIVED && payload.status === ProjectTaskStatus.COMPLETED) {
+          const userRole = user.role?.toLowerCase();
+          if (userRole !== UserRoles.ADMIN && userRole !== UserRoles.SUPER_ADMIN) {
+            return {
+              status: false,
+              message: 'Only ADMIN or SUPER_ADMIN users can unarchive tasks',
+              statusCode: StatusCodes.FORBIDDEN,
+            };
+          }
+        }
+
+        updateData.status = payload.status as ProjectTaskStatus;
+      }
 
       await Objection.Model.transaction(async (trx) => {
         await this.projectTaskRepository.update({ id: task_id, company_id }, updateData, trx);
@@ -326,6 +354,41 @@ export class TaskService {
           }
         }
       });
+
+      // Log status change to activity log and emit notification
+      if (payload.status && payload.status !== previousStatus) {
+        try {
+          await TaskActivityLog.query().insert({
+            id: uuidv4(),
+            task_id,
+            action: TaskActivityAction.STATUS_CHANGED,
+            previous_value: previousStatus,
+            new_value: payload.status,
+            user_id: user.id,
+            company_id: user.company_id,
+            metadata: JSON.stringify({ task_name: task.name, project_id }),
+          });
+        } catch (logError) {
+          console.log(`${this.traceId} Non-blocking: failed to log activity ===> ${(logError as Error)?.message}`);
+        }
+
+        // Emit notification for status change
+        const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
+        notificationEmitter.emitNotification({
+          user_id: task.author_id,
+          type: 'task_status_changed',
+          title: 'Task Status Updated',
+          message: `Task "${task.name}" status changed from "${previousStatus}" to "${payload.status}"`,
+          data: {
+            task_id,
+            project_id,
+            task_name: task.name,
+            previous_status: previousStatus,
+            new_status: payload.status,
+            task_link: taskLink,
+          },
+        });
+      }
 
       if (payload.status && payload.status === ProjectTaskStatus.COMPLETED) {
         const emailSubject = `${EmailSubject.TASK_COMPLETED} - ${task.name}`;
@@ -422,6 +485,7 @@ export class TaskService {
 
       task.due_date = dayjs(task.due_date).format('DD MMM, YYYY');
       task['assignees'] = task.assignees.map((assignee) => assignee.user).flat() as any;
+      task.status = this.normalizeTaskStatus(task.status);
 
       const today = dayjs().startOf('day');
       const dueDate = dayjs(task.due_date).startOf('day');
@@ -469,11 +533,30 @@ export class TaskService {
         query['is_visible_to_client'] = projectSettings?.client_can_view_task ?? query.is_visible_to_client;
       }
 
+      // Status filter: exclude archived by default unless explicitly requested
+      if (query.status) {
+        query['status_filter'] = query.status;
+        delete query.status;
+      } else if (query.include_archived === 'true' || query.include_archived === true) {
+        // No status filter, but include archived — don't exclude anything
+      } else {
+        query['exclude_archived'] = true;
+      }
+      delete query.include_archived;
+
+      // Task category type filter
+      if (query.task_category_type) {
+        query['task_category_type_filter'] = query.task_category_type;
+        delete query.task_category_type;
+      }
+
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
 
       const remappedTasks = await Promise.all(
         tasks.map(async (taskData) => {
           const { project_id, ...task } = taskData;
+
+          task.status = this.normalizeTaskStatus(task.status);
 
           const today = dayjs().startOf('day');
 
@@ -617,6 +700,118 @@ export class TaskService {
         message: 'An error occurred, please try again later',
       };
     }
+  }
+
+  /**
+   * Update the signing sub-status for a signing task.
+   * Validates the task is a signing task and the transition is valid.
+   * On 'signed', creates a document record linked to both task and project.
+   */
+  async updateSigningStatus(user: UserModelType, task_id: string, project_id: string, targetStatus: string): Promise<ServiceType> {
+    try {
+      const { company_id } = user;
+
+      const task = await this.projectTaskRepository.getTaskById(company_id, project_id, task_id);
+      if (!task) {
+        return {
+          status: false,
+          message: 'Task not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      if (task.task_category_type !== 'signing') {
+        return {
+          status: false,
+          message: 'This operation is only valid for signing tasks',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+
+      const currentSigningStatus = task.signing_status || 'sent';
+      const transitionResult = this.statusTransitionValidator.validateSigningTransition(currentSigningStatus, targetStatus);
+      if (!transitionResult.status) {
+        return transitionResult;
+      }
+
+      await this.projectTaskRepository.update({ id: task_id, company_id }, { signing_status: targetStatus } as any);
+
+      // If transitioning to 'signed', create a document record linked to both task and project
+      if (targetStatus === 'signed') {
+        try {
+          await this.documentRepository.create({
+            id: uuidv4(),
+            company_id,
+            project_id,
+            task_id,
+            type: MetadataType.TASK,
+            name: `Signed Document - ${task.name}`,
+            is_visible_to_client: task.is_visible_to_client ?? true,
+          } as any);
+        } catch (docError) {
+          console.log(`${this.traceId} Non-blocking: failed to create signed document record ===> ${(docError as Error)?.message}`);
+        }
+      }
+
+      // Log activity
+      try {
+        await TaskActivityLog.query().insert({
+          id: uuidv4(),
+          task_id,
+          action: TaskActivityAction.SIGNING_STATUS_CHANGED,
+          previous_value: currentSigningStatus,
+          new_value: targetStatus,
+          user_id: user.id,
+          company_id,
+          metadata: JSON.stringify({ task_name: task.name, project_id }),
+        });
+      } catch (logError) {
+        console.log(`${this.traceId} Non-blocking: failed to log signing activity ===> ${(logError as Error)?.message}`);
+      }
+
+      // Emit notification to task author
+      const taskLink = `${FRONTEND_URL}/projects/${project_id}/tasks/${task_id}`;
+      notificationEmitter.emitNotification({
+        user_id: task.author_id,
+        type: 'signing_status_changed',
+        title: 'Signing Status Updated',
+        message: `Signing status for task "${task.name}" changed from "${currentSigningStatus}" to "${targetStatus}"`,
+        data: {
+          task_id,
+          project_id,
+          task_name: task.name,
+          previous_signing_status: currentSigningStatus,
+          new_signing_status: targetStatus,
+          task_link: taskLink,
+        },
+      });
+
+      return {
+        status: true,
+        message: 'Signing status updated successfully',
+      };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error occurred updating signing status ===> ${JSON.stringify({
+          task_id,
+          err_msg: (error as Error)?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  /**
+   * Map legacy 'pending' status to 'sent' at the application layer.
+   * All other values pass through unchanged.
+   */
+  private normalizeTaskStatus(status: string): string {
+    if (status === 'pending') return 'sent';
+    return status;
   }
 
   private async updateTaskAssignees(payload: { task_id: string; project_id: string; company_id: string; current_assignees: ProjectTaskAssignees[]; new_assignees: string[] }): Promise<void> {

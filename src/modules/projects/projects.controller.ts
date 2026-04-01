@@ -10,14 +10,17 @@ import { MilestoneService } from './services/milestone.service';
 import { NotesService } from './services/notes.service';
 import { ProjectService } from './services/projects.service';
 import { TaskService } from './services/task.service';
+import { TaskCommentService } from './services/task-comment.service';
 import { TypeService } from './services/type.service';
 import { MetricsService } from './services/metrics.service';
 import { ObjectLiteral } from '@/shared/types/general.type';
+import { TaskActivityLog } from '@/models/task_activity_log.model';
 
 @injectable()
 export class ProjectController {
   constructor(
     private readonly taskService: TaskService,
+    private readonly taskCommentService: TaskCommentService,
     private readonly noteService: NotesService,
     private readonly projectService: ProjectService,
     private readonly milestoneService: MilestoneService,
@@ -247,6 +250,62 @@ export class ProjectController {
     const { task_id, attachment_id } = req.params;
 
     const { statusCode = null, ...others } = await this.taskService.deleteTaskAttachment(user, task_id, attachment_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  createTaskComment = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { project_id, task_id } = req.params;
+    const { content } = req.body;
+
+    const { statusCode = null, ...others } = await this.taskCommentService.createComment(user, task_id, project_id, content);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getTaskComments = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { project_id, task_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskCommentService.getComments(user.company_id, task_id, project_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  deleteTaskComment = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { comment_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskCommentService.deleteComment(user, comment_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  getTaskActivity = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id } = req.params;
+
+    try {
+      const entries = await TaskActivityLog.query().where({ task_id, company_id: user.company_id }).withGraphFetched('user').orderBy('created_at', 'asc');
+
+      genericResponse({ res, data: { status: true, message: 'Activity log retrieved', data: entries } });
+    } catch (error) {
+      genericResponse({ res, data: { status: false, message: 'Failed to fetch activity log' } });
+    }
+  };
+
+  updateSigningStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id, project_id } = req.params;
+    const { signing_status } = req.body;
+
+    const { statusCode = null, ...others } = await this.taskService.updateSigningStatus(user, task_id, project_id, signing_status);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  updateTaskStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id, project_id } = req.params;
+    const { status } = req.body;
+
+    const { statusCode = null, ...others } = await this.taskService.updateTask(user, task_id, project_id, { status });
     genericResponse({ res, data: others, statusCode });
   };
 

@@ -22,6 +22,9 @@ export class ProjectTask extends BaseModel {
   status: ProjectTaskStatus;
   due_date: string;
   is_visible_to_client: boolean;
+  signing_status?: string;
+  form_config?: string;
+  task_category_type?: string;
 
   assignees: Array<ProjectTaskAssignees>;
   project: any;
@@ -75,6 +78,22 @@ export class ProjectTask extends BaseModel {
         join: {
           from: 'project_tasks.project_id',
           to: 'projects.id',
+        },
+      },
+      comments: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: require('./task_comment.model').TaskComment,
+        join: {
+          from: 'project_tasks.id',
+          to: 'task_comments.task_id',
+        },
+      },
+      activity_log: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: require('./task_activity_log.model').TaskActivityLog,
+        join: {
+          from: 'project_tasks.id',
+          to: 'task_activity_log.task_id',
         },
       },
     };

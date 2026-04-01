@@ -115,6 +115,24 @@ export const projectRoutes = (prefix: string, server: Server) => {
   server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, projectController.deleteTaskAttachment);
 
   /**
+   * Task Comments
+   */
+  server.post(`${prefix}/:project_id/tasks/:task_id/comments`, authGuard, projectController.createTaskComment);
+  server.get(`${prefix}/:project_id/tasks/:task_id/comments`, authGuard, projectController.getTaskComments);
+  server.delete(`${prefix}/:project_id/tasks/:task_id/comments/:comment_id`, authGuard, projectController.deleteTaskComment);
+
+  /**
+   * Task Activity Log
+   */
+  server.get(`${prefix}/:project_id/tasks/:task_id/activity`, authGuard, projectController.getTaskActivity);
+
+  /**
+   * Task Status Transitions
+   */
+  server.patch(`${prefix}/:project_id/tasks/:task_id/signing-status`, authGuard, projectController.updateSigningStatus);
+  server.patch(`${prefix}/:project_id/tasks/:task_id/status`, authGuard, projectController.updateTaskStatus);
+
+  /**
    * Notes
    */
   server.post(`${prefix}/:project_id/notes`, authGuard, schemaValidator(createNoteValidationRules), projectController.createNote);

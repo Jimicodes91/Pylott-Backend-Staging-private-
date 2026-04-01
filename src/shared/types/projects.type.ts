@@ -61,6 +61,9 @@ export type CreateTask = {
   is_visible_to_client: boolean;
   task_type_id: string;
   project_type_id: string;
+  task_category_type?: string;
+  form_config?: string;
+  signing_status?: string;
 };
 
 export type AuditTrailPayload = {

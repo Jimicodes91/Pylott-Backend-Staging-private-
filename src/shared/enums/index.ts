@@ -35,9 +35,41 @@ export enum ProjectStatus {
 }
 
 export enum ProjectTaskStatus {
-  PENDING = 'pending',
+  DRAFT = 'draft',
+  SENT = 'sent',
+  PENDING = 'pending', // kept for backward compat reads
+  IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
+  ARCHIVED = 'archived',
   OVER_DUE = 'over_due', // computed only (task not completed and past due_date)
+}
+
+export enum SigningSubStatus {
+  SENT = 'sent',
+  VIEWED = 'viewed',
+  SIGNED = 'signed',
+  COMPLETED = 'completed',
+}
+
+export enum TaskCategoryType {
+  SIGNING = 'signing',
+  INFORMATION_REQUEST = 'information_request',
+  DOCUMENT_UPLOAD = 'document_upload',
+  REVIEW = 'review',
+  APPROVAL = 'approval',
+  MEETING = 'meeting',
+  FOLLOW_UP = 'follow_up',
+}
+
+export enum TaskActivityAction {
+  STATUS_CHANGED = 'status_changed',
+  SIGNING_STATUS_CHANGED = 'signing_status_changed',
+  COMMENT_ADDED = 'comment_added',
+  COMMENT_DELETED = 'comment_deleted',
+  DOCUMENT_UPLOADED = 'document_uploaded',
+  SIGNED_DOCUMENT_STORED = 'signed_document_stored',
+  TASK_ARCHIVED = 'task_archived',
+  TASK_SENT = 'task_sent',
 }
 
 export enum MetadataType {
@@ -110,12 +142,18 @@ export enum AUDIT_TRAIL_ACTION {
   USER_PROFILE_UPDATED = 'USER_PROFILE_UPDATED',
   USER_ADDED_TO_COMPANY = 'USER_ADDED_TO_COMPANY',
   USER_REMOVED_FROM_COMPANY = 'USER_REMOVED_FROM_COMPANY',
+  // Task lifecycle actions
+  TASK_STATUS_CHANGED = 'TASK_STATUS_CHANGED',
+  TASK_ARCHIVED = 'TASK_ARCHIVED',
+  TASK_SENT = 'TASK_SENT',
 }
 
 export enum EmailSubject {
   EVENT_CREATED = 'New Event Scheduled',
   TASK_COMPLETED = 'Task Completed',
   TASK_ASSIGNED = 'New Task Assigned',
+  TASK_STATUS_CHANGED = 'Task Status Updated',
+  SIGNING_STATUS_CHANGED = 'Signing Status Updated',
   MILESTONE_CREATED = 'New Milestone Added',
   PROJECT_CREATED = 'New Project Created',
   DOCUMENT_REQUEST = 'Document Request',

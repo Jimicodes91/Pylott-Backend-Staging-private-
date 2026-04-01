@@ -60,6 +60,18 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
       qb.whereILike('name', `%${query.search.trim()}%`);
     }
 
+    // Status filter: specific status or exclude archived by default
+    if (query.status_filter) {
+      qb.where('status', query.status_filter);
+    } else if (query.exclude_archived) {
+      qb.whereNot('status', ProjectTaskStatus.ARCHIVED);
+    }
+
+    // Task category type filter
+    if (query.task_category_type_filter) {
+      qb.where('task_category_type', query.task_category_type_filter);
+    }
+
     return await qb.withGraphFetched({
       document: { attachments: true },
       task_type: true,
@@ -83,6 +95,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
       .whereNull('project_tasks.deleted_at')
       .whereNull('project_task_assignees.deleted_at')
       .whereNot('project_tasks.status', ProjectTaskStatus.COMPLETED)
+      .whereNot('project_tasks.status', ProjectTaskStatus.ARCHIVED)
       .count('project_tasks.id as count')
       .first();
     return Number((result as any)?.count ?? 0);

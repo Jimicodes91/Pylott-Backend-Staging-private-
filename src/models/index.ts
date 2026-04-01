@@ -26,3 +26,5 @@ export * from './org-finance-payment.model';
 export * from './user_company.model';
 export * from './invitation.model';
 export * from './client_invite_request.model';
+export * from './task_comment.model';
+export * from './task_activity_log.model';

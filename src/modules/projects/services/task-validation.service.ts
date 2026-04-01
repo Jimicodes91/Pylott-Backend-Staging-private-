@@ -164,4 +164,89 @@ export class TaskValidationService {
 
     return { status: true, message: 'Required information is valid' };
   }
+
+  /**
+   * Validate signing task requires at least one document attachment.
+   */
+  validateSigningTaskFields(attachments?: string[]): ServiceType {
+    if (!attachments || attachments.length === 0) {
+      return {
+        status: false,
+        message: 'Signing tasks require at least one document attachment',
+        statusCode: StatusCodes.BAD_REQUEST,
+      };
+    }
+    return { status: true, message: 'Signing task fields valid' };
+  }
+
+  /**
+   * Validate information request task has exactly one mode (native or external)
+   * and a valid URL for external mode.
+   */
+  validateInfoRequestFields(formConfig: any): ServiceType {
+    if (!formConfig || !formConfig.mode) {
+      return {
+        status: false,
+        message: "Information request tasks require a form configuration with mode 'native' or 'external'",
+        statusCode: StatusCodes.BAD_REQUEST,
+      };
+    }
+
+    if (formConfig.mode !== 'native' && formConfig.mode !== 'external') {
+      return {
+        status: false,
+        message: "form_config must specify exactly one mode: 'native' or 'external'",
+        statusCode: StatusCodes.BAD_REQUEST,
+      };
+    }
+
+    if (formConfig.mode === 'external') {
+      if (!formConfig.external_url || typeof formConfig.external_url !== 'string') {
+        return {
+          status: false,
+          message: 'External form URL is required for external mode',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+      try {
+        const url = new URL(formConfig.external_url);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          return {
+            status: false,
+            message: 'External form URL must be a valid URL with http or https scheme',
+            statusCode: StatusCodes.BAD_REQUEST,
+          };
+        }
+      } catch {
+        return {
+          status: false,
+          message: 'External form URL must be a valid URL with http or https scheme',
+          statusCode: StatusCodes.BAD_REQUEST,
+        };
+      }
+    }
+
+    return { status: true, message: 'Information request fields valid' };
+  }
+
+  /**
+   * Validate document upload task configuration (allowed file types and max size).
+   */
+  validateDocUploadConfig(config: { allowed_types?: string[]; max_size_mb?: number }): ServiceType {
+    if (config.allowed_types && !Array.isArray(config.allowed_types)) {
+      return {
+        status: false,
+        message: 'allowed_types must be an array of file type strings',
+        statusCode: StatusCodes.BAD_REQUEST,
+      };
+    }
+    if (config.max_size_mb !== undefined && (typeof config.max_size_mb !== 'number' || config.max_size_mb <= 0)) {
+      return {
+        status: false,
+        message: 'max_size_mb must be a positive number',
+        statusCode: StatusCodes.BAD_REQUEST,
+      };
+    }
+    return { status: true, message: 'Document upload config valid' };
+  }
 }
