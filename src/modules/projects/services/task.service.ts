@@ -117,7 +117,7 @@ export class TaskService {
         }
       }
 
-      const existingTask = await this.projectTaskRepository.findOne({ project_id, name: payload.name, deleted_at: null });
+      const existingTask = payload.name ? await this.projectTaskRepository.findOne({ project_id, name: payload.name, deleted_at: null }) : null;
 
       if (existingTask) {
         return {
@@ -127,11 +127,12 @@ export class TaskService {
         };
       }
       await Objection.Model.transaction(async (trx) => {
+        const taskName = payload.name || `Task ${dayjs().format('MMM DD, YYYY')}`;
         const projectTaskData: Partial<ProjectTask> = {
           id: task_id,
           project_id,
           company_id,
-          name: payload.name,
+          name: taskName,
           description: payload?.description ?? '',
           status: (payload?.status as ProjectTaskStatus) || ProjectTaskStatus.DRAFT,
           due_date: dayjs(payload.due_date).format(),
@@ -150,7 +151,7 @@ export class TaskService {
           project_id,
           task_id,
           type: MetadataType.TASK,
-          name: payload.name,
+          name: taskName,
           is_visible_to_client: payload.is_visible_to_client,
         };
 
@@ -165,7 +166,7 @@ export class TaskService {
         if (payload.attachments && payload.attachments.length) {
           await payload.attachments.forEach(async (fileData) => {
             if (!fileData.includes('http')) {
-              const fileName = `${project_id}/${payload.name.replace(' ', '_').toLowerCase()}`;
+              const fileName = `${project_id}/${(payload.name || 'task').replace(' ', '_').toLowerCase()}`;
               const { data } = await this.cloudinary.upload(DocumentsDirectory.TASKS, fileData, fileName);
               if (data) await this.attachmentRepository.create({ ...documentAttachmentData, media_url: data });
             } else {
