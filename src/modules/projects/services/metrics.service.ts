@@ -35,7 +35,9 @@ export class MetricsService {
         percentage_increase: Math.round(percentage_increase * 100) / 100,
       };
 
-      const taskReport = await this.projectTaskRepository.getContextualTaskReport(company_id);
+      const contextualTaskReport = await this.projectTaskRepository.getContextualTaskReport(company_id);
+      // Spread 'all' counts at top level for backward compatibility with dashboard
+      const taskReport = { ...contextualTaskReport.all, ...contextualTaskReport };
 
       const recentProjects = await this.projectRepository.getRecentProject(company_id);
 
