@@ -10,6 +10,7 @@ import {
   createMilestoneValidationRules,
   createNoteValidationRules,
   createProjectTypeValidationRules,
+  createStandaloneTaskValidationRules,
   createTaskValidationRules,
   reorderMilestonesValidationRules,
   toggleNotePinValidationRules,
@@ -58,6 +59,7 @@ export const projectCoreRoutes = (prefix: string, server: Server) => {
   /**
    * Tasks
    */
+  server.post(`${prefix}/tasks`, authGuard, schemaValidator(createStandaloneTaskValidationRules), async (req, res) => (await getProjectController()).createStandaloneTask(req, res));
   server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), async (req, res) => (await getProjectController()).createTask(req, res));
   server.get(`${prefix}/tasks`, authGuard, async (req, res) => (await getProjectController()).getAllTasks(req, res));
   server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, async (req, res) => (await getProjectController()).getTaskById(req, res));

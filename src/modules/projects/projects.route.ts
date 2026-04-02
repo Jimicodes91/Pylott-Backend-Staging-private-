@@ -16,6 +16,7 @@ import {
   createNoteValidationRules,
   createProjectTypeValidationRules,
   // createProjectValidationRules,
+  createStandaloneTaskValidationRules,
   createTaskValidationRules,
   documentRequestValidationRules,
   reorderMilestonesValidationRules,
@@ -106,6 +107,7 @@ export const projectRoutes = (prefix: string, server: Server) => {
   /**
    * Tasks
    */
+  server.post(`${prefix}/tasks`, authGuard, schemaValidator(createStandaloneTaskValidationRules), projectController.createStandaloneTask);
   server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), projectController.createTask);
   server.get(`${prefix}/tasks`, authGuard, projectController.getAllTasks);
   server.get(`${prefix}/tasks/assigned-to-me/count`, authGuard, projectController.getMyAssignedTaskCount);

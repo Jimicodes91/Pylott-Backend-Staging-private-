@@ -207,6 +207,14 @@ export class ProjectController {
     genericResponse({ res, data: others, statusCode });
   };
 
+  createStandaloneTask = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const payload = req.body as CreateTask;
+
+    const { statusCode = null, ...others } = await this.taskService.createStandaloneTask(user, payload);
+    genericResponse({ res, data: others, statusCode });
+  };
+
   updateTask = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = req.user as UserModelType;
     const { task_id, project_id } = req.params;
@@ -245,6 +253,14 @@ export class ProjectController {
     genericResponse({ res, data: others, statusCode });
   };
 
+  deleteStandaloneTask = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskService.deleteStandaloneTask(user.company_id, task_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
   deleteTaskAttachment = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = req.user as UserModelType;
     const { task_id, attachment_id } = req.params;
@@ -262,6 +278,15 @@ export class ProjectController {
     genericResponse({ res, data: others, statusCode });
   };
 
+  createStandaloneTaskComment = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id } = req.params;
+    const { content } = req.body;
+
+    const { statusCode = null, ...others } = await this.taskCommentService.createStandaloneComment(user, task_id, content);
+    genericResponse({ res, data: others, statusCode });
+  };
+
   getTaskComments = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = req.user as UserModelType;
     const { project_id, task_id } = req.params;
@@ -270,7 +295,23 @@ export class ProjectController {
     genericResponse({ res, data: others, statusCode });
   };
 
+  getStandaloneTaskComments = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskCommentService.getStandaloneComments(user.company_id, task_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
   deleteTaskComment = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { comment_id } = req.params;
+
+    const { statusCode = null, ...others } = await this.taskCommentService.deleteComment(user, comment_id);
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  deleteStandaloneTaskComment = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = req.user as UserModelType;
     const { comment_id } = req.params;
 
@@ -306,6 +347,15 @@ export class ProjectController {
     const { status } = req.body;
 
     const { statusCode = null, ...others } = await this.taskService.updateTask(user, task_id, project_id, { status });
+    genericResponse({ res, data: others, statusCode });
+  };
+
+  updateStandaloneTaskStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id } = req.params;
+    const { status } = req.body;
+
+    const { statusCode = null, ...others } = await this.taskService.updateStandaloneTaskStatus(user, task_id, status);
     genericResponse({ res, data: others, statusCode });
   };
 

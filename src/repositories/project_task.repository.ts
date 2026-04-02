@@ -25,6 +25,10 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
     return await this.model.query().where({ company_id, project_id, id: task_id, deleted_at: null }).withGraphFetched({ assignees: true }).first();
   }
 
+  async getTaskByIdOnly(company_id: string, task_id: string) {
+    return await this.model.query().where({ company_id, id: task_id, deleted_at: null }).withGraphFetched({ assignees: true }).first();
+  }
+
   async getAllTasks(company_id: string, project_id: string = null, query: ObjectLiteral = {}) {
     let assignedTaskIds: string[] = [];
 

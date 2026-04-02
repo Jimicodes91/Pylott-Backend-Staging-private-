@@ -80,6 +80,85 @@ export class TaskCommentService {
     }
   }
 
+  async createStandaloneComment(user: UserModelType, taskId: string, content: string): Promise<ServiceType> {
+    try {
+      if (!content || !content.trim()) {
+        return { status: false, message: 'Comment content cannot be empty', statusCode: StatusCodes.BAD_REQUEST };
+      }
+
+      const task = await this.projectTaskRepository.getTaskByIdOnly(user.company_id, taskId);
+      if (!task) {
+        return { status: false, message: 'Task not found', statusCode: StatusCodes.NOT_FOUND };
+      }
+
+      const comment = await TaskComment.query().insert({
+        id: uuidv4(),
+        task_id: taskId,
+        author_id: user.id,
+        content: content.trim(),
+        company_id: user.company_id,
+      });
+
+      // Log activity (non-blocking)
+      try {
+        await TaskActivityLog.query().insert({
+          id: uuidv4(),
+          task_id: taskId,
+          action: TaskActivityAction.COMMENT_ADDED,
+          new_value: content.trim().substring(0, 100),
+          user_id: user.id,
+          company_id: user.company_id,
+          metadata: JSON.stringify({ comment_id: comment.id, project_id: task.project_id }),
+        });
+      } catch (e) {
+        console.log(`${this.traceId} Non-blocking: failed to log comment activity`);
+      }
+
+      // Notify all task participants except the comment author
+      const assignees = task.assignees || [];
+      const participantIds = new Set<string>();
+      if (task.author_id && task.author_id !== user.id) participantIds.add(task.author_id);
+      for (const a of assignees) {
+        const assigneeId = a.assignee_id || (a as any).user_id;
+        if (assigneeId && assigneeId !== user.id) participantIds.add(assigneeId);
+      }
+
+      const taskLink = task.project_id ? `${FRONTEND_URL}/projects/${task.project_id}/tasks/${taskId}` : `${FRONTEND_URL}/task`;
+      for (const participantId of participantIds) {
+        notificationEmitter.emitNotification({
+          user_id: participantId,
+          type: 'task_comment_added',
+          title: 'New Comment on Task',
+          message: `${user.name || 'Someone'} commented on task "${task.name}"`,
+          data: { task_id: taskId, project_id: task.project_id, comment_id: comment.id, task_link: taskLink },
+        });
+      }
+
+      const commentWithAuthor = await TaskComment.query().findById(comment.id).withGraphFetched('author');
+
+      return { status: true, message: 'Comment added', data: commentWithAuthor, statusCode: StatusCodes.CREATED };
+    } catch (error) {
+      console.log(`${this.traceId} Error creating standalone comment ===> ${(error as Error)?.message}`);
+      return { status: false, message: 'Failed to add comment' };
+    }
+  }
+
+  async getStandaloneComments(companyId: string, taskId: string): Promise<ServiceType> {
+    try {
+      const task = await this.projectTaskRepository.getTaskByIdOnly(companyId, taskId);
+      if (!task) {
+        return { status: false, message: 'Task not found', statusCode: StatusCodes.NOT_FOUND };
+      }
+
+      const comments = await TaskComment.query().where({ task_id: taskId, company_id: companyId }).whereNull('deleted_at').withGraphFetched('author').orderBy('created_at', 'asc');
+
+      return { status: true, message: 'Comments retrieved', data: comments };
+    } catch (error) {
+      console.log(`${this.traceId} Error fetching standalone comments ===> ${(error as Error)?.message}`);
+      return { status: false, message: 'Failed to fetch comments' };
+    }
+  }
+
   async getComments(companyId: string, taskId: string, projectId: string): Promise<ServiceType> {
     try {
       const task = await this.projectTaskRepository.getTaskById(companyId, projectId, taskId);

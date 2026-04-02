@@ -452,6 +452,47 @@ export const createTaskValidationRules = [
   body('is_visible_to_client').notEmpty().withMessage('Visibility to client is required').isBoolean().withMessage('Visibility must be a boolean').toBoolean(),
 ];
 
+export const createStandaloneTaskValidationRules = [
+  validateName('name', false, {
+    maxLength: 100,
+    customMessage: 'Numbers are not allowed in task name. Only letters, spaces, hyphens, and apostrophes are allowed',
+  }),
+
+  body('description').optional().trim().isString().withMessage('Description must be a string').isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
+
+  body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['pending', 'completed']).withMessage('Invalid status value'),
+
+  body('due_date').trim().notEmpty().withMessage('Due date is required').isISO8601().withMessage('Due date must be a valid ISO8601 date'),
+
+  body('assignees')
+    .optional()
+    .isArray()
+    .withMessage('Assignees must be an array')
+    .custom((value) => {
+      if (value.some((item: any) => typeof item !== 'string')) {
+        throw new Error('All assignee IDs must be strings');
+      }
+      return true;
+    }),
+
+  body('task_type_id').optional().trim().isString().withMessage('Task type ID must be a string'),
+
+  body('project_type_id').optional().trim().isString().withMessage('Project type ID must be a string'),
+
+  body('attachments')
+    .optional()
+    .isArray()
+    .withMessage('Attachments must be an array')
+    .custom((value) => {
+      if (value.some((item: any) => typeof item !== 'string')) {
+        throw new Error('All attachments must be strings');
+      }
+      return true;
+    }),
+
+  body('is_visible_to_client').notEmpty().withMessage('Visibility to client is required').isBoolean().withMessage('Visibility must be a boolean').toBoolean(),
+];
+
 export const updateTaskValidationRules = [
   validateName('name', true, {
     maxLength: 100,

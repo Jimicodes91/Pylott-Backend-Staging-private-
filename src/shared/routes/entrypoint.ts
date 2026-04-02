@@ -69,6 +69,13 @@ export default (server: Server) => {
   }
 
   try {
+    const { standaloneTaskRoutes } = require('@/modules/projects/task.route');
+    standaloneTaskRoutes(`${RoutePrefix.V1}/tasks`, server);
+  } catch (error) {
+    console.error('Failed to load standalone task routes:', error.message);
+  }
+
+  try {
     const { projectFormRoutes } = require('@/modules/projects/project-form.route');
     projectFormRoutes(`${RoutePrefix.V1}/projects`, server);
   } catch (error) {

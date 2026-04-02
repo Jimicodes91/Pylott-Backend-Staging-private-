@@ -233,6 +233,122 @@ export class TaskService {
     }
   }
 
+  async createStandaloneTask(user: UserModelType, payload: CreateTask): Promise<ServiceType> {
+    try {
+      const { company_id } = user;
+
+      if (payload.task_type_id) {
+        const metadataQuery = {
+          company_id,
+          type: MetadataType.TASK,
+          id: payload.task_type_id,
+          deleted_at: null,
+        };
+
+        const taskType = await this.metadataRepository.findOne(metadataQuery);
+
+        if (!taskType) return { status: false, message: 'Task type not found', statusCode: StatusCodes.NOT_FOUND };
+      }
+
+      const task_id = uuidv4();
+
+      const assigneePayload: Array<Partial<ProjectTaskAssignees>> = [];
+
+      if (payload.assignees && payload.assignees.length) {
+        for (const assignee_id of payload.assignees) {
+          const assignee = await this.userRepository.findOne({ id: assignee_id, deleted_at: null });
+          if (!assignee) {
+            return {
+              status: false,
+              message: 'Assignee not found',
+              statusCode: StatusCodes.NOT_FOUND,
+            };
+          }
+
+          assigneePayload.push({ company_id, assignee_id, project_id: null, task_id });
+        }
+      }
+
+      await Objection.Model.transaction(async (trx) => {
+        const projectTaskData: Partial<ProjectTask> = {
+          id: task_id,
+          project_id: null,
+          company_id,
+          name: payload.name,
+          description: payload?.description ?? '',
+          status: (payload?.status as ProjectTaskStatus) || ProjectTaskStatus.DRAFT,
+          due_date: dayjs(payload.due_date).format(),
+          is_visible_to_client: payload.is_visible_to_client,
+          author_id: user.id,
+          task_type_id: payload?.task_type_id ?? null,
+          project_type_id: null,
+          task_category_type: payload?.task_category_type ?? null,
+          form_config: payload?.form_config ?? null,
+          signing_status: payload?.task_category_type === 'signing' ? 'sent' : null,
+        };
+
+        await this.projectTaskRepository.create(projectTaskData, trx);
+        await this.projectTaskAssigneesRepository.createMultiple(assigneePayload, trx);
+      });
+
+      this.auditTrailService.createEvent(
+        AUDIT_TRAIL_ACTION.TASK_ADDED,
+        {
+          user_id: user.id,
+          company_id,
+          description: 'Task added',
+          entity_description: user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id,
+          entity_id: task_id,
+        },
+        null,
+      );
+
+      for (const assignee_id of payload.assignees ?? []) {
+        const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
+        const taskAuthor = await this.userRepository.findOne({ id: assignee_id });
+        const taskLink = `${FRONTEND_URL}/task`;
+        const formattedDueDate = payload.due_date ? dayjs(payload.due_date).format('MMMM DD, YYYY') : 'Not set';
+        const email = newTaskAssignedEmail(taskAuthor.name, payload.name, 'Standalone Task', formattedDueDate, taskLink);
+        await sendEmail(taskAuthor.email, emailSubject, email);
+
+        // Emit notification event for task assignment
+        notificationEmitter.emitNotification({
+          user_id: assignee_id,
+          type: 'task_assigned',
+          title: 'New Task Assigned',
+          message: `You have been assigned to standalone task "${payload.name}"`,
+          data: {
+            task_id,
+            project_id: null,
+            task_name: payload.name,
+            project_name: 'Standalone Task',
+            due_date: payload.due_date,
+            task_link: taskLink,
+          },
+        });
+      }
+
+      return {
+        status: true,
+        message: 'Task created successfully',
+      };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error occurred creating standalone task ===> ${JSON.stringify({
+          user_id: user.id,
+          company_id: user.company_id,
+          payload,
+          err_msg: error?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
   async updateTask(user: UserModelType, task_id: string, project_id: string, payload: Partial<CreateTask>): Promise<ServiceType> {
     try {
       const { company_id } = user;
@@ -461,6 +577,95 @@ export class TaskService {
     }
   }
 
+  async updateStandaloneTaskStatus(user: UserModelType, task_id: string, status: string): Promise<ServiceType> {
+    try {
+      const { company_id } = user;
+
+      const task = await this.projectTaskRepository.getTaskByIdOnly(company_id, task_id);
+      if (!task) {
+        return {
+          status: false,
+          message: 'Task not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      const previousStatus = this.normalizeTaskStatus(task.status);
+
+      const transitionResult = this.statusTransitionValidator.validateTransition(previousStatus, status);
+      if (!transitionResult.status) {
+        return transitionResult;
+      }
+
+      // Enforce admin-only unarchive (archived → completed)
+      if (previousStatus === ProjectTaskStatus.ARCHIVED && status === ProjectTaskStatus.COMPLETED) {
+        const userRole = user.role?.toLowerCase();
+        if (userRole !== UserRoles.ADMIN && userRole !== UserRoles.SUPER_ADMIN) {
+          return {
+            status: false,
+            message: 'Only ADMIN or SUPER_ADMIN users can unarchive tasks',
+            statusCode: StatusCodes.FORBIDDEN,
+          };
+        }
+      }
+
+      await this.projectTaskRepository.update({ id: task_id, company_id }, { status: status as ProjectTaskStatus });
+
+      // Log status change to activity log
+      if (status !== previousStatus) {
+        try {
+          await TaskActivityLog.query().insert({
+            id: uuidv4(),
+            task_id,
+            action: TaskActivityAction.STATUS_CHANGED,
+            previous_value: previousStatus,
+            new_value: status,
+            user_id: user.id,
+            company_id,
+            metadata: JSON.stringify({ task_name: task.name, project_id: null }),
+          });
+        } catch (logError) {
+          console.log(`${this.traceId} Non-blocking: failed to log activity ===> ${(logError as Error)?.message}`);
+        }
+
+        // Emit notification for status change
+        const taskLink = `${FRONTEND_URL}/task`;
+        notificationEmitter.emitNotification({
+          user_id: task.author_id,
+          type: 'task_status_changed',
+          title: 'Task Status Updated',
+          message: `Task "${task.name}" status changed from "${previousStatus}" to "${status}"`,
+          data: {
+            task_id,
+            project_id: null,
+            task_name: task.name,
+            previous_status: previousStatus,
+            new_status: status,
+            task_link: taskLink,
+          },
+        });
+      }
+
+      return {
+        status: true,
+        message: 'Task status updated successfully',
+      };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error occurred updating standalone task status ===> ${JSON.stringify({
+          task_id,
+          status,
+          err_msg: (error as Error)?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
   async getTaskById(user: UserModelType, company_id: string, project_id: string, task_id: string): Promise<ServiceType> {
     try {
       const task = await this.projectTaskRepository.getTaskDetails(company_id, project_id, task_id);
@@ -637,6 +842,47 @@ export class TaskService {
       console.log(
         `${this.traceId} Error occurred deleting task ===> ${JSON.stringify({
           project_id,
+          task_id,
+          err_msg: error?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
+  async deleteStandaloneTask(company_id: string, task_id: string): Promise<ServiceType> {
+    try {
+      const task = await this.projectTaskRepository.findOne({ id: task_id, company_id, deleted_at: null });
+      if (!task) {
+        return {
+          status: false,
+          message: 'Task not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      await Objection.Model.transaction(async (trx) => {
+        await this.projectTaskRepository.delete({ id: task_id, company_id }, false, trx);
+        await this.projectTaskAssigneesRepository.delete({ task_id, deleted_at: null }, false, trx);
+        const document = await this.documentRepository.findOne({ task_id, deleted_at: null });
+        if (document) {
+          await this.attachmentRepository.delete({ document_id: document.id, deleted_at: null }, false, trx);
+          await this.documentRepository.delete({ id: document.id }, false, trx);
+        }
+      });
+
+      return {
+        status: true,
+        message: 'Task deleted successfully',
+      };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error occurred deleting standalone task ===> ${JSON.stringify({
+          company_id,
           task_id,
           err_msg: error?.message,
         })}`,
