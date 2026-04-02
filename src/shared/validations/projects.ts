@@ -412,14 +412,14 @@ export const updateProjectValidationRules = [
 ];
 
 export const createTaskValidationRules = [
-  validateName('name', false, {
+  validateName('name', true, {
     maxLength: 100,
     customMessage: 'Numbers are not allowed in task name. Only letters, spaces, hyphens, and apostrophes are allowed',
   }),
 
   body('description').optional().trim().isString().withMessage('Description must be a string').isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
 
-  body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['pending', 'completed']).withMessage('Invalid status value'),
+  body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['draft', 'sent', 'pending', 'in_progress', 'completed', 'archived']).withMessage('Invalid status value'),
 
   body('due_date').trim().notEmpty().withMessage('Due date is required').isISO8601().withMessage('Due date must be a valid ISO8601 date'),
 
@@ -453,14 +453,14 @@ export const createTaskValidationRules = [
 ];
 
 export const createStandaloneTaskValidationRules = [
-  validateName('name', false, {
+  validateName('name', true, {
     maxLength: 100,
     customMessage: 'Numbers are not allowed in task name. Only letters, spaces, hyphens, and apostrophes are allowed',
   }),
 
   body('description').optional().trim().isString().withMessage('Description must be a string').isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
 
-  body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['pending', 'completed']).withMessage('Invalid status value'),
+  body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['draft', 'sent', 'pending', 'in_progress', 'completed', 'archived']).withMessage('Invalid status value'),
 
   body('due_date').trim().notEmpty().withMessage('Due date is required').isISO8601().withMessage('Due date must be a valid ISO8601 date'),
 
@@ -508,7 +508,7 @@ export const updateTaskValidationRules = [
     .withMessage('Status cannot be empty')
     .isString()
     .withMessage('Status must be a string')
-    .isIn(['pending', 'completed'])
+    .isIn(['draft', 'sent', 'pending', 'in_progress', 'completed', 'archived'])
     .withMessage('Invalid status value'),
 
   body('due_date').optional().trim().notEmpty().withMessage('Due date cannot be empty').isISO8601().withMessage('Due date must be a valid ISO8601 date'),
