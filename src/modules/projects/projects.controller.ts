@@ -233,10 +233,11 @@ export class ProjectController {
   };
 
   getAllTasks = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const { project_id = null, ...otherQueries } = req.query;
+    const { project_id = null, context, ...otherQueries } = req.query;
     const user = req.user as UserModelType;
 
-    const { statusCode = null, ...others } = await this.taskService.getAllTask(user, project_id as string | null, otherQueries);
+    const query = { ...otherQueries, ...(context ? { context } : {}) };
+    const { statusCode = null, ...others } = await this.taskService.getAllTask(user, project_id as string | null, query);
     genericResponse({ res, data: others, statusCode });
   };
 

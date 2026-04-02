@@ -2,7 +2,7 @@ import { container, injectable } from 'tsyringe';
 
 import BaseRepository from './base.repository';
 import { ProjectTask, ProjectTaskModelType } from '@/models/project_task.model';
-import { TaskStatusCounts } from '@/shared/interface/model';
+import { TaskStatusCounts, ContextualTaskReport } from '@/shared/interface/model';
 import { ProjectTaskStatus } from '@/shared/enums';
 import { ObjectLiteral } from '@/shared/types/general.type';
 import { ProjectTaskAssigneesRepository } from './project_task_asignees.repository';
@@ -76,6 +76,13 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
       qb.where('task_category_type', query.task_category_type_filter);
     }
 
+    // Context filter: standalone (organization) vs project-bound tasks
+    if (query.context_filter === 'organization') {
+      qb.whereNull('project_id');
+    } else if (query.context_filter === 'project') {
+      qb.whereNotNull('project_id');
+    }
+
     return await qb.withGraphFetched({
       document: { attachments: true },
       task_type: true,
@@ -137,6 +144,63 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
       in_progress: 0, // Only pending and completed states (requirement #13.2)
       pending: Number(result?.pending) || 0,
       overdue: Number(result?.overdue) || 0,
+    };
+  }
+
+  async getContextualTaskReport(companyId: string): Promise<ContextualTaskReport> {
+    const baseQuery = () => this.model.query().where('company_id', companyId).whereNull('deleted_at');
+
+    const statusSelect = [
+      this.model.raw('COUNT(id) as total'),
+      this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed']),
+      this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending', ['pending']),
+      this.model.raw(`SUM(CASE WHEN status != ? AND due_date IS NOT NULL AND due_date < NOW() THEN 1 ELSE 0 END) as overdue`, [ProjectTaskStatus.COMPLETED]),
+    ];
+
+    const toStatusCounts = (row: any): TaskStatusCounts => ({
+      total: Number(row?.total) || 0,
+      completed: Number(row?.completed) || 0,
+      in_progress: 0,
+      pending: Number(row?.pending) || 0,
+      overdue: Number(row?.overdue) || 0,
+    });
+
+    // All tasks
+    const allResult = await baseQuery().select(statusSelect).first();
+
+    // Standalone tasks (project_id IS NULL)
+    const standaloneResult = await baseQuery().whereNull('project_id').select(statusSelect).first();
+
+    // Project tasks (project_id IS NOT NULL)
+    const projectResult = await baseQuery().whereNotNull('project_id').select(statusSelect).first();
+
+    // Project tasks by category (internal/external)
+    const internalResult = await baseQuery().whereNotNull('project_id').where('task_category', 'internal').select(statusSelect).first();
+
+    const externalResult = await baseQuery().whereNotNull('project_id').where('task_category', 'external').select(statusSelect).first();
+
+    // Project tasks grouped by project_id with project name
+    const byProjectRows = await baseQuery()
+      .whereNotNull('project_tasks.project_id')
+      .join('projects', 'project_tasks.project_id', 'projects.id')
+      .select(['project_tasks.project_id', 'projects.name as project_name', ...statusSelect.map((s) => (typeof s === 'string' ? this.model.raw(s) : s))])
+      .groupBy('project_tasks.project_id', 'projects.name');
+
+    const projectByProject = (byProjectRows ?? []).map((row: any) => ({
+      project_id: row.project_id,
+      project_name: row.project_name || '',
+      counts: toStatusCounts(row),
+    }));
+
+    return {
+      all: toStatusCounts(allResult),
+      standalone: toStatusCounts(standaloneResult),
+      project: toStatusCounts(projectResult),
+      project_by_category: {
+        internal: toStatusCounts(internalResult),
+        external: toStatusCounts(externalResult),
+      },
+      project_by_project: projectByProject,
     };
   }
 }

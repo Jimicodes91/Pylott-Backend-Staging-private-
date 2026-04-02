@@ -755,6 +755,12 @@ export class TaskService {
         delete query.task_category_type;
       }
 
+      // Context filter: organization (standalone) vs project-bound tasks
+      if (query.context === 'organization' || query.context === 'project') {
+        query['context_filter'] = query.context;
+      }
+      delete query.context;
+
       const tasks = await this.projectTaskRepository.getAllTasks(company_id, project_id, query);
 
       const remappedTasks = await Promise.all(

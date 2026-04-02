@@ -35,7 +35,7 @@ export class MetricsService {
         percentage_increase: Math.round(percentage_increase * 100) / 100,
       };
 
-      const taskReport = await this.projectTaskRepository.getTaskStatusCounts(company_id);
+      const taskReport = await this.projectTaskRepository.getContextualTaskReport(company_id);
 
       const recentProjects = await this.projectRepository.getRecentProject(company_id);
 

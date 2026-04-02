@@ -14,6 +14,21 @@ export interface TaskStatusCounts {
   total: number;
 }
 
+export interface ContextualTaskReport {
+  all: TaskStatusCounts;
+  standalone: TaskStatusCounts;
+  project: TaskStatusCounts;
+  project_by_category: {
+    internal: TaskStatusCounts;
+    external: TaskStatusCounts;
+  };
+  project_by_project: Array<{
+    project_id: string;
+    project_name: string;
+    counts: TaskStatusCounts;
+  }>;
+}
+
 export interface PipelineAnalytics {
   id: string;
   name: string;
