@@ -9,15 +9,21 @@ const tableName = 'project_tasks';
  * columns must accept NULL values.
  */
 export async function up(knex: Knex): Promise<void> {
+  const hasProjectId = await knex.schema.hasColumn(tableName, 'project_id');
+  const hasProjectTypeId = await knex.schema.hasColumn(tableName, 'project_type_id');
+
   await knex.schema.alterTable(tableName, (table) => {
-    table.string('project_id').nullable().alter();
-    table.string('project_type_id').nullable().alter();
+    if (hasProjectId) table.string('project_id').nullable().alter();
+    if (hasProjectTypeId) table.string('project_type_id').nullable().alter();
   });
 }
 
 export async function down(knex: Knex): Promise<void> {
+  const hasProjectId = await knex.schema.hasColumn(tableName, 'project_id');
+  const hasProjectTypeId = await knex.schema.hasColumn(tableName, 'project_type_id');
+
   await knex.schema.alterTable(tableName, (table) => {
-    table.string('project_id').notNullable().alter();
-    table.string('project_type_id').notNullable().alter();
+    if (hasProjectId) table.string('project_id').notNullable().alter();
+    if (hasProjectTypeId) table.string('project_type_id').notNullable().alter();
   });
 }
