@@ -151,10 +151,10 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
     const baseQuery = () => this.model.query().where('company_id', companyId).whereNull('deleted_at');
 
     const statusSelect = [
-      this.model.raw('COUNT(id) as total'),
-      this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed']),
-      this.model.raw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending', ['pending']),
-      this.model.raw(`SUM(CASE WHEN status != ? AND due_date IS NOT NULL AND due_date < NOW() THEN 1 ELSE 0 END) as overdue`, [ProjectTaskStatus.COMPLETED]),
+      this.model.raw('COUNT(project_tasks.id) as total'),
+      this.model.raw('SUM(CASE WHEN project_tasks.status = ? THEN 1 ELSE 0 END) as completed', ['completed']),
+      this.model.raw('SUM(CASE WHEN project_tasks.status = ? THEN 1 ELSE 0 END) as pending', ['pending']),
+      this.model.raw(`SUM(CASE WHEN project_tasks.status != ? AND project_tasks.due_date IS NOT NULL AND project_tasks.due_date < NOW() THEN 1 ELSE 0 END) as overdue`, [ProjectTaskStatus.COMPLETED]),
     ];
 
     const toStatusCounts = (row: any): TaskStatusCounts => ({
