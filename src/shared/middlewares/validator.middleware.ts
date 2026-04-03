@@ -21,6 +21,9 @@ export const schemaValidator = (schemaValidationRules: ValidationChain[]) => {
       value: err.value,
     }));
 
+    console.log('[VALIDATION DEBUG] Request body:', JSON.stringify(request.body));
+    console.log('[VALIDATION DEBUG] Validation errors:', JSON.stringify(errors));
+
     // Get the first error message as the main message, or use a generic one
     const mainMessage = errors.length > 0 ? errors[0].message : 'Validation failed';
 

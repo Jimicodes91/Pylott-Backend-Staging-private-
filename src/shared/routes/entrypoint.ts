@@ -21,6 +21,7 @@ import { subscriptionRoutes } from '@/modules/subscription/subscription.route';
 
 export default (server: Server) => {
   server.get('/', (_: Request, response: Response) => successResponse(response, 'Welcome to Pylott 🚀'));
+  server.get('/debug/version', (_: Request, response: Response) => successResponse(response, 'v2-task-context-separation-debug'));
 
   // Auth & notifications
   authRoutes(`${RoutePrefix.V1}/auth`, server);
