@@ -37,11 +37,10 @@ export enum ProjectStatus {
 export enum ProjectTaskStatus {
   DRAFT = 'draft',
   SENT = 'sent',
-  PENDING = 'pending', // kept for backward compat reads
+  PENDING = 'pending',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
-  OVER_DUE = 'over_due', // computed only (task not completed and past due_date)
 }
 
 export enum SigningSubStatus {
