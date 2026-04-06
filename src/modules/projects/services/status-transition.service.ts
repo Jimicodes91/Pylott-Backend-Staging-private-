@@ -7,10 +7,11 @@ import { ServiceType } from '@/shared/types/general.type';
  * These are compile-time constants — not stored in the database.
  */
 export const TASK_TRANSITION_MAP: Record<string, string[]> = {
-  draft: ['sent'],
-  sent: ['in_progress', 'draft'],
-  in_progress: ['completed', 'sent'],
-  completed: ['archived'],
+  draft: ['sent', 'in_progress', 'completed'],
+  sent: ['in_progress', 'draft', 'completed'],
+  pending: ['in_progress', 'completed'], // legacy status
+  in_progress: ['completed', 'sent', 'pending'],
+  completed: ['archived', 'in_progress', 'pending'],
   archived: ['completed'], // unarchive (admin only)
 };
 
