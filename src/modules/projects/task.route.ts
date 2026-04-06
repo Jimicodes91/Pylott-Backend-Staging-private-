@@ -22,6 +22,11 @@ export const standaloneTaskRoutes = (prefix: string, server: Server) => {
   server.delete(`${prefix}/:task_id`, authGuard, async (req, res) => (await getProjectController()).deleteStandaloneTask(req, res));
 
   /**
+   * Standalone Task General Update
+   */
+  server.patch(`${prefix}/:task_id`, authGuard, async (req, res) => (await getProjectController()).updateStandaloneTask(req, res));
+
+  /**
    * Standalone Task Status Update
    */
   server.patch(`${prefix}/:task_id/status`, authGuard, async (req, res) => (await getProjectController()).updateStandaloneTaskStatus(req, res));

@@ -351,6 +351,15 @@ export class ProjectController {
     genericResponse({ res, data: others, statusCode });
   };
 
+  updateStandaloneTask = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user as UserModelType;
+    const { task_id } = req.params;
+    const payload = req.body;
+
+    const { statusCode = null, ...others } = await this.taskService.updateStandaloneTask(user, task_id, payload);
+    genericResponse({ res, data: others, statusCode });
+  };
+
   updateStandaloneTaskStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = req.user as UserModelType;
     const { task_id } = req.params;

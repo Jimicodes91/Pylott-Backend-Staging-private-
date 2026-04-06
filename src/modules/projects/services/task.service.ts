@@ -666,6 +666,116 @@ export class TaskService {
     }
   }
 
+  async updateStandaloneTask(user: UserModelType, task_id: string, payload: { name?: string; due_date?: string; status?: string; task_category_type?: string }): Promise<ServiceType> {
+    try {
+      const { company_id } = user;
+
+      const task = await this.projectTaskRepository.getTaskByIdOnly(company_id, task_id);
+      if (!task) {
+        return {
+          status: false,
+          message: 'Task not found',
+          statusCode: StatusCodes.NOT_FOUND,
+        };
+      }
+
+      const previousStatus = this.normalizeTaskStatus(task.status);
+
+      // Validate name if provided
+      if (payload.name !== undefined) {
+        if (!payload.name || !payload.name.trim()) {
+          return {
+            status: false,
+            message: 'Task name cannot be empty',
+            statusCode: StatusCodes.BAD_REQUEST,
+          };
+        }
+      }
+
+      // Validate status transition if status provided
+      if (payload.status) {
+        const transitionResult = this.statusTransitionValidator.validateTransition(previousStatus, payload.status);
+        if (!transitionResult.status) {
+          return transitionResult;
+        }
+
+        // Enforce admin-only unarchive (archived → completed)
+        if (previousStatus === ProjectTaskStatus.ARCHIVED && payload.status === ProjectTaskStatus.COMPLETED) {
+          const userRole = user.role?.toLowerCase();
+          if (userRole !== UserRoles.ADMIN && userRole !== UserRoles.SUPER_ADMIN) {
+            return {
+              status: false,
+              message: 'Only ADMIN or SUPER_ADMIN users can unarchive tasks',
+              statusCode: StatusCodes.FORBIDDEN,
+            };
+          }
+        }
+      }
+
+      // Build update object with only provided fields
+      const updateFields: Partial<ProjectTask> = {};
+      if (payload.name !== undefined) updateFields.name = payload.name.trim();
+      if (payload.due_date !== undefined) updateFields.due_date = dayjs(payload.due_date).format();
+      if (payload.status !== undefined) updateFields.status = payload.status as ProjectTaskStatus;
+      if (payload.task_category_type !== undefined) updateFields.task_category_type = payload.task_category_type;
+
+      await this.projectTaskRepository.update({ id: task_id, company_id }, updateFields);
+
+      // Log activity and emit notification if status changed
+      if (payload.status && payload.status !== previousStatus) {
+        try {
+          await TaskActivityLog.query().insert({
+            id: uuidv4(),
+            task_id,
+            action: TaskActivityAction.STATUS_CHANGED,
+            previous_value: previousStatus,
+            new_value: payload.status,
+            user_id: user.id,
+            company_id,
+            metadata: JSON.stringify({ task_name: task.name, project_id: null }),
+          });
+        } catch (logError) {
+          console.log(`${this.traceId} Non-blocking: failed to log activity ===> ${(logError as Error)?.message}`);
+        }
+
+        // Emit notification for status change
+        const taskLink = `${FRONTEND_URL}/task`;
+        notificationEmitter.emitNotification({
+          user_id: task.author_id,
+          type: 'task_status_changed',
+          title: 'Task Status Updated',
+          message: `Task "${task.name}" status changed from "${previousStatus}" to "${payload.status}"`,
+          data: {
+            task_id,
+            project_id: null,
+            task_name: task.name,
+            previous_status: previousStatus,
+            new_status: payload.status,
+            task_link: taskLink,
+          },
+        });
+      }
+
+      return {
+        status: true,
+        message: 'Task updated successfully',
+      };
+    } catch (error) {
+      console.log(
+        `${this.traceId} Error occurred updating standalone task ===> ${JSON.stringify({
+          task_id,
+          payload,
+          err_msg: (error as Error)?.message,
+        })}`,
+      );
+
+      return {
+        status: false,
+        message: 'An error occurred, please try again later',
+      };
+    }
+  }
+
   async getTaskById(user: UserModelType, company_id: string, project_id: string, task_id: string): Promise<ServiceType> {
     try {
       const task = await this.projectTaskRepository.getTaskDetails(company_id, project_id, task_id);
