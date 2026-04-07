@@ -16,6 +16,7 @@ const getProjectController = async () => {
  * These support standalone tasks where project_id may be null.
  */
 export const standaloneTaskRoutes = (prefix: string, server: Server) => {
+  console.log(`[STANDALONE TASK ROUTES] Registering routes with prefix: ${prefix}`);
   /**
    * Standalone Task Delete
    */
