@@ -62,10 +62,31 @@ export const projectCoreRoutes = (prefix: string, server: Server) => {
   server.post(`${prefix}/tasks`, authGuard, schemaValidator(createStandaloneTaskValidationRules), async (req, res) => (await getProjectController()).createStandaloneTask(req, res));
   server.post(`${prefix}/:project_id/tasks`, authGuard, schemaValidator(createTaskValidationRules), async (req, res) => (await getProjectController()).createTask(req, res));
   server.get(`${prefix}/tasks`, authGuard, async (req, res) => (await getProjectController()).getAllTasks(req, res));
+  server.get(`${prefix}/tasks/assigned-to-me/count`, authGuard, async (req, res) => (await getProjectController()).getMyAssignedTaskCount(req, res));
   server.get(`${prefix}/:project_id/tasks/:task_id`, authGuard, async (req, res) => (await getProjectController()).getTaskById(req, res));
   server.patch(`${prefix}/:project_id/tasks/:task_id`, authGuard, schemaValidator(updateTaskValidationRules), async (req, res) => (await getProjectController()).updateTask(req, res));
   server.delete(`${prefix}/:project_id/tasks/:task_id`, authGuard, async (req, res) => (await getProjectController()).deleteTask(req, res));
   server.delete(`${prefix}/:project_id/tasks/:task_id/attachments/:attachment_id`, authGuard, async (req, res) => (await getProjectController()).deleteTaskAttachment(req, res));
+
+  /**
+   * Task Comments (project-bound)
+   */
+  server.post(`${prefix}/:project_id/tasks/:task_id/comments`, authGuard, schemaValidator(createCommentValidationRules), async (req, res) =>
+    (await getProjectController()).createTaskComment(req, res),
+  );
+  server.get(`${prefix}/:project_id/tasks/:task_id/comments`, authGuard, async (req, res) => (await getProjectController()).getTaskComments(req, res));
+  server.delete(`${prefix}/:project_id/tasks/:task_id/comments/:comment_id`, authGuard, async (req, res) => (await getProjectController()).deleteTaskComment(req, res));
+
+  /**
+   * Task Activity Log (project-bound)
+   */
+  server.get(`${prefix}/:project_id/tasks/:task_id/activity`, authGuard, async (req, res) => (await getProjectController()).getTaskActivity(req, res));
+
+  /**
+   * Task Status Transitions (project-bound)
+   */
+  server.patch(`${prefix}/:project_id/tasks/:task_id/signing-status`, authGuard, async (req, res) => (await getProjectController()).updateSigningStatus(req, res));
+  server.patch(`${prefix}/:project_id/tasks/:task_id/status`, authGuard, async (req, res) => (await getProjectController()).updateTaskStatus(req, res));
 
   /**
    * Notes
