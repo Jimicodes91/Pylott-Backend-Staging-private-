@@ -215,6 +215,7 @@ export class TaskService {
       return {
         status: true,
         message: 'Task created successfully',
+        data: { task_id },
       };
     } catch (error) {
       console.log(
@@ -331,6 +332,7 @@ export class TaskService {
       return {
         status: true,
         message: 'Task created successfully',
+        data: { task_id },
       };
     } catch (error) {
       console.log(
