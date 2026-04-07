@@ -282,7 +282,6 @@ export class TaskService {
           is_visible_to_client: payload.is_visible_to_client,
           author_id: user.id,
           task_type_id: payload?.task_type_id ?? null,
-          project_type_id: null,
           task_category_type: payload?.task_category_type ?? null,
           form_config: payload?.form_config ?? null,
           signing_status: payload?.task_category_type === 'signing' ? 'sent' : null,
