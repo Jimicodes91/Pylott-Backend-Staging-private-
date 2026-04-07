@@ -845,9 +845,12 @@ export class TaskService {
       }
 
       const projectSettings = await this.projectSettingsRepository.getOne({ company_id, deleted_at: null });
-      // Only apply project-level default when no explicit Inhouse/Client filter was provided
+      // The client_can_view_task setting only controls the DEFAULT visibility filter.
+      // For non-client users, skip this default so admins always see all tasks (internal + client-facing).
+      // The frontend can still pass ?is_visible_to_client=true/false to explicitly filter.
+      // Previously this was applying the project setting as a default, which hid internal tasks from admins.
       if (!isClient && (query.is_visible_to_client === undefined || query.is_visible_to_client === null)) {
-        query['is_visible_to_client'] = projectSettings?.client_can_view_task ?? query.is_visible_to_client;
+        // Don't apply project settings default — admins should see all tasks by default
       }
 
       // Status filter: exclude archived by default unless explicitly requested
