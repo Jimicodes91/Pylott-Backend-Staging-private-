@@ -189,7 +189,7 @@ export class TaskCommentService {
 
       await TaskComment.query()
         .findById(commentId)
-        .patch({ deleted_at: new Date().toISOString() } as any);
+        .patch({ deleted_at: new Date().toISOString().slice(0, 19).replace('T', ' ') } as any);
 
       // Log activity (non-blocking)
       try {
