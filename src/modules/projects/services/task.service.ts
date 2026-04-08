@@ -667,7 +667,7 @@ export class TaskService {
     }
   }
 
-  async updateStandaloneTask(user: UserModelType, task_id: string, payload: { name?: string; due_date?: string; status?: string; task_category_type?: string }): Promise<ServiceType> {
+  async updateStandaloneTask(user: UserModelType, task_id: string, payload: { name?: string; due_date?: string; status?: string; task_category_type?: string; contact_id?: string | null; priority?: string; description?: string }): Promise<ServiceType> {
     try {
       const { company_id } = user;
 
@@ -713,12 +713,27 @@ export class TaskService {
         }
       }
 
+      // Validate contact_id if provided and not null
+      if (payload.contact_id !== undefined && payload.contact_id !== null) {
+        const contact = await this.contactRepository.getContactById(payload.contact_id);
+        if (!contact || contact.company_id !== company_id) {
+          return {
+            status: false,
+            message: 'Contact not found or does not belong to this company',
+            statusCode: StatusCodes.BAD_REQUEST,
+          };
+        }
+      }
+
       // Build update object with only provided fields
       const updateFields: Partial<ProjectTask> = {};
       if (payload.name !== undefined) updateFields.name = payload.name.trim();
       if (payload.due_date !== undefined) updateFields.due_date = dayjs(payload.due_date).format();
       if (payload.status !== undefined) updateFields.status = payload.status as ProjectTaskStatus;
       if (payload.task_category_type !== undefined) updateFields.task_category_type = payload.task_category_type;
+      if (payload.contact_id !== undefined) updateFields.contact_id = payload.contact_id;
+      if (payload.priority !== undefined) updateFields.priority = payload.priority;
+      if (payload.description !== undefined) updateFields.description = payload.description;
 
       await this.projectTaskRepository.update({ id: task_id, company_id }, updateFields);
 

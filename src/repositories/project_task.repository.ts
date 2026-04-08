@@ -17,7 +17,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
     return await this.model
       .query()
       .where({ company_id, project_id, id: task_id, deleted_at: null })
-      .withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true })
+      .withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true, contact: true })
       .first();
   }
 
@@ -89,6 +89,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
       pipeline: true,
       assignees: { user: true },
       company: true,
+      contact: true,
     });
   }
 

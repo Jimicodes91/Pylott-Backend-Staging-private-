@@ -24,6 +24,8 @@ export class ProjectTask extends BaseModel {
   signing_status?: string;
   form_config?: string;
   task_category_type?: string;
+  contact_id?: string;
+  priority?: string;
 
   assignees: Array<ProjectTaskAssignees>;
   project: any;
@@ -93,6 +95,15 @@ export class ProjectTask extends BaseModel {
         join: {
           from: 'project_tasks.id',
           to: 'task_activity_log.task_id',
+        },
+      },
+      contact: {
+        relation: BaseModel.BelongsToOneRelation,
+        modelClass: require('./contact.model').Contact,
+        filter: (query) => query.select('id', 'name', 'email', 'phone', 'organization'),
+        join: {
+          from: 'project_tasks.contact_id',
+          to: 'contacts.id',
         },
       },
     };
