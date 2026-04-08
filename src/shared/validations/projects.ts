@@ -475,9 +475,9 @@ export const createStandaloneTaskValidationRules = [
       return true;
     }),
 
-  body('task_type_id').optional().trim().isString().withMessage('Task type ID must be a string'),
+  body('task_type_id').optional({ nullable: true }).trim().isString().withMessage('Task type ID must be a string'),
 
-  body('project_type_id').optional().trim().isString().withMessage('Project type ID must be a string'),
+  body('project_type_id').optional({ nullable: true }).trim().isString().withMessage('Project type ID must be a string'),
 
   body('attachments')
     .optional()
