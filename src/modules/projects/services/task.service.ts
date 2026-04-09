@@ -142,6 +142,8 @@ export class TaskService {
           task_category_type: payload?.task_category_type ?? null,
           form_config: payload?.form_config ?? null,
           signing_status: payload?.task_category_type === 'signing' ? 'sent' : null,
+          contact_id: payload?.contact_id ?? null,
+          priority: payload?.priority ?? null,
         };
 
         const documentData: Partial<Documents> = {
@@ -285,6 +287,8 @@ export class TaskService {
           task_category_type: payload?.task_category_type ?? null,
           form_config: payload?.form_config ?? null,
           signing_status: payload?.task_category_type === 'signing' ? 'sent' : null,
+          contact_id: payload?.contact_id ?? null,
+          priority: payload?.priority ?? null,
         };
 
         await this.projectTaskRepository.create(projectTaskData, trx);

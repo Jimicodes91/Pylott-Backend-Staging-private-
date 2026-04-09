@@ -64,6 +64,8 @@ export type CreateTask = {
   task_category_type?: string;
   form_config?: string;
   signing_status?: string;
+  contact_id?: string;
+  priority?: string;
 };
 
 export type AuditTrailPayload = {
