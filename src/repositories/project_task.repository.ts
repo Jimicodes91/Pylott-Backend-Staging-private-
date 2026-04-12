@@ -149,7 +149,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
   }
 
   async getContextualTaskReport(companyId: string): Promise<ContextualTaskReport> {
-    const baseQuery = () => this.model.query().where('company_id', companyId).whereNull('deleted_at');
+    const baseQuery = () => this.model.query().where('project_tasks.company_id', companyId).whereNull('project_tasks.deleted_at');
 
     const statusSelect = [
       this.model.raw('COUNT(project_tasks.id) as total'),
