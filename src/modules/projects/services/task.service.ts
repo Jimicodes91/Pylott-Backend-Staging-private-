@@ -117,15 +117,6 @@ export class TaskService {
         }
       }
 
-      const existingTask = payload.name ? await this.projectTaskRepository.findOne({ project_id, name: payload.name, deleted_at: null }) : null;
-
-      if (existingTask) {
-        return {
-          status: false,
-          message: 'Task name already exists in this project',
-          statusCode: StatusCodes.NOT_FOUND,
-        };
-      }
       await Objection.Model.transaction(async (trx) => {
         const taskName = payload.name || `Task ${dayjs().format('MMM DD, YYYY')}`;
         const projectTaskData: Partial<ProjectTask> = {
