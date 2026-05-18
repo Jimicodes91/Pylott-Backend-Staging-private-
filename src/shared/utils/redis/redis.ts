@@ -7,18 +7,36 @@ import { redis as redisConfig } from '@config/env';
 @singleton()
 export class Redis {
   private instance: RedisClientType;
+  private connected = false;
 
   constructor() {
     this.instance = redis.createClient({ url: redisConfig.url });
 
-    this.instance.connect();
-
-    this.instance.on('connect', () => {
-      console.info('Redis instance connected 🐧');
-    });
+    // Non-blocking connect — server starts even if Redis is unavailable
+    this.instance
+      .connect()
+      .then(() => {
+        this.connected = true;
+        console.info('Redis instance connected 🐧');
+      })
+      .catch((err) => {
+        this.connected = false;
+        console.warn(`⚠️ Redis connection failed (non-fatal): ${err.message}`);
+        console.warn('⚠️ Features requiring Redis (client invitation caching, OTP) will be unavailable');
+      });
 
     this.instance.on('error', (err) => {
-      console.error(err, 'An error occurred connecting to Redis instance 🐧');
+      this.connected = false;
+      console.error('Redis error:', err.message);
+    });
+
+    this.instance.on('reconnecting', () => {
+      console.info('Redis reconnecting...');
+    });
+
+    this.instance.on('ready', () => {
+      this.connected = true;
+      console.info('Redis ready 🐧');
     });
   }
 
@@ -26,13 +44,16 @@ export class Redis {
     if (!this.instance) {
       new Redis();
     }
-
     return this.instance;
+  }
+
+  isConnected(): boolean {
+    return this.connected;
   }
 
   disconnect() {
     if (this.instance) {
-      this.instance.quit();
+      this.instance.quit().catch(() => {});
     }
   }
 }
