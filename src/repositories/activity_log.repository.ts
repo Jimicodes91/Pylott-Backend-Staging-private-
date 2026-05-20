@@ -15,7 +15,11 @@ export class ActivityLogRepository extends BaseRepository<ActivityLogsModelType,
     const { page, limit } = pagination;
     const offset = (page - 1) * limit;
 
-    const query = this.model.query().where('company_id', company_id);
+    const query = this.model.query();
+
+    if (company_id) {
+      query.where('company_id', company_id);
+    }
 
     if (project_id) query.where('project_id', project_id);
 

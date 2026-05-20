@@ -271,7 +271,7 @@ export class TaskService {
           name: payload.name,
           description: payload?.description ?? '',
           status: (payload?.status as ProjectTaskStatus) || ProjectTaskStatus.DRAFT,
-          due_date: dayjs(payload.due_date).format(),
+          due_date: payload.due_date ? dayjs(payload.due_date).format() : null,
           is_visible_to_client: payload.is_visible_to_client,
           author_id: user.id,
           task_type_id: payload?.task_type_id ?? null,
@@ -286,48 +286,59 @@ export class TaskService {
         await this.projectTaskAssigneesRepository.createMultiple(assigneePayload, trx);
       });
 
-      this.auditTrailService.createEvent(
-        AUDIT_TRAIL_ACTION.TASK_ADDED,
-        {
-          user_id: user.id,
-          company_id,
-          description: 'Task added',
-          entity_description: user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id,
-          entity_id: task_id,
-        },
-        null,
-      );
-
-      for (const assignee_id of payload.assignees ?? []) {
-        const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
-        const taskAuthor = await this.userRepository.findOne({ id: assignee_id });
-        const taskLink = `${FRONTEND_URL}/task`;
-        const formattedDueDate = payload.due_date ? dayjs(payload.due_date).format('MMMM DD, YYYY') : 'Not set';
-        const email = newTaskAssignedEmail(taskAuthor.name, payload.name, 'Standalone Task', formattedDueDate, taskLink);
-        await sendEmail(taskAuthor.email, emailSubject, email);
-
-        // Emit notification event for task assignment
-        notificationEmitter.emitNotification({
-          user_id: assignee_id,
-          type: 'task_assigned',
-          title: 'New Task Assigned',
-          message: `You have been assigned to standalone task "${payload.name}"`,
-          data: {
-            task_id,
-            project_id: null,
-            task_name: payload.name,
-            project_name: 'Standalone Task',
-            due_date: payload.due_date,
-            task_link: taskLink,
-          },
-        });
-      }
-
-      return {
+      // Return success immediately — notifications are best-effort
+      const result = {
         status: true,
         message: 'Task created successfully',
         data: { task_id },
       };
+
+      // Fire-and-forget: audit trail and notifications
+      try {
+        this.auditTrailService.createEvent(
+          AUDIT_TRAIL_ACTION.TASK_ADDED,
+          {
+            user_id: user.id,
+            company_id,
+            description: 'Task added',
+            entity_description: user?.name?.length ? user.name.replace(/^./, (c) => c.toUpperCase()) : user.id,
+            entity_id: task_id,
+          },
+          null,
+        );
+
+        for (const assignee_id of payload.assignees ?? []) {
+          try {
+            const emailSubject = `${EmailSubject.TASK_ASSIGNED} - ${payload.name}`;
+            const taskAuthor = await this.userRepository.findOne({ id: assignee_id });
+            const taskLink = `${FRONTEND_URL}/task`;
+            const formattedDueDate = payload.due_date ? dayjs(payload.due_date).format('MMMM DD, YYYY') : 'Not set';
+            const email = newTaskAssignedEmail(taskAuthor.name, payload.name, 'Standalone Task', formattedDueDate, taskLink);
+            await sendEmail(taskAuthor.email, emailSubject, email);
+
+            notificationEmitter.emitNotification({
+              user_id: assignee_id,
+              type: 'task_assigned',
+              title: 'New Task Assigned',
+              message: `You have been assigned to standalone task "${payload.name}"`,
+              data: {
+                task_id,
+                project_id: null,
+                task_name: payload.name,
+                project_name: 'Standalone Task',
+                due_date: payload.due_date,
+                task_link: taskLink,
+              },
+            });
+          } catch (notifError) {
+            console.log(`${this.traceId} Non-fatal: Failed to send notification for assignee ${assignee_id}:`, notifError?.message);
+          }
+        }
+      } catch (postCreateError) {
+        console.log(`${this.traceId} Non-fatal post-create error:`, postCreateError?.message);
+      }
+
+      return result;
     } catch (error) {
       console.log(
         `${this.traceId} Error occurred creating standalone task ===> ${JSON.stringify({
@@ -662,7 +673,11 @@ export class TaskService {
     }
   }
 
-  async updateStandaloneTask(user: UserModelType, task_id: string, payload: { name?: string; due_date?: string; status?: string; task_category_type?: string; contact_id?: string | null; priority?: string; description?: string }): Promise<ServiceType> {
+  async updateStandaloneTask(
+    user: UserModelType,
+    task_id: string,
+    payload: { name?: string; due_date?: string; status?: string; task_category_type?: string; contact_id?: string | null; priority?: string; description?: string },
+  ): Promise<ServiceType> {
     try {
       const { company_id } = user;
 

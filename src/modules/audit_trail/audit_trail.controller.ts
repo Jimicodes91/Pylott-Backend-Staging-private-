@@ -35,6 +35,12 @@ export class AuditTrailController {
       limit: parseInt(req.query.limit as string) || 10,
     };
 
+    // If user has no company_id (e.g. SUPER_ADMIN), return all admin activities
+    if (!company_id) {
+      const { statusCode = null, ...others } = await this.auditTrailService.getAdminActivities(filters, pagination);
+      return genericResponse({ res, data: others, statusCode });
+    }
+
     const { statusCode = null, ...others } = await this.auditTrailService.getAuditTrail(company_id, undefined, filters, pagination);
 
     return genericResponse({ res, data: others, statusCode });

@@ -453,16 +453,13 @@ export const createTaskValidationRules = [
 ];
 
 export const createStandaloneTaskValidationRules = [
-  validateName('name', true, {
-    maxLength: 100,
-    customMessage: 'Numbers are not allowed in task name. Only letters, spaces, hyphens, and apostrophes are allowed',
-  }),
+  body('name').optional().trim().isString().withMessage('Task name must be a string').isLength({ max: 100 }).withMessage('Task name cannot exceed 100 characters'),
 
   body('description').optional().trim().isString().withMessage('Description must be a string').isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
 
   body('status').optional().trim().isString().withMessage('Status must be a string').isIn(['draft', 'sent', 'pending', 'in_progress', 'completed', 'archived']).withMessage('Invalid status value'),
 
-  body('due_date').trim().notEmpty().withMessage('Due date is required').isISO8601().withMessage('Due date must be a valid ISO8601 date'),
+  body('due_date').optional().trim().isISO8601().withMessage('Due date must be a valid ISO8601 date'),
 
   body('assignees')
     .optional()

@@ -318,7 +318,7 @@ export class AuditTrailService {
   }) {
     await this.activityLogRepository.create({
       user_id: payload.user_id,
-      company_id: payload.company_id || '', // Use empty string if company_id is null
+      company_id: payload.company_id || null,
       description: activity_description,
       name: activity_name,
       project_id: project_id,

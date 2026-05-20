@@ -120,15 +120,65 @@ export class SysAdminService {
   }
 
   public async subscribeCompany(companyId: string, expiryDate: Date) {
-    return await this.companyRepository.update({ id: companyId }, { subscription_status: SubscriptionStatus.ACTIVE, subscription_expiry_date: expiryDate });
+    // Update companies table
+    await this.companyRepository.update({ id: companyId }, { subscription_status: SubscriptionStatus.ACTIVE, subscription_expiry_date: expiryDate });
+
+    // Also persist to subscriptions table
+    const existing = await this.subscriptionRepository.getSubscriptionByCompanyId(companyId);
+    if (existing) {
+      await this.subscriptionRepository.updateSubscription(existing.id, {
+        status: SubscriptionStatus.ACTIVE,
+        current_period_start: new Date(),
+        current_period_end: expiryDate,
+        cancel_at_period_end: false,
+        updated_at: new Date(),
+      });
+    } else {
+      await this.subscriptionRepository.createSubscription({
+        company_id: companyId,
+        plan: 'starter',
+        status: SubscriptionStatus.ACTIVE,
+        current_period_start: new Date(),
+        current_period_end: expiryDate,
+        cancel_at_period_end: false,
+      });
+    }
   }
 
   public async cancelSubscription(companyId: string) {
-    return await this.companyRepository.update({ id: companyId }, { subscription_status: SubscriptionStatus.CANCELLED });
+    // Update companies table
+    await this.companyRepository.update({ id: companyId }, { subscription_status: SubscriptionStatus.CANCELLED });
+
+    // Also update subscriptions table
+    const subscription = await this.subscriptionRepository.getActiveSubscriptionByCompanyId(companyId);
+    if (subscription) {
+      await this.subscriptionRepository.cancelSubscription(subscription.id);
+    }
   }
 
   public async renewSubscription(companyId: string, expiryDate: Date) {
-    return await this.companyRepository.update({ id: companyId }, { subscription_status: SubscriptionStatus.ACTIVE, subscription_expiry_date: expiryDate });
+    // Update companies table
+    await this.companyRepository.update({ id: companyId }, { subscription_status: SubscriptionStatus.ACTIVE, subscription_expiry_date: expiryDate });
+
+    // Also persist to subscriptions table
+    const subscription = await this.subscriptionRepository.getSubscriptionByCompanyId(companyId);
+    if (subscription) {
+      await this.subscriptionRepository.updateSubscription(subscription.id, {
+        status: SubscriptionStatus.ACTIVE,
+        current_period_end: expiryDate,
+        cancel_at_period_end: false,
+        updated_at: new Date(),
+      });
+    } else {
+      await this.subscriptionRepository.createSubscription({
+        company_id: companyId,
+        plan: 'starter',
+        status: SubscriptionStatus.ACTIVE,
+        current_period_start: new Date(),
+        current_period_end: expiryDate,
+        cancel_at_period_end: false,
+      });
+    }
   }
 
   public async addSysAdmin(name: string, email: string, role: UserRoles = UserRoles.SUPER_ADMIN) {

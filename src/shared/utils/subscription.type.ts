@@ -21,7 +21,7 @@ export enum SubscriptionStatus {
   CANCELLED = 'cancelled',
   SUSPENDED = 'suspended',
   TRIAL = 'trial',
-  EXPIRED = 'exprired',
+  EXPIRED = 'expired',
 }
 
 // In subscription.type.ts or a new file like subscription-plan.type.ts
