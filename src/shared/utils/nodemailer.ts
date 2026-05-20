@@ -39,7 +39,8 @@ const sendEmail = async (to: string | Array<string>, subject: string, html: stri
       if (error.response) {
         console.error('SendGrid error body:', JSON.stringify(error.response.body));
       }
-      throw new Error(`Failed to send email to ${to}: ${error.message || 'Unknown SendGrid error'}`);
+      console.error(`Failed to send email to ${to}: ${error.message || 'Unknown SendGrid error'}`);
+      return null;
     }
   } else {
     // Use Gmail SMTP via nodemailer
@@ -57,7 +58,8 @@ const sendEmail = async (to: string | Array<string>, subject: string, html: stri
       return info;
     } catch (error) {
       console.error('Error sending email via SMTP 💀', error);
-      throw new Error(`Failed to send email to ${to}: ${error.message || 'Unknown SMTP error'}`);
+      console.error(`Failed to send email to ${to}: ${error.message || 'Unknown SMTP error'}`);
+      return null;
     }
   }
 };
