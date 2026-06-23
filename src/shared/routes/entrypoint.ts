@@ -89,4 +89,13 @@ export default (server: Server) => {
   } catch (error) {
     console.error('Failed to load forms routes:', error.message);
   }
+
+  // NativeForms Integration
+  try {
+    const { nativeformsRoutes, nativeformsWebhookRoutes } = require('@/modules/nativeforms/nativeforms.route');
+    nativeformsRoutes(`${RoutePrefix.V1}/nativeforms`, server);
+    nativeformsWebhookRoutes(`${RoutePrefix.V1}/webhooks`, server);
+  } catch (error) {
+    console.error('Failed to load nativeforms routes:', error.message);
+  }
 };

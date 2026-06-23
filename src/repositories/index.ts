@@ -23,3 +23,5 @@ export * from './org-finance-payment.repository';
 export * from './user_company.repository';
 export * from './invitation.repository';
 export * from './client_invite_request.repository';
+export * from './form_link.repository';
+export * from './nativeforms_submission.repository';
