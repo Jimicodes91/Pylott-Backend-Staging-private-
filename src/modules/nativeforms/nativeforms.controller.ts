@@ -8,7 +8,7 @@ import { FormLinkService } from './services/form-link.service';
 import { NativeformsSubmissionService } from './services/nativeforms-submission.service';
 
 const NATIVEFORMS_WEBHOOK_SECRET = process.env.NATIVEFORMS_WEBHOOK_SECRET || '';
-const WEBHOOK_MAX_BODY_SIZE = 1 * 1024 * 1024; // 1MB
+const WEBHOOK_MAX_BODY_SIZE = 1 * 1024 * 1024;
 
 @injectable()
 export class NativeformsController {
@@ -52,6 +52,14 @@ export class NativeformsController {
     return genericResponse({ res, data: result, statusCode: result.statusCode });
   };
 
+  updateFormLinkStatus = async (req: AuthenticatedRequest, res: Response) => {
+    const user = req.user as UserModelType;
+    const { id } = req.params;
+    const { status } = req.body;
+    const result = await this.formLinkService.updateStatus(user.company_id, id, status);
+    return genericResponse({ res, data: result, statusCode: result.statusCode });
+  };
+
   // ─── Client-facing Endpoints ─────────────────────────────────────
 
   getFormLinksByProject = async (req: AuthenticatedRequest, res: Response) => {
@@ -75,10 +83,25 @@ export class NativeformsController {
     return genericResponse({ res, data: result, statusCode: result.statusCode });
   };
 
+  updateSubmissionStatus = async (req: AuthenticatedRequest, res: Response) => {
+    const user = req.user as UserModelType;
+    const { id } = req.params;
+    const { status } = req.body;
+    const result = await this.submissionService.updateSubmissionStatus(id, status, user.id);
+    return genericResponse({ res, data: result, statusCode: result.statusCode });
+  };
+
+  // ─── Dashboard ────────────────────────────────────────────────────
+
+  getDashboardStats = async (req: AuthenticatedRequest, res: Response) => {
+    const user = req.user as UserModelType;
+    const result = await this.submissionService.getDashboardStats(user.company_id);
+    return genericResponse({ res, data: result, statusCode: result.statusCode });
+  };
+
   // ─── Webhook (Public, secret-validated) ────────────────────────────
 
   handleWebhook = async (req: Request, res: Response) => {
-    // Check payload size
     const contentLength = parseInt(req.headers['content-length'] || '0', 10);
     if (contentLength > WEBHOOK_MAX_BODY_SIZE) {
       return res.status(413).json({ error: 'Payload too large' });

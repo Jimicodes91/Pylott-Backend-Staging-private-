@@ -1,5 +1,7 @@
 import BaseModel from './base.model';
 
+export type SubmissionStatus = 'submitted' | 'under_review' | 'completed' | 'info_requested';
+
 export class NativeformsSubmission extends BaseModel {
   static tableName = 'nativeforms_submissions';
 
@@ -14,6 +16,9 @@ export class NativeformsSubmission extends BaseModel {
   submitted_data: Record<string, unknown>;
   raw_payload: Record<string, unknown>;
   submitted_at: string;
+  status: SubmissionStatus;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
 
   static get jsonSchema() {
     return {
@@ -32,6 +37,9 @@ export class NativeformsSubmission extends BaseModel {
         submitted_data: { type: 'object' },
         raw_payload: { type: 'object' },
         submitted_at: { type: 'string' },
+        status: { type: 'string', default: 'submitted' },
+        reviewed_at: { type: ['string', 'null'] },
+        reviewed_by: { type: ['string', 'null'] },
         deleted_at: { type: ['string', 'null'] },
       },
     };

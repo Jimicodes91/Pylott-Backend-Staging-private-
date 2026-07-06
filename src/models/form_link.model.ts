@@ -1,5 +1,7 @@
 import BaseModel from './base.model';
 
+export type FormLinkStatus = 'not_sent' | 'sent' | 'awaiting_client' | 'submitted' | 'under_review' | 'completed';
+
 export class FormLink extends BaseModel {
   static tableName = 'form_links';
 
@@ -9,6 +11,7 @@ export class FormLink extends BaseModel {
   project_type_id: string | null;
   milestone_id: string | null;
   sort_order: number;
+  status: FormLinkStatus;
 
   static get jsonSchema() {
     return {
@@ -22,6 +25,7 @@ export class FormLink extends BaseModel {
         project_type_id: { type: ['string', 'null'] },
         milestone_id: { type: ['string', 'null'] },
         sort_order: { type: 'integer', default: 0 },
+        status: { type: 'string', default: 'not_sent' },
         deleted_at: { type: ['string', 'null'] },
       },
     };
