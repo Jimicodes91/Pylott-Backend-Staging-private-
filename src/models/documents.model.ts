@@ -19,6 +19,9 @@ export class Documents extends BaseModel {
   description: string;
   is_visible_to_client: boolean;
   is_document_request: boolean;
+  issue_date?: string;
+  expiry_date?: string;
+  does_not_expire: boolean;
 
   attachments: Attachments[];
 

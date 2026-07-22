@@ -13,6 +13,7 @@ export class Metadata extends BaseModel {
   is_system: boolean;
   type: MetadataType;
   description: string;
+  requires_expiry: boolean;
 
   static relationMappings = (): ModelsRelationMapping => ({});
 }
