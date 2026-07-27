@@ -30,6 +30,9 @@ interface DocumentsType {
   description: string;
   is_visible_to_client: boolean;
   is_document_request: boolean;
+  issue_date?: string | null;
+  expiry_date?: string | null;
+  does_not_expire?: boolean;
 }
 
 interface AttachmentsType {
@@ -100,7 +103,7 @@ export class DocsService {
         is_document_request: isClient,
         issue_date: (payload as any).issue_date || null,
         expiry_date: (payload as any).expiry_date || null,
-        does_not_expire: (payload as any).does_not_expire || false,
+        does_not_expire: Boolean((payload as any).does_not_expire) || false,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
         const fileName = `${project_id}/${docFileName}`.toLowerCase();
@@ -122,7 +125,7 @@ export class DocsService {
 
       return { status: true, message: 'Document uploaded successfully' };
     } catch (error) {
-      console.log(`${this.traceId} Error occurred uploading docs ===> ${JSON.stringify({ ...others, err_msg: error?.message })}`);
+      console.log(`${this.traceId} Error occurred uploading docs ===> ${JSON.stringify({ ...others, err_msg: error?.message, err_stack: error?.stack?.slice(0, 200) })}`);
       return {
         status: false,
         message: 'An error occurred, please try again later',
