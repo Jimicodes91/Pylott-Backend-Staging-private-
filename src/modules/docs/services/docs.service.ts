@@ -98,6 +98,9 @@ export class DocsService {
         name: others.file_name,
         is_visible_to_client: isVisibleToClient,
         is_document_request: isClient,
+        issue_date: (payload as any).issue_date || null,
+        expiry_date: (payload as any).expiry_date || null,
+        does_not_expire: (payload as any).does_not_expire || false,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
         const fileName = `${project_id}/${docFileName}`.toLowerCase();
