@@ -8,3 +8,10 @@ coverage/
 out/
 
 migrations/
+# Test & jest config (not in the typed lint project)
+jest.config.js
+jest.setup.ts
+tsconfig.jest.json
+**/*.test.ts
+**/*.property.test.ts
+**/*.spec.ts
