@@ -3,11 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
 
-import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository, ProjectRepository, ProjectSettingsRepository } from '@/repositories';
+import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository, ProjectRepository, ProjectSettingsRepository, ProjectTaskRepository } from '@/repositories';
 
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { ServiceType } from '@/shared/types/general.type';
-import { DocumentsDirectory, MetadataType } from '@/shared/enums';
+import { DocumentsDirectory, MetadataType, ProjectTaskStatus } from '@/shared/enums';
 
 // Plain types to avoid circular dependencies
 interface UserType {
@@ -53,6 +53,7 @@ export class DocsService {
     private readonly documentRepository: DocumentsRepository,
     private readonly documentAttachmentRepository: DocumentAttachmentsRepository,
     private readonly projectSettingsRepository: ProjectSettingsRepository,
+    private readonly projectTaskRepository: ProjectTaskRepository,
     private readonly cloudinary: Cloudinary,
   ) {}
 
@@ -84,7 +85,7 @@ export class DocsService {
 
       let attachmentUrl: null | string = null;
 
-      const docFileName = others.file_name.trim().replaceAll(' ', '-');
+      const docFileName = (others.file_name ?? '').trim().replaceAll(' ', '-');
 
       let isVisibleToClient = false;
 
@@ -98,6 +99,7 @@ export class DocsService {
         description: others.description,
         type: MetadataType.DOCUMENT,
         document_type_id: others?.document_type_id ?? null,
+        task_id: (payload as any).task_id ?? undefined,
         name: others.file_name,
         is_visible_to_client: isVisibleToClient,
 
@@ -121,6 +123,11 @@ export class DocsService {
       await Objection.Model.transaction(async (trx) => {
         await this.documentRepository.create(documentData, trx);
         await this.documentAttachmentRepository.create(documentAttachmentData, trx);
+
+        // Auto-complete the linked task when a document is uploaded from a task
+        if ((payload as any).task_id) {
+          await this.projectTaskRepository.update({ id: (payload as any).task_id, company_id } as any, { status: ProjectTaskStatus.COMPLETED } as any, trx);
+        }
       });
 
       return { status: true, message: 'Document uploaded successfully' };

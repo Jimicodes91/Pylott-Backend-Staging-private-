@@ -58,6 +58,7 @@ export enum TaskCategoryType {
   APPROVAL = 'approval',
   MEETING = 'meeting',
   FOLLOW_UP = 'follow_up',
+  COMPLETE_FORM = 'complete_form',
 }
 
 export enum TaskActivityAction {

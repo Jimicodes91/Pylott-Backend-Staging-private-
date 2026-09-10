@@ -106,6 +106,7 @@ export class MetadataService {
       await this.metadataRepository.create({
         ...queryData,
         description: payload?.description ?? '',
+        requires_expiry: payload?.requires_expiry ?? false,
       });
 
       return {
@@ -151,6 +152,7 @@ export class MetadataService {
         {
           name: payload.name,
           description: payload?.description ?? '',
+          ...(payload?.requires_expiry !== undefined ? { requires_expiry: payload.requires_expiry } : {}),
         },
       );
 
