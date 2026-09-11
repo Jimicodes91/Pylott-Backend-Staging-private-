@@ -24,12 +24,9 @@ export class DocumentsRepository extends BaseRepository<DocumentsModelType, Docu
   async getAllDocumentsAndAttachment(project_id: string, others: Partial<DocumentsModelType> = {}, is_visible_to_client: boolean, is_client = false) {
     let qb = this.model.query().where({ project_id, deleted_at: null, ...others });
 
+    // Clients only see documents explicitly marked visible to them.
     if (is_client && is_visible_to_client) {
-      qb = qb.where((builder) => {
-        builder.where('is_document_request', false).orWhere((builder) => {
-          builder.where('is_document_request', true).andWhere('is_visible_to_client', true);
-        });
-      });
+      qb = qb.where('is_visible_to_client', true);
     }
 
     return await qb.withGraphFetched('attachments').modifyGraph('attachments', (qb) => {
