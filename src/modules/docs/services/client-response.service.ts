@@ -1,11 +1,12 @@
-import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
+import Objection from 'objection';
+import { injectable } from 'tsyringe';
 
-import { ServiceType } from '@/shared/types/general.type';
 import { ProjectTaskRepository } from '@/repositories';
 import { ContactRespository } from '@/repositories/contact.repository';
 import { TaskClientAssigneesRepository } from '@/repositories/task_client_assignees.repository';
 import { TaskClientResponsesRepository } from '@/repositories/task_client_responses.repository';
+import { ServiceType } from '@/shared/types/general.type';
 import { DocsService } from './docs.service';
 
 // Plain type to avoid circular dependencies (mirrors DocsService usage).
@@ -84,38 +85,54 @@ export class ClientResponseService {
       const company_id = user.company_id;
       const client_id = contact.id;
 
-      // Process each response item: route files through the hardened document path.
-      for (const item of payload.responses) {
-        let storedFileUrl: string | null = item.file_url ?? null;
+      // Process all response items in a SINGLE transaction so the submission is
+      // all-or-nothing: a mid-batch failure rolls back every earlier file and
+      // response row. File-validation failures are surfaced via a sentinel so
+      // they still return a 400 instead of a generic error.
+      try {
+        await Objection.Model.transaction(async (trx) => {
+          for (const item of payload.responses) {
+            let storedFileUrl: string | null = item.file_url ?? null;
 
-        const hasNewFile = typeof item.file_url === 'string' && item.file_url.length > 0 && !item.file_url.includes('http');
-        if (hasNewFile) {
-          // Req 8.1, 8.2, 9.1, 9.2 — validate + store the file as a linked document.
-          const stored = await this.docsService.storeTaskFile({
-            project_id,
-            company_id,
-            task_id,
-            file_name: item.required_item || task.name || 'client-response',
-            attachment: item.file_url as string,
-            is_visible_to_client: true,
-          });
+            const hasNewFile = typeof item.file_url === 'string' && item.file_url.length > 0 && !isHostedUrl(item.file_url);
+            if (hasNewFile) {
+              // Req 8.1, 8.2, 9.1, 9.2 — validate + store the file as a linked document (same trx).
+              const stored = await this.docsService.storeTaskFile({
+                project_id,
+                company_id,
+                task_id,
+                file_name: item.required_item || task.name || 'client-response',
+                attachment: item.file_url as string,
+                is_visible_to_client: true,
+                trx,
+              });
 
-          // Req 9.3 — reject the submission if a file fails validation/storage.
-          if (!stored.status) {
-            return { status: false, message: stored.message ?? 'File could not be stored', statusCode: StatusCodes.BAD_REQUEST };
+              // Req 9.3 — reject (and roll back) if a file fails validation/storage.
+              if (!stored.status) {
+                throw new ClientResponseValidationError(stored.message ?? 'File could not be stored');
+              }
+
+              storedFileUrl = stored.url; // Req 8.4 — reference, not base64.
+            }
+
+            await this.upsertResponse(
+              {
+                task_id,
+                client_id,
+                required_item: item.required_item,
+                file_url: storedFileUrl,
+                is_completed: item.is_completed ?? true,
+                comment: item.comment ?? null,
+              },
+              trx,
+            );
           }
-
-          storedFileUrl = stored.url; // Req 8.4 — reference, not base64.
-        }
-
-        await this.upsertResponse({
-          task_id,
-          client_id,
-          required_item: item.required_item,
-          file_url: storedFileUrl,
-          is_completed: item.is_completed ?? true,
-          comment: item.comment ?? null,
         });
+      } catch (txError) {
+        if (txError instanceof ClientResponseValidationError) {
+          return { status: false, message: txError.message, statusCode: StatusCodes.BAD_REQUEST };
+        }
+        throw txError;
       }
 
       return { status: true, message: 'Response submitted successfully' };
@@ -129,17 +146,32 @@ export class ClientResponseService {
    * Upsert a single response row keyed by (task_id, client_id, required_item).
    * BaseRepository has no upsert, so find-then-update-or-create.
    */
-  private async upsertResponse(row: { task_id: string; client_id: string; required_item: string; file_url: string | null; is_completed: boolean; comment: string | null }): Promise<void> {
-    const existing = await this.taskClientResponsesRepository.findOne({
-      task_id: row.task_id,
-      client_id: row.client_id,
-      required_item: row.required_item,
-    } as any);
+  private async upsertResponse(
+    row: { task_id: string; client_id: string; required_item: string; file_url: string | null; is_completed: boolean; comment: string | null },
+    trx?: Objection.Transaction,
+  ): Promise<void> {
+    const existing = await this.taskClientResponsesRepository.findOne(
+      {
+        task_id: row.task_id,
+        client_id: row.client_id,
+        required_item: row.required_item,
+      } as any,
+      trx,
+    );
 
     if (existing) {
-      await this.taskClientResponsesRepository.update({ id: (existing as any).id } as any, { file_url: row.file_url, is_completed: row.is_completed, comment: row.comment } as any);
+      await this.taskClientResponsesRepository.update({ id: (existing as any).id } as any, { file_url: row.file_url, is_completed: row.is_completed, comment: row.comment } as any, trx);
     } else {
-      await this.taskClientResponsesRepository.create(row as any);
+      await this.taskClientResponsesRepository.create(row as any, trx);
     }
   }
+}
+
+/** Sentinel used to surface a per-item validation failure out of the transaction as a 400. */
+class ClientResponseValidationError extends Error {}
+
+/** True only when the value is an already-hosted http(s) URL (prefix, not substring). */
+function isHostedUrl(value: string): boolean {
+  const v = value.includes(',') && value.startsWith('data:') ? '' : value;
+  return v.startsWith('http');
 }

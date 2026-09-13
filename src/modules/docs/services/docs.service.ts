@@ -172,8 +172,10 @@ export class DocsService {
   }): Promise<{ status: boolean; url: string | null; message?: string }> {
     const { project_id, company_id, task_id, file_name, attachment, is_visible_to_client = true } = params;
 
-    // Already a hosted URL — nothing to upload; treat as-is.
-    if (attachment.includes('http')) {
+    // Already a hosted URL — nothing to upload; treat as-is. Use a prefix check
+    // (not substring) so base64 whose bytes contain "http" is not misclassified
+    // as hosted and silently stored as raw base64.
+    if (attachment.startsWith('http')) {
       return { status: true, url: attachment };
     }
 
