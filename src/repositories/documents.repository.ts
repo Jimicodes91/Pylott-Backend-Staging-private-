@@ -10,10 +10,14 @@ export class DocumentsRepository extends BaseRepository<DocumentsModelType, Docu
     super(Documents);
   }
 
-  async getDocumentAndAttachments(project_id: string, document_id: string) {
+  async getDocumentAndAttachments(project_id: string, document_id: string, company_id?: string) {
+    const where: Record<string, unknown> = { project_id, id: document_id, deleted_at: null };
+    // Scope by tenant when provided so a document cannot be read across companies.
+    if (company_id) where.company_id = company_id;
+
     return await this.model
       .query()
-      .where({ project_id, id: document_id, deleted_at: null })
+      .where(where)
       .first()
       .withGraphFetched('attachments')
       .modifyGraph('attachments', (qb) => {

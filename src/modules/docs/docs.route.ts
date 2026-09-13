@@ -3,7 +3,7 @@ import { container } from 'tsyringe';
 import { authenticateUser as authGuard } from '@/shared/middlewares/guard.middleware';
 import { schemaValidator } from '@/shared/middlewares/validator.middleware';
 import { Server } from '@/shared/types/http.type';
-import { updateDocumentAttachmentValidationRules, updateUploadDocumentValidationRules, uploadDocumentValidationRules } from '@/shared/validations/docs';
+import { clientResponseValidationRules, updateDocumentAttachmentValidationRules, updateUploadDocumentValidationRules, uploadDocumentValidationRules } from '@/shared/validations/docs';
 import { documentRequestValidationRules } from '@/shared/validations/projects';
 
 // Lazy controller resolution with dynamic imports
@@ -33,5 +33,14 @@ export const docsRoutes = (prefix: string, server: Server) => {
    */
   server.post(`${prefix}/:project_id/document-requests`, authGuard, schemaValidator(documentRequestValidationRules), async (req, res) =>
     (await getDocumentController()).createDocumentRequest(req, res),
+  );
+
+  /**
+   * Client Task Response (Part A) — an assigned client submits a task response.
+   * Any attached file is routed through the hardened document path.
+   * Full path: /api/v1/projects/tasks/:task_id/client-response
+   */
+  server.post(`${prefix}/tasks/:task_id/client-response`, authGuard, schemaValidator(clientResponseValidationRules), async (req, res) =>
+    (await getDocumentController()).submitClientResponse(req, res),
   );
 };

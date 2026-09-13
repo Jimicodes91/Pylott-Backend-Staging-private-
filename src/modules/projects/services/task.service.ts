@@ -18,23 +18,24 @@ import {
   UserRepository,
 } from '@/repositories';
 
+import { FRONTEND_URL } from '@/config/env';
 import { Attachments } from '@/models/document_attachments.model';
 import { Documents } from '@/models/documents.model';
-import { ProjectTaskAssignees } from '@/models/project_task_asignees.model';
 import { ProjectTask } from '@/models/project_task.model';
-import { User, UserModelType } from '@/models/user.model';
+import { ProjectTaskAssignees } from '@/models/project_task_asignees.model';
+import { TaskActivityLog } from '@/models/task_activity_log.model';
+import { UserModelType } from '@/models/user.model';
 import { AuditTrailService } from '@/modules/audit_trail/services/audit_trail.service';
 import { StatusTransitionValidator } from '@/modules/projects/services/status-transition.service';
+import { ContactRespository } from '@/repositories/contact.repository';
 import { AUDIT_TRAIL_ACTION, DocumentsDirectory, EmailSubject, MetadataType, ProjectTaskStatus, TaskActivityAction, UserRoles } from '@/shared/enums';
-import { TaskActivityLog } from '@/models/task_activity_log.model';
+import { notificationEmitter } from '@/shared/events/notification.events';
 import { ObjectLiteral, ServiceType } from '@/shared/types/general.type';
 import { CreateTask } from '@/shared/types/projects.type';
+import { tagClientResponseFiles } from '@/shared/utils/client-response-file';
 import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 import { newTaskAssignedEmail, taskCompletedEmail } from '@/shared/utils/email';
 import sendEmail from '@/shared/utils/nodemailer';
-import { ContactRespository } from '@/repositories/contact.repository';
-import { FRONTEND_URL } from '@/config/env';
-import { notificationEmitter } from '@/shared/events/notification.events';
 
 @injectable()
 export class TaskService {
@@ -827,6 +828,10 @@ export class TaskService {
       task.due_date = dayjs(task.due_date).format('DD MMM, YYYY');
       task['assignees'] = task.assignees.map((assignee) => assignee.user).flat() as any;
       task.status = this.normalizeTaskStatus(task.status);
+
+      // Req 11.1/11.3 — tag each client response's file as a hosted reference
+      // ('url') or legacy base64 ('base64') so the reader renders either safely.
+      task['client_responses'] = tagClientResponseFiles((task as any).client_responses) as any;
 
       const today = dayjs().startOf('day');
       const dueDate = dayjs(task.due_date).startOf('day');

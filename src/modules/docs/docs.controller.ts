@@ -1,12 +1,13 @@
 import { Response } from 'express';
 import { injectable } from 'tsyringe';
 
-import { DocsService } from './services/docs.service';
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
-import { genericResponse } from '@/shared/utils/api-response';
 import { AuthenticatedRequest } from '@/shared/types/express';
-import { DocRequestService } from './services/docs-request.service';
 import { DocumentRequestType } from '@/shared/types/projects.type';
+import { genericResponse } from '@/shared/utils/api-response';
+import { ClientResponseService, SubmitClientResponsePayload } from './services/client-response.service';
+import { DocRequestService } from './services/docs-request.service';
+import { DocsService } from './services/docs.service';
 
 // Plain type to avoid circular dependencies
 interface UserType {
@@ -22,7 +23,16 @@ export class DocsController {
   constructor(
     private readonly docService: DocsService,
     private readonly docRequestService: DocRequestService,
+    private readonly clientResponseService: ClientResponseService,
   ) {}
+
+  submitClientResponse = async (req: AuthenticatedRequest, res: Response) => {
+    const { task_id } = req.params;
+    const payload = req.body as SubmitClientResponsePayload;
+    const user = req.user as UserType;
+    const { statusCode = null, ...others } = await this.clientResponseService.submitResponse(task_id, user, payload);
+    return genericResponse({ res, data: others, statusCode });
+  };
 
   uploadDocument = async (req: AuthenticatedRequest, res: Response) => {
     const { project_id } = req.params;
@@ -64,7 +74,8 @@ export class DocsController {
 
   getDocumentDetails = async (req: AuthenticatedRequest, res: Response) => {
     const { document_id, project_id } = req.params;
-    const { statusCode = null, ...others } = await this.docService.getDocumentDetails(project_id, document_id);
+    const user = req.user as UserType;
+    const { statusCode = null, ...others } = await this.docService.getDocumentDetails(project_id, document_id, user.company_id);
     return genericResponse({ res, data: others, statusCode });
   };
 

@@ -1,13 +1,8 @@
 import { ModelObject } from 'objection';
 
-import { ModelsRelationMapping } from '@/shared/types/models.type';
-import BaseModel from './base.model';
 import { ProjectTaskStatus } from '@/shared/enums';
-import { Documents } from './documents.model';
+import BaseModel from './base.model';
 import { ProjectTaskAssignees } from './project_task_asignees.model';
-import { ProjectType } from './project_type.model';
-import { Metadata } from './metadata.model';
-import { Company } from './company.model';
 
 export class ProjectTask extends BaseModel {
   static tableName = 'project_tasks';
@@ -104,6 +99,14 @@ export class ProjectTask extends BaseModel {
         join: {
           from: 'project_tasks.contact_id',
           to: 'contacts.id',
+        },
+      },
+      client_responses: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: require('./task_client_responses.model').TaskClientResponses,
+        join: {
+          from: 'project_tasks.id',
+          to: 'task_client_responses.task_id',
         },
       },
     };

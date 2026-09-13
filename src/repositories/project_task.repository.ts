@@ -1,10 +1,10 @@
 import { container, injectable } from 'tsyringe';
 
-import BaseRepository from './base.repository';
 import { ProjectTask, ProjectTaskModelType } from '@/models/project_task.model';
-import { TaskStatusCounts, ContextualTaskReport } from '@/shared/interface/model';
 import { ProjectTaskStatus } from '@/shared/enums';
+import { ContextualTaskReport, TaskStatusCounts } from '@/shared/interface/model';
 import { ObjectLiteral } from '@/shared/types/general.type';
+import BaseRepository from './base.repository';
 import { ProjectTaskAssigneesRepository } from './project_task_asignees.repository';
 
 @injectable()
@@ -17,7 +17,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskModelType, 
     return await this.model
       .query()
       .where({ company_id, project_id, id: task_id, deleted_at: null })
-      .withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true, contact: true })
+      .withGraphFetched({ document: { attachments: true }, task_type: true, pipeline: true, assignees: { user: true }, company: true, contact: true, client_responses: { client: true } })
       .first();
   }
 

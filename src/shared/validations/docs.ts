@@ -41,3 +41,11 @@ export const updateUploadDocumentValidationRules = [
 ];
 
 export const updateDocumentAttachmentValidationRules = [body('attachment').notEmpty().withMessage('Attachment is required').isString().withMessage('Attachment must be a string')];
+
+export const clientResponseValidationRules = [
+  body('responses').isArray({ min: 1 }).withMessage('At least one response is required'),
+  body('responses.*.required_item').notEmpty().withMessage('required_item is required').isString().withMessage('required_item must be a string'),
+  body('responses.*.file_url').optional({ values: 'null' }).isString().withMessage('file_url must be a string'),
+  body('responses.*.is_completed').optional().isBoolean().withMessage('is_completed must be a boolean').toBoolean(),
+  body('responses.*.comment').optional({ values: 'null' }).isString().withMessage('comment must be a string'),
+];

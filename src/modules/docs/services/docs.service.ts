@@ -1,13 +1,16 @@
-import Objection from 'objection';
-import { v4 as uuidv4 } from 'uuid';
-import { injectable } from 'tsyringe';
 import { StatusCodes } from 'http-status-codes';
+import Objection from 'objection';
+import { injectable } from 'tsyringe';
+import { v4 as uuidv4 } from 'uuid';
 
 import { DocumentAttachmentsRepository, DocumentsRepository, MetadataRepository, ProjectRepository, ProjectSettingsRepository, ProjectTaskRepository } from '@/repositories';
 
+import { documentUpload } from '@/config/env';
+import { DocumentsDirectory, MetadataType, ProjectTaskStatus } from '@/shared/enums';
 import { UploadDocumentType } from '@/shared/types/dto/documents.dto';
 import { ServiceType } from '@/shared/types/general.type';
-import { DocumentsDirectory, MetadataType, ProjectTaskStatus } from '@/shared/enums';
+import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
+import { decodeBase64Attachment, validateFile } from '@/shared/utils/file-validation';
 
 // Plain types to avoid circular dependencies
 interface UserType {
@@ -41,7 +44,6 @@ interface AttachmentsType {
   field_id?: string;
   media_url: string | null;
 }
-import { Cloudinary } from '@/shared/utils/cloud-storage/cloudinary';
 
 @injectable()
 export class DocsService {
@@ -108,6 +110,14 @@ export class DocsService {
         does_not_expire: Boolean((payload as any).does_not_expire) || false,
       };
       if (payload.attachment && !payload.attachment.includes('http')) {
+        // Hardening (Req 1 & 2): validate file type by content and enforce a
+        // size cap on the decoded buffer before uploading to storage.
+        const buffer = decodeBase64Attachment(attachment);
+        const validation = validateFile(buffer, documentUpload.allowedMimeTypes, documentUpload.maxFileBytes);
+        if (!validation.ok) {
+          return { status: false, message: validation.message ?? 'Invalid file', statusCode: StatusCodes.BAD_REQUEST };
+        }
+
         const fileName = `${project_id}/${docFileName}`.toLowerCase();
         const { status, data } = await this.cloudinary.upload(DocumentsDirectory.DOCS, attachment, fileName);
 
@@ -140,9 +150,79 @@ export class DocsService {
     }
   }
 
-  public async getDocumentDetails(project_id: string, document_id: string): Promise<ServiceType> {
+  /**
+   * Store a single task-related file as a proper Document + Attachment via the
+   * hardened upload path, returning the hosted URL. Reused by both the
+   * document-upload flow and the client-response flow (Part A) so every client
+   * file gets identical type/size validation and safe delivery.
+   *
+   * Applies Requirements 1 & 2 (type + size validation) before storage and
+   * links the created document to the task and project (Requirement 8.2).
+   *
+   * @returns `{ status, url }` — `url` is the hosted media URL on success.
+   */
+  public async storeTaskFile(params: {
+    project_id: string;
+    company_id: string;
+    task_id: string;
+    file_name: string;
+    attachment: string; // base64 (data URL or raw)
+    is_visible_to_client?: boolean;
+    trx?: Objection.Transaction;
+  }): Promise<{ status: boolean; url: string | null; message?: string }> {
+    const { project_id, company_id, task_id, file_name, attachment, is_visible_to_client = true } = params;
+
+    // Already a hosted URL — nothing to upload; treat as-is.
+    if (attachment.includes('http')) {
+      return { status: true, url: attachment };
+    }
+
+    // Req 1 & 2 — validate type by content and enforce size before storage.
+    const buffer = decodeBase64Attachment(attachment);
+    const validation = validateFile(buffer, documentUpload.allowedMimeTypes, documentUpload.maxFileBytes);
+    if (!validation.ok) {
+      return { status: false, url: null, message: validation.message ?? 'Invalid file' };
+    }
+
+    const docFileName = (file_name ?? '').trim().replaceAll(' ', '-');
+    const cloudName = `${project_id}/${docFileName}`.toLowerCase();
+    const { status, data } = await this.cloudinary.upload(DocumentsDirectory.DOCS, attachment, cloudName);
+    if (!status) return { status: false, url: null, message: 'Could not upload file. Please try again later' };
+
+    const document_id = uuidv4();
+    const documentData: Partial<DocumentsType> = {
+      id: document_id,
+      company_id,
+      project_id,
+      description: '',
+      type: MetadataType.DOCUMENT,
+      document_type_id: null,
+      task_id,
+      name: file_name,
+      is_visible_to_client,
+    };
+    const documentAttachmentData: Partial<AttachmentsType> = {
+      document_id,
+      media_url: data,
+    };
+
+    const runner = async (trx: Objection.Transaction) => {
+      await this.documentRepository.create(documentData, trx);
+      await this.documentAttachmentRepository.create(documentAttachmentData, trx);
+    };
+
+    if (params.trx) {
+      await runner(params.trx);
+    } else {
+      await Objection.Model.transaction(async (trx) => runner(trx));
+    }
+
+    return { status: true, url: data };
+  }
+
+  public async getDocumentDetails(project_id: string, document_id: string, company_id?: string): Promise<ServiceType> {
     try {
-      const document = await this.documentRepository.getDocumentAndAttachments(project_id, document_id);
+      const document = await this.documentRepository.getDocumentAndAttachments(project_id, document_id, company_id);
 
       if (!document) return { status: false, message: 'Document not found', statusCode: StatusCodes.NOT_FOUND };
 
@@ -246,6 +326,13 @@ export class DocsService {
       let attachmentUrl = payload.attachment;
 
       if (payload.attachment && !payload.attachment.includes('http')) {
+        // Hardening (Req 1 & 2): validate type + size before storage.
+        const buffer = decodeBase64Attachment(payload.attachment);
+        const validation = validateFile(buffer, documentUpload.allowedMimeTypes, documentUpload.maxFileBytes);
+        if (!validation.ok) {
+          return { status: false, message: validation.message ?? 'Invalid file', statusCode: StatusCodes.BAD_REQUEST };
+        }
+
         const fileName = `${project_id}/${document.name}`;
         const { status, data } = await this.cloudinary.upload(DocumentsDirectory.DOCS, payload.attachment, fileName);
 
