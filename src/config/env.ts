@@ -85,6 +85,26 @@ export const storage = {
   },
 };
 
+/**
+ * Document upload hardening config (Wave 1).
+ * All values have safe defaults so the hardening is active out of the box.
+ * MAY-COST features (signing, malware scanning) are inert by default.
+ */
+export const documentUpload = {
+  // Allowed MIME types for uploaded files, validated by content (magic bytes).
+  allowedMimeTypes: (process.env.ALLOWED_DOC_MIME_TYPES || 'application/pdf,image/png,image/jpeg')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean),
+  // Max decoded file size in bytes (default 7 MB). Independent of body-parser limit.
+  maxFileBytes: Number(process.env.MAX_DOC_FILE_BYTES) || 7 * 1024 * 1024,
+  // Wave 2 (MAY COST) — off by default.
+  signedUrlEnabled: process.env.SIGNED_URL_ENABLED === 'true',
+  signedUrlTtlSeconds: Number(process.env.SIGNED_URL_TTL_SECONDS) || 300,
+  // Wave 2 (MAY COST) — 'noop' | 'clamav' | 'api'. Default noop = no scanning cost.
+  scannerProvider: process.env.SCANNER_PROVIDER || 'noop',
+};
+
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'https://pylott-staging-frontend.onrender.com';
 
 export const TOKEN_EXPIRATION_MS = 5 * 60 * 60 * 1000; // 5 hours
